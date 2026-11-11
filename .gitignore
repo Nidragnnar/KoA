@@ -1,0 +1,8 @@
+build/
+pacote/
+capturas/*.bmp
+*.user
+.vs/
+build_config.log
+capturas/roteiro/saves/
+capturas/**/*.log

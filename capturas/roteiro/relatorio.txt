@@ -1,0 +1,29 @@
+captura: 01_titulo
+[OK] pasta de saves de teste começa vazia
+[OK] mapa e dados carregados
+captura: 02_vilarejo_inicio
+captura: 03_andando
+[OK] herói andou 67 px para a direita
+[OK] achou uma árvore acessível
+captura: 04_cortando
+[OK] árvore virou toco após 3 golpes
+[OK] madeira = 3 (esperado 3)
+captura: 05_recursos_juntados
+[OK] E na porta abre o painel da construção
+captura: 06_painel_casa
+captura: 07_reconstruindo
+[OK] casa subiu para o nível 2 (Casa Reconstruída)
+[OK] salvamento automático após a obra
+captura: 08_casa_reconstruida
+[OK] Esc abre o menu de pausa
+captura: 08b_menu_pausa
+captura: 09_titulo_continuar
+[OK] título oferece Continuar depois de salvar
+[OK] inventário igual ao salvo
+[OK] casa continua no nível 2 após carregar
+[OK] 9 árvores/rochas esgotadas restauradas
+captura: 10_carregado
+captura: 11_era_1
+captura: 11_era_2
+captura: 11_era_3
+RESULTADO: 0 falha(s)

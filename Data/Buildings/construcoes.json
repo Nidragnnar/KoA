@@ -1,0 +1,18 @@
+{
+  "construcoes": [
+    {
+      "id": "casa",
+      "aparencia": "casa",
+      "tamanho": [4, 3],
+      "niveis": [
+        { "nivel": 1, "nome": "Cabana Abandonada", "descricao": "Abrigo inicial, estrutura deteriorada." },
+        { "nivel": 2, "nome": "Casa Reconstruída", "descricao": "Paredes firmes e um teto que não deixa a chuva entrar.",
+          "custo": { "madeira": 15, "pedra": 8, "ouro": 10 } },
+        { "nivel": 3, "nome": "Mansão Medieval", "descricao": "Pedra, vigas de carvalho e lareira para o inverno.",
+          "custo": { "madeira": 40, "pedra": 45, "ouro": 60 } },
+        { "nivel": 4, "nome": "Residência Encantada", "descricao": "Pedra branca, telhado azul e cristais que brilham à noite.",
+          "custo": { "madeira": 60, "pedra": 90, "ouro": 150 } }
+      ]
+    }
+  ]
+}

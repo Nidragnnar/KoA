@@ -1,0 +1,93 @@
+#include <gtest/gtest.h>
+
+#include "Engine/Core/Time.h"
+#include "Engine/Physics/Collision.h"
+#include "Engine/Renderer/Animation.h"
+#include "Engine/Renderer/ParticleSystem.h"
+#include "Engine/Renderer/RenderTarget.h"
+#include "Engine/World/TileMap.h"
+
+using namespace ke;
+
+TEST(PassoFixo, AcumulaEDevolvePassosInteiros) {
+    FixedTimestep p(1.0 / 60.0);
+    EXPECT_EQ(p.avancar(1.0 / 120.0), 0);
+    EXPECT_EQ(p.avancar(1.0 / 120.0), 1);
+    EXPECT_EQ(p.avancar(3.0 / 60.0), 3);
+}
+
+TEST(PassoFixo, EngasgoLongoNaoViraRajada) {
+    FixedTimestep p(1.0 / 60.0, 5);
+    EXPECT_EQ(p.avancar(2.0), 5);
+    EXPECT_LT(p.alfa(), 1.01);
+}
+
+TEST(TileMap, ChunksDe32CobremOMapaInteiro) {
+    TileMap m(64, 40, 16);
+    EXPECT_EQ(m.chunksX(), 2);
+    EXPECT_EQ(m.chunksY(), 2);
+    m.em(63, 39).terreno = 7;
+    EXPECT_EQ(m.chunk(1, 1).tiles[(39 % 32) * 32 + 31].terreno, 7);
+    EXPECT_TRUE(m.solido(-1, 0));
+    EXPECT_TRUE(m.solido(64, 0));
+    EXPECT_FALSE(m.solido(0, 0));
+}
+
+TEST(Colisao, ParaEncostadoNaParede) {
+    TileMap m(10, 10, 16);
+    for (int y = 0; y < 10; ++y) m.em(5, y).solido = true;  // parede em x = 80..96
+    const AABB caixa{{60, 40}, {70, 46}};
+    const glm::vec2 feito = moverComColisao(m, caixa, {30, 0}, {});
+    EXPECT_FLOAT_EQ(caixa.max.x + feito.x, 80.0f);
+}
+
+TEST(Colisao, DeslizaPelaQuinaQuandoQuaseAlinhado) {
+    TileMap m(10, 10, 16);
+    m.em(5, 2).solido = true;  // bloco em y 32..48; caixa raspando 2 px na parte de baixo
+    const AABB caixa{{60, 46}, {70, 52}};
+    glm::vec2 total{0};
+    AABB c = caixa;
+    for (int i = 0; i < 20; ++i) {
+        const glm::vec2 d = moverComColisao(m, c, {1.5f, 0}, {});
+        c = c.deslocada(d);
+        total += d;
+    }
+    EXPECT_GT(c.min.x, 80.0f) << "deveria ter contornado o bloco";
+    EXPECT_GE(c.min.y, 48.0f);
+}
+
+TEST(Colisao, ObstaculosExtrasBloqueiam) {
+    TileMap m(10, 10, 16);
+    const AABB obst[] = {{{50, 0}, {60, 160}}};
+    const glm::vec2 feito = moverComColisao(m, {{30, 30}, {40, 36}}, {40, 0}, obst);
+    EXPECT_FLOAT_EQ(feito.x, 10.0f);
+}
+
+TEST(Letterbox, EscalaInteiraQuandoCabe) {
+    const Retangulo r = calcularLetterbox(1920, 1080, 640, 360);
+    EXPECT_EQ(r.largura, 1920);
+    EXPECT_EQ(r.altura, 1080);
+    const Retangulo r2 = calcularLetterbox(1366, 768, 640, 360);
+    EXPECT_EQ(r2.largura, 1280);  // 2× com bordas
+    EXPECT_EQ(r2.x, 43);
+}
+
+TEST(Animacao, RepeteOuParaNoUltimoQuadro) {
+    AnimationClip c{{"a", "b", "c"}, 10.0f, true};
+    EXPECT_EQ(c.quadro(0.0f), "a");
+    EXPECT_EQ(c.quadro(0.25f), "c");
+    EXPECT_EQ(c.quadro(0.35f), "a");
+    c.repetir = false;
+    EXPECT_EQ(c.quadro(5.0f), "c");
+}
+
+TEST(Particulas, MorremNoFimDaVida) {
+    ParticleSystem s;
+    Particula p;
+    p.vida = p.vidaMax = 0.5f;
+    s.emitir(p);
+    s.atualizar(0.3f);
+    EXPECT_EQ(s.particulas().size(), 1u);
+    s.atualizar(0.3f);
+    EXPECT_TRUE(s.particulas().empty());
+}

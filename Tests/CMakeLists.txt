@@ -1,0 +1,12 @@
+include(GoogleTest)
+
+add_executable(EngineTests EngineTests/TestesEngine.cpp)
+target_link_libraries(EngineTests PRIVATE KingdomEngine GTest::gtest_main)
+configurar_alvo(EngineTests)
+gtest_discover_tests(EngineTests DISCOVERY_MODE PRE_TEST)
+
+add_executable(GameTests GameTests/TestesJogo.cpp GameTests/TestesSave.cpp)
+target_link_libraries(GameTests PRIVATE KingdomGame GTest::gtest_main)
+target_compile_definitions(GameTests PRIVATE PASTA_DATA="${CMAKE_SOURCE_DIR}/Data")
+configurar_alvo(GameTests)
+gtest_discover_tests(GameTests DISCOVERY_MODE PRE_TEST)
