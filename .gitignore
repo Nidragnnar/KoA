@@ -6,3 +6,7 @@ capturas/*.bmp
 build_config.log
 capturas/roteiro/saves/
 capturas/**/*.log
+# Arte do NidraIA: imagens de trabalho (o resultado vai em Assets/Arte)
+arte_fonte/brutas/
+arte_fonte/bases/
+arte_fonte/procedurais/
