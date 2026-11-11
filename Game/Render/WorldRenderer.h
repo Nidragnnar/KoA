@@ -17,6 +17,8 @@ public:
 
     void desenhar(ke::Renderer2D& r, const World& w, const ke::Camera2D& cam, float tempo, const ke::ParticleSystem& part,
                   bool mostrarColisoes);
+    // Luzes para o mapa de luz da noite (desenhar entre LightMap::comecar e terminar)
+    void desenharLuzes(ke::Renderer2D& r, const World& w, const ke::Camera2D& cam, float tempo);
     // Marcador sobre o alvo de interação e a dica "[E] ..."
     void desenharAlvo(ke::Renderer2D& r, const ke::BitmapFont& f, const World& w, float tempo);
 

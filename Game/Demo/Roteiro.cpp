@@ -8,6 +8,7 @@
 #include "Engine/Core/Logger.h"
 #include "Game/App/Contexto.h"
 #include "Game/Exploration/Components.h"
+#include "Game/NPC/Npc.h"
 #include "Game/Scenes/TitleScene.h"
 #include "Game/Scenes/WorldScene.h"
 
@@ -124,27 +125,79 @@ void Roteiro::noMundo(WorldScene& cena) {
 
     if (fase_ == 1) {
         switch (etapa_) {
-        case 0:
+        case 0: {
             if (quadro_ < 40) return;
             verificar(w.inventario.todos() == inventarioSalvo_, "inventário igual ao salvo");
             verificar(w.reino.construcao("casa_herdeiro")->level == 2, "casa continua no nível 2 após carregar");
             verificar(contarEsgotados(w) == esgotadosSalvos_, std::format("{} árvores/rochas esgotadas restauradas", esgotadosSalvos_));
+            verificar(w.relogio.dia == 2, std::format("dia restaurado do save (dia {})", w.relogio.dia));
+            const auto& rel = w.reg.get<Relacionamento>(w.morador("bram"));
+            verificar(rel.conheceu && rel.afinidade == 25, std::format("amizade com Bram restaurada ({} pontos)", rel.afinidade));
             capturar("10_carregado");
             proxima();
             return;
-        case 1: case 2: case 3: {  // prévia das eras (só a cor da tela muda no 0.1)
-            const int era = etapa_;
+        }
+        case 1: {  // troca de atividade: às 13:00 o Bram volta do poço para a forja, andando
+            const entt::entity bram = w.morador("bram");
+            if (quadro_ == 1) {
+                w.relogio.minutos = 12 * 60;
+                w.posicionarMoradores();
+                w.jogador.pos = w.reg.get<Posicao>(bram).v + glm::vec2(30, 20);
+                xInicial_ = w.reg.get<Posicao>(bram).v.x;
+                yInicial_ = w.reg.get<Posicao>(bram).v.y;
+                w.relogio.minutos = 13 * 60 - 0.5f;
+            }
+            if (quadro_ == 90) capturar("11_morador_andando");
+            if (quadro_ == 100) {
+                const glm::vec2 agora = w.reg.get<Posicao>(bram).v;
+                verificar(glm::distance(agora, {xInicial_, yInicial_}) > 24.0f,
+                          std::format("Bram anda sozinho na troca de rotina ({:.0f} px)", glm::distance(agora, {xInicial_, yInicial_})));
+                verificar(w.reg.get<Movimento>(bram).andando || w.reg.get<Movimento>(bram).caminho.empty(), "Bram segue um caminho (A*)");
+                proxima();
+            }
+            return;
+        }
+        case 2:  // noite: tochas, fogueira e janelas acesas
+            if (quadro_ == 1) {
+                w.relogio.minutos = 21 * 60 + 30;
+                w.posicionarMoradores();
+                w.jogador.pos = {29 * 16 + 8, 25 * 16 + 14};  // olhando a fogueira de longe (sem a etiqueta na frente)
+                w.jogador.dir = Direcao::Direita;
+            }
+            if (quadro_ == 40) {
+                verificar(w.relogio.escuridao() > 0.9f, "21:30 já é noite fechada");
+                capturar("12_noite_fogueira");
+            }
+            if (quadro_ == 45) {
+                const BuildingData* casa = w.reino.construcao("casa_herdeiro");
+                w.jogador.pos = w.pontoPorta(*casa) + glm::vec2(0, 30);
+            }
+            if (quadro_ == 80) {
+                capturar("12b_noite_casa");
+                proxima();
+            }
+            return;
+        case 3:  // ficar acordado até as 2:00: desmaio
+            if (quadro_ == 1) w.relogio.minutos = Relogio::FIM_DIA - 0.3f;
+            if (quadro_ == 200) {
+                verificar(w.relogio.dia == 3 && w.relogio.minutos < 6 * 60 + 30, std::format("desmaio às 2:00 leva ao dia 3 (dia {})", w.relogio.dia));
+                capturar("13_depois_do_desmaio");
+                proxima();
+            }
+            return;
+        case 4: case 5: case 6: {  // prévia das eras (só a cor da tela muda por enquanto)
+            const int era = etapa_ - 3;
             if (quadro_ == 1) {
                 w.reino.eraForcada = era;
                 w.reino.eraVisual = static_cast<float>(era);
             }
             if (quadro_ == 20) {
-                capturar(std::format("11_era_{}", era));
+                capturar(std::format("14_era_{}", era));
                 proxima();
             }
             return;
         }
-        case 4:
+        case 7:
             w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();
@@ -240,12 +293,55 @@ void Roteiro::noMundo(WorldScene& cena) {
             verificar(w.reino.construcao("casa_herdeiro")->level == 2, "casa subiu para o nível 2 (Casa Reconstruída)");
             verificar(ctx_.saves->existe(), "salvamento automático após a obra");
             capturar("08_casa_reconstruida");
+            proxima();
+        }
+        return;
+    case 6: {  // conversar com o Bram até o fim
+        const entt::entity bram = w.morador("bram");
+        if (quadro_ == 1) {
+            verificar(bram != entt::null, "Bram existe no vilarejo");
+            w.reg.get<Agenda>(bram).dormindo = false;
+            w.jogador.pos = w.reg.get<Posicao>(bram).v + glm::vec2(0, 14);
+            w.jogador.dir = Direcao::Cima;
+            w.reg.get<Movimento>(bram).caminho.clear();
+        }
+        if (quadro_ == 10) in.simularToque(SDL_SCANCODE_E);
+        if (quadro_ == 30) verificar(cena.conversa().has_value() && cena.conversa()->npc == "bram", "E perto do Bram abre a conversa");
+        if (quadro_ == 120) capturar("08c_dialogo_bram");
+        if (quadro_ > 130 && cena.conversa() && quadro_ % 12 == 0) in.simularToque(SDL_SCANCODE_E);
+        if (quadro_ > 130 && !cena.conversa()) {
+            const auto& rel = w.reg.get<Relacionamento>(bram);
+            verificar(rel.afinidade == 25 && rel.conheceu, std::format("amizade com Bram subiu para {} na primeira conversa", rel.afinidade));
+            verificar(!w.reg.get<Agenda>(bram).conversando, "Bram volta à rotina depois da conversa");
+            proxima();
+        }
+        if (quadro_ > 600) {
+            verificar(false, "conversa terminou");
+            terminar();
+        }
+        return;
+    }
+    case 7:  // dormir pela casa: novo dia
+        if (quadro_ == 1) {
+            const BuildingData* casa = w.reino.construcao("casa_herdeiro");
+            w.jogador.pos = w.pontoPorta(*casa) + glm::vec2(0, 9);
+            w.jogador.dir = Direcao::Cima;
+        }
+        if (quadro_ == 10) in.simularToque(SDL_SCANCODE_E);
+        if (quadro_ == 20) in.simularToque(SDL_SCANCODE_S);  // "Dormir até amanhã"
+        if (quadro_ == 26) capturar("08d_painel_dormir");
+        if (quadro_ == 30) in.simularToque(SDL_SCANCODE_E);
+        if (quadro_ == 60) verificar(cena.emTransicao(), "a tela escurece ao dormir");
+        if (quadro_ == 200) {
+            verificar(w.relogio.dia == 2 && w.relogio.minutos < 6 * 60 + 30, std::format("acordou no dia {} às {}", w.relogio.dia, w.relogio.textoHora()));
+            verificar(!w.reg.get<Relacionamento>(w.morador("bram")).falouHoje, "novo dia libera nova conversa");
+            capturar("08e_novo_dia");
             inventarioSalvo_ = w.inventario.todos();
             esgotadosSalvos_ = contarEsgotados(w);
             proxima();
         }
         return;
-    case 6:  // menu de pausa → voltar ao título (que também salva)
+    case 8:  // menu de pausa → voltar ao título (que também salva)
         if (quadro_ == 5) in.simularToque(SDL_SCANCODE_ESCAPE);
         if (quadro_ == 10) in.simularToque(SDL_SCANCODE_S);
         if (quadro_ == 14) in.simularToque(SDL_SCANCODE_S);

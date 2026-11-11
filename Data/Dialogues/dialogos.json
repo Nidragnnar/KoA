@@ -1,0 +1,71 @@
+{
+  "_como_funciona": "Para cada morador vale a PRIMEIRA entrada cujas condições batem (de cima para baixo). Condições: primeiro_encontro, ja_falou_hoje, periodo (manha/tarde/noite), estacao (primavera/verao/outono/inverno), casa_nivel_min, afinidade_min. 'uma_vez': a entrada vira lembrança e não se repete.",
+  "dialogos": {
+    "bram": [
+      { "id": "bram_conhece", "se": { "primeiro_encontro": true }, "falas": [
+        "Hm. Então o herdeiro voltou.",
+        "Espero que saiba segurar um martelo melhor do que seu pai segurou a coroa.",
+        "Sou Bram. Ferreiro, quando havia ferro. Hoje só junto pregos tortos nas ruínas."] },
+      { "id": "bram_casa", "uma_vez": true, "se": { "casa_nivel_min": 2 }, "falas": [
+        "Vi a casa que você levantou. Paredes retas, telhado inteiro.",
+        "...Não está ruim. Não conte pra ninguém que eu disse isso."] },
+      { "se": { "ja_falou_hoje": true }, "falas": ["Já falei o que tinha pra falar. Vá cortar lenha."] },
+      { "se": { "periodo": "noite" }, "falas": ["A fogueira é a única forja que me resta.", "Dizem que as sombras não chegam perto do fogo. Eu digo que elas só esperam ele apagar."] },
+      { "se": { "afinidade_min": 300 }, "falas": ["Guardei um saco de pregos bons pra você. Não pergunte de onde vieram.", "Quando a forja voltar, a primeira lâmina é sua."] },
+      { "se": { "estacao": "inverno" }, "falas": ["Inverno nas ruínas. O frio entra até nos ossos do martelo."] },
+      { "se": {}, "falas": ["A forja está fria há sete invernos. Ferro não cai do céu, majestade.", "Se as criaturas da floresta vierem de novo, quero uma lâmina decente na mão."] }
+    ],
+    "edda": [
+      { "id": "edda_conhece", "se": { "primeiro_encontro": true }, "falas": [
+        "Majestade! Ninguém aqui acreditava que você voltaria. Eu acreditava. Mais ou menos.",
+        "Sou Edda. Tinha uma taverna ali na praça, antes do fogo.",
+        "Hoje sirvo sopa de raiz pra quem sobrou. Mas ainda sei rir alto!"] },
+      { "id": "edda_casa", "uma_vez": true, "se": { "casa_nivel_min": 2 }, "falas": [
+        "Você viu? Tem fumaça saindo da chaminé da sua casa!",
+        "Fumaça de chaminé é sinal de gente viva. Faz anos que eu não via isso aqui."] },
+      { "se": { "ja_falou_hoje": true }, "falas": ["Volte mais tarde, querido. Vou estar contando histórias na fogueira."] },
+      { "se": { "periodo": "manha" }, "falas": ["Bom dia! Dormiu bem? Ninguém dorme bem com esse vento uivando.", "Sopa de raiz de novo. Amanhã, quem sabe, sopa de raiz com sal."] },
+      { "se": { "periodo": "noite" }, "falas": ["Antes da Queda, esta praça cantava até o amanhecer.", "Hoje só o vento canta. Mas a gente ainda tem a fogueira e as histórias."] },
+      { "se": { "afinidade_min": 300 }, "falas": ["Sabe que você tem o sorriso da sua mãe? Ela vinha na minha taverna escondida do rei."] },
+      { "se": {}, "falas": ["Dizem que a floresta engole quem entra depois do anoitecer.", "Mas dizem tanta coisa... Disseram que você nunca voltaria!"] }
+    ],
+    "maelis": [
+      { "id": "maelis_conhece", "se": { "primeiro_encontro": true }, "falas": [
+        "A luz não morreu, herdeiro. Apenas dorme. Como você dormiu no exílio.",
+        "Sou Maelis. Cuido dos túmulos e dos nomes que ninguém mais lembra.",
+        "A magia sumiu na mesma noite em que a coroa caiu. Não acredito em coincidências."] },
+      { "id": "maelis_casa", "uma_vez": true, "se": { "casa_nivel_min": 2 }, "falas": [
+        "A terra sentiu quando você ergueu aquelas paredes.",
+        "Um reino não renasce de uma vez. Renasce casa por casa."] },
+      { "se": { "ja_falou_hoje": true }, "falas": ["Que a luz guarde seus passos, herdeiro."] },
+      { "se": { "periodo": "noite" }, "falas": ["À noite os túmulos sussurram. Não tenha medo: são só lembranças pedindo para não serem esquecidas."] },
+      { "se": { "estacao": "outono" }, "falas": ["No outono as folhas caem sobre as lápides como se quisessem cobri-las do frio."] },
+      { "se": { "afinidade_min": 300 }, "falas": ["Encontrei o nome do seu avô numa lápide quebrada. Limpei o musgo para você."] },
+      { "se": {}, "falas": ["Os mortos não pedem muito. Só que alguém lembre deles.", "O castelo ainda guarda segredos sob o entulho. Um dia vamos precisar deles."] }
+    ],
+    "oswin": [
+      { "id": "oswin_conhece", "se": { "primeiro_encontro": true }, "falas": [
+        "Alto lá! ...Ah. É você, majestade. Perdão, a vista já não é a mesma.",
+        "Oswin, da Guarda Real. O último dela, na verdade.",
+        "Fui o último a baixar a lança. E não baixei por medo. Baixei porque não havia mais rei."] },
+      { "id": "oswin_casa", "uma_vez": true, "se": { "casa_nivel_min": 2 }, "falas": [
+        "A casa do herdeiro de pé outra vez. Isso merece uma saudação.",
+        "*bate o punho no peito* Pela coroa."] },
+      { "se": { "ja_falou_hoje": true }, "falas": ["Estou de vigia, majestade. Pode ir tranquilo."] },
+      { "se": { "periodo": "noite" }, "falas": ["De noite, criaturas rondam a borda da floresta.", "Sem guardas, perdemos comida e gente. Um dia teremos um quartel de novo."] },
+      { "se": { "afinidade_min": 300 }, "falas": ["Meu joelho não aguenta outra guerra. Mas meu juramento aguenta. Conte comigo."] },
+      { "se": {}, "falas": ["Mantenha a tocha acesa e o machado por perto.", "A estrada do leste leva à floresta amaldiçoada. Ainda não é hora de ir lá."] }
+    ],
+    "tilda": [
+      { "id": "tilda_conhece", "se": { "primeiro_encontro": true }, "falas": [
+        "Herdeiro. Tilda. Planto o que der.",
+        "A terra aqui é escura, mas não está morta. Ela só precisa de mãos."] },
+      { "id": "tilda_casa", "uma_vez": true, "se": { "casa_nivel_min": 2 }, "falas": ["Casa nova. Bom. Agora falta um campo decente perto dela."] },
+      { "se": { "ja_falou_hoje": true }, "falas": ["Tenho terra pra mexer."] },
+      { "se": { "periodo": "manha" }, "falas": ["Orvalho bom hoje. A terra bebe de manhã."] },
+      { "se": { "estacao": "inverno" }, "falas": ["Inverno. Terra dormindo. Eu não."] },
+      { "se": { "afinidade_min": 300 }, "falas": ["Separei sementes boas pra quando você tiver um campo. Não estrague."] },
+      { "se": {}, "falas": ["Comida guardada é gente viva.", "Cogumelos na borda da floresta. Os escuros, não. Os escuros, nunca."] }
+    ]
+  }
+}

@@ -15,6 +15,16 @@ captura: 07_reconstruindo
 [OK] casa subiu para o nível 2 (Casa Reconstruída)
 [OK] salvamento automático após a obra
 captura: 08_casa_reconstruida
+[OK] Bram existe no vilarejo
+[OK] E perto do Bram abre a conversa
+captura: 08c_dialogo_bram
+[OK] amizade com Bram subiu para 25 na primeira conversa
+[OK] Bram volta à rotina depois da conversa
+captura: 08d_painel_dormir
+[OK] a tela escurece ao dormir
+[OK] acordou no dia 2 às 06:00
+[OK] novo dia libera nova conversa
+captura: 08e_novo_dia
 [OK] Esc abre o menu de pausa
 captura: 08b_menu_pausa
 captura: 09_titulo_continuar
@@ -22,8 +32,18 @@ captura: 09_titulo_continuar
 [OK] inventário igual ao salvo
 [OK] casa continua no nível 2 após carregar
 [OK] 9 árvores/rochas esgotadas restauradas
+[OK] dia restaurado do save (dia 2)
+[OK] amizade com Bram restaurada (25 pontos)
 captura: 10_carregado
-captura: 11_era_1
-captura: 11_era_2
-captura: 11_era_3
+captura: 11_morador_andando
+[OK] Bram anda sozinho na troca de rotina (49 px)
+[OK] Bram segue um caminho (A*)
+[OK] 21:30 já é noite fechada
+captura: 12_noite_fogueira
+captura: 12b_noite_casa
+[OK] desmaio às 2:00 leva ao dia 3 (dia 3)
+captura: 13_depois_do_desmaio
+captura: 14_era_1
+captura: 14_era_2
+captura: 14_era_3
 RESULTADO: 0 falha(s)

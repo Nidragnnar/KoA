@@ -19,10 +19,10 @@ void desenharPainel(ke::Renderer2D& r, glm::vec2 p, glm::vec2 s) {
 }
 
 ke::ColorGrade gradeDaEra(float e) {
-    // Cinzas: frio e sem cor → Despertar → Renascido: quente → Alta Fantasia: vivo e luminoso
+    // Cinzas: verde fechado e sombrio (natureza engolindo ruínas) → Despertar → Renascido: quente → Alta Fantasia: vivo e luminoso
     static const ke::ColorGrade eras[4] = {
-        {0.55f, 1.06f, -0.03f, {0.86f, 0.92f, 1.04f}, 0.60f},
-        {0.80f, 1.04f, 0.00f, {0.97f, 0.97f, 1.00f}, 0.38f},
+        {0.68f, 1.10f, -0.07f, {0.84f, 0.92f, 1.00f}, 0.62f},
+        {0.97f, 1.05f, -0.01f, {0.98f, 0.98f, 0.98f}, 0.35f},
         {1.05f, 1.02f, 0.02f, {1.05f, 1.00f, 0.92f}, 0.22f},
         {1.28f, 1.05f, 0.04f, {1.06f, 1.02f, 0.97f}, 0.15f},
     };

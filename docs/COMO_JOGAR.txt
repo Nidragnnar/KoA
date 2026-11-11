@@ -18,8 +18,9 @@ Não precisa instalar nada.
 CONTROLES
 ---------
   W A S D ou setas ... andar
-  E ou Espaço ........ interagir (cortar, quebrar, abrir, construir)
+  E ou Espaço ........ interagir (cortar, quebrar, abrir, construir, conversar)
                        segure para continuar golpeando
+  W/S + E ............ escolher opções nos menus e no painel da casa
   Esc ................ menu (continuar, salvar, título, sair)
   F5 ................. salvar
   F11 ................ tela cheia
@@ -32,7 +33,20 @@ O QUE FAZER
   4. Vá até a porta da Cabana Abandonada e aperte E.
      Com 15 de madeira, 8 de pedra e 10 de ouro, reconstrua a casa!
 
-O jogo salva sozinho depois de cada obra e ao sair pelo menu.
+O VILAREJO
+----------
+  Cinco sobreviventes vivem nas ruínas: Bram (ferreiro), Edda (taverneira),
+  Irmã Maelis (guardiã dos túmulos), Oswin (velho guarda) e Tilda (camponesa).
+  Cada um tem rotina: trabalha, almoça no poço, se junta na fogueira da praça
+  ao anoitecer e volta para o seu barraco para dormir.
+  Converse com eles (E). A primeira conversa de cada dia aumenta a amizade
+  (os corações), e eles comentam o que você faz pelo reino.
+
+  O dia vai das 6:00 às 2:00 da madrugada. Para dormir, aperte E na porta
+  da sua casa e escolha "Dormir até amanhã". Se ficar acordado até as 2:00,
+  você desmaia e acorda em casa no dia seguinte, com um pouco menos de ouro.
+
+O jogo salva sozinho depois de cada obra, a cada manhã e ao sair pelo menu.
 Os saves ficam em:  %APPDATA%\Nidragnnar\KingdomOfAshes\Saves
 (antes de sobrescrever, o jogo guarda uma cópia em Save_001.bak)
 

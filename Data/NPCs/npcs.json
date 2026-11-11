@@ -1,0 +1,80 @@
+{
+  "npcs": [
+    {
+      "id": "bram", "nome": "Bram", "profissao": "Ferreiro",
+      "personalidade": "Ranzinza, mas leal até o osso.",
+      "casa": "casa_bram",
+      "gosta": ["ferro", "pedra"], "odeia": ["flores"],
+      "aparencia": { "pele": "#c08a64", "cabelo": "#3a2a20", "roupa": "#5a4636", "roupa2": "#2e2620", "barba": true, "avental": true },
+      "rotina": [
+        { "hora": "06:00", "local": "casa_bram", "acao": "acordar" },
+        { "hora": "07:00", "local": "forja_ruina", "acao": "trabalhar" },
+        { "hora": "12:00", "local": "poco", "acao": "almoçar" },
+        { "hora": "13:00", "local": "forja_ruina", "acao": "trabalhar" },
+        { "hora": "18:00", "local": "praca_fogueira", "acao": "conversar" },
+        { "hora": "21:00", "local": "casa_bram", "acao": "voltar" },
+        { "hora": "22:00", "local": "casa_bram", "acao": "dormir" }
+      ]
+    },
+    {
+      "id": "edda", "nome": "Edda", "profissao": "Taverneira",
+      "personalidade": "Calorosa, fofoqueira, ri alto.",
+      "casa": "casa_edda",
+      "gosta": ["trigo", "flores"], "odeia": ["ossos"],
+      "aparencia": { "pele": "#e0b090", "cabelo": "#a0402a", "roupa": "#7a5a3a", "roupa2": "#d8c8a0", "saia": true },
+      "rotina": [
+        { "hora": "06:00", "local": "casa_edda", "acao": "acordar" },
+        { "hora": "08:00", "local": "taverna_ruina", "acao": "cozinhar" },
+        { "hora": "12:00", "local": "praca", "acao": "servir sopa" },
+        { "hora": "15:00", "local": "taverna_ruina", "acao": "cozinhar" },
+        { "hora": "18:00", "local": "praca_fogueira", "acao": "contar histórias" },
+        { "hora": "22:00", "local": "casa_edda", "acao": "dormir" }
+      ]
+    },
+    {
+      "id": "maelis", "nome": "Irmã Maelis", "profissao": "Guardiã dos Túmulos",
+      "personalidade": "Serena, guarda segredos antigos.",
+      "casa": "casa_maelis",
+      "gosta": ["flores", "cristais"], "odeia": ["essência sombria"],
+      "aparencia": { "pele": "#f0d0b8", "cabelo": "#e8e0d0", "roupa": "#3a3a5a", "roupa2": "#d0c8b0", "capuz": true, "saia": true },
+      "rotina": [
+        { "hora": "06:00", "local": "casa_maelis", "acao": "rezar" },
+        { "hora": "07:00", "local": "cemiterio", "acao": "cuidar dos túmulos" },
+        { "hora": "12:00", "local": "casa_maelis", "acao": "meditar" },
+        { "hora": "14:00", "local": "cemiterio", "acao": "cuidar dos túmulos" },
+        { "hora": "19:00", "local": "castelo", "acao": "contemplar as ruínas" },
+        { "hora": "21:00", "local": "casa_maelis", "acao": "dormir" }
+      ]
+    },
+    {
+      "id": "oswin", "nome": "Oswin", "profissao": "Velho Guarda",
+      "personalidade": "Teimoso, honrado, cansado.",
+      "casa": "casa_oswin",
+      "gosta": ["nabos", "ferro"], "odeia": ["lírios"],
+      "aparencia": { "pele": "#c89878", "cabelo": "#9a9a9a", "roupa": "#5a5a62", "roupa2": "#8a2a2a", "elmo": true, "barba": true },
+      "rotina": [
+        { "hora": "06:00", "local": "portao_leste", "acao": "vigiar" },
+        { "hora": "10:00", "local": "estrada", "acao": "patrulhar" },
+        { "hora": "12:00", "local": "poco", "acao": "almoçar" },
+        { "hora": "13:00", "local": "portao_leste", "acao": "vigiar" },
+        { "hora": "17:00", "local": "cemiterio", "acao": "patrulhar" },
+        { "hora": "19:00", "local": "praca_fogueira", "acao": "descansar" },
+        { "hora": "23:00", "local": "casa_oswin", "acao": "dormir" }
+      ]
+    },
+    {
+      "id": "tilda", "nome": "Tilda", "profissao": "Camponesa",
+      "personalidade": "Prática, fala pouco, sabe tudo de terra.",
+      "casa": "casa_tilda",
+      "gosta": ["nabos", "cogumelos"], "odeia": ["cristais"],
+      "aparencia": { "pele": "#b07850", "cabelo": "#5a3a1a", "roupa": "#4e5a32", "roupa2": "#c8b080", "chapeu": true, "saia": true },
+      "rotina": [
+        { "hora": "06:00", "local": "campo", "acao": "lavrar" },
+        { "hora": "11:00", "local": "floresta_borda", "acao": "colher cogumelos" },
+        { "hora": "13:00", "local": "campo", "acao": "lavrar" },
+        { "hora": "17:00", "local": "poco", "acao": "buscar água" },
+        { "hora": "19:00", "local": "casa_tilda", "acao": "dormir" }
+      ]
+    }
+  ]
+}

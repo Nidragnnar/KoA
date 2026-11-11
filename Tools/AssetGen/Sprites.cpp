@@ -1,8 +1,12 @@
 #include "Sprites.h"
 
 #include <cmath>
+#include <cstdio>
 #include <format>
+#include <fstream>
 #include <numbers>
+
+#include <nlohmann/json.hpp>
 
 namespace gen {
 
@@ -16,18 +20,22 @@ const Cor CONTORNO = hex("#16110f");
 Img grama(int v) {
     std::mt19937 r(100 + v);
     Img t(16, 16);
-    t.rect(0, 0, 16, 16, hex("#4b5141"));
-    t.salpicar(r, 34, hex("#41473a"));
-    t.salpicar(r, 18, hex("#575e4c"));
+    // Grama verde e cheia (a era sombria é natureza engolindo as ruínas, não terra morta)
+    t.rect(0, 0, 16, 16, hex("#33502e"));
+    t.salpicar(r, 40, hex("#2b4527"));
+    t.salpicar(r, 22, hex("#3d5e35"));
     std::uniform_int_distribution<int> d(0, 15);
-    for (int k = 0; k < 5; ++k) {  // tufos de capim seco
+    for (int k = 0; k < 6; ++k) {  // tufos de capim
         const int x = d(r), y = d(r) | 1;
-        t.px(x, y, hex("#5e6450"));
-        t.px(x, y - 1, hex("#636650"));
-        t.px(x + 1, y, hex("#3d4236"));
+        t.px(x, y, hex("#4a6e3e"));
+        t.px(x, y - 1, hex("#557a46"));
+        t.px(x + 1, y, hex("#223a20"));
     }
-    if (v == 2) t.salpicar(r, 6, hex("#6e6a4c"));   // capim amarelado
-    if (v == 3) t.salpicar(r, 9, hex("#6a6a66"));   // cinzas
+    if (v == 2) t.salpicar(r, 4, hex("#8a8a4c"));   // capim amarelado
+    if (v == 3) {                                    // florzinhas brancas
+        t.px(d(r), d(r), hex("#d8d8c8"));
+        t.px(d(r), d(r), hex("#c8b8d8"));
+    }
     return t;
 }
 
@@ -159,6 +167,16 @@ Img arvoreMorta(int v) {
     galho(t, r, 15, 24, base - 0.15f, 10, 2, 3);
     galho(t, r, 16, 29, base + 0.9f + v * 0.1f, 8, 2, 2);
     galho(t, r, 14, 31, base - 0.95f, 7, 1, 2);
+    if (v < 2) {
+        // Copa cheia e arredondada: tufos do escuro (embaixo) ao claro (em cima, onde bate luz)
+        const std::pair<int, int> tufos[] = {{16, 14}, {10, 18}, {22, 18}, {13, 9}, {20, 9}, {16, 5}, {8, 24}, {24, 23}};
+        const Cor tons[] = {hex("#1c3a1e"), hex("#264a26"), hex("#315a2e"), hex("#3e6a38")};
+        for (int camada = 0; camada < 4; ++camada)
+            for (const auto& [x, y] : tufos)
+                t.elipse(x - camada / 2, y - camada, 5 - camada, 4 - camada, tons[camada]);
+        t.salpicar(r, 30, hex("#4a7a40"), 4, 0, 28, 20);
+        t.salpicar(r, 20, hex("#16301a"), 4, 10, 28, 28);
+    }
     t.contornar(CONTORNO);
     return t;
 }
@@ -577,6 +595,176 @@ Img heroi(int dir, int q) {
     return t;
 }
 
+// ---------- Moradores (lidos de Data/NPCs/npcs.json) ----------
+
+struct AparenciaNpc {
+    Cor pele, cabelo, roupa, roupa2;
+    bool barba = false, avental = false, saia = false, capuz = false, elmo = false, chapeu = false;
+};
+
+// dir: 0 baixo, 1 cima, 2 lado (direita); quadro 0..3
+Img morador(const AparenciaNpc& a, int dir, int q) {
+    Img t(16, 24);
+    const int passo = q == 1 ? 1 : q == 3 ? -1 : 0;
+    const int y0 = (q == 1 || q == 3) ? -1 : 0;
+    const Cor roupaE = clarear(a.roupa, -0.25f), roupaC = clarear(a.roupa, 0.15f), bota = hex("#2a2220"), olho = hex("#1a1414");
+    const Cor cabeloE = clarear(a.cabelo, -0.25f), peleE = clarear(a.pele, -0.18f);
+    t.elipse(8, 22, 5, 1, hex("#000000", 70));
+    // Pernas (a saia esconde)
+    if (a.saia) {
+        t.rect(4, 16 + y0, 8, 5, roupaE);
+        t.rect(4, 16 + y0, 2, 5, clarear(roupaE, -0.15f));
+        t.rect(5 + passo, 21, 2, 2, bota);
+        t.rect(9 - passo, 21, 2, 2, bota);
+    } else if (dir == 2) {
+        t.rect(6 + passo, 17 + y0, 2, 4, hex("#3c3a44"));
+        t.rect(8 - passo, 17 + y0, 2, 4, hex("#2e2c36"));
+        t.rect(6 + passo, 21, 3, 2, bota);
+        t.rect(8 - passo, 21, 3, 2, clarear(bota, -0.2f));
+    } else {
+        t.rect(5, 17 + y0, 2, 4 - (passo > 0), hex("#3c3a44"));
+        t.rect(9, 17 + y0, 2, 4 - (passo < 0), hex("#3c3a44"));
+        t.rect(5, 21 - (passo > 0), 3, 2, bota);
+        t.rect(8, 21 - (passo < 0), 3, 2, bota);
+    }
+    // Tronco com luz do lado esquerdo e sombra do direito
+    const int tx = dir == 2 ? 5 : 4, tw = dir == 2 ? 6 : 8;
+    t.rect(tx, 10 + y0, tw, 7, a.roupa);
+    t.rect(tx, 10 + y0, 1, 7, roupaC);
+    t.rect(tx + tw - 1, 10 + y0, 1, 7, roupaE);
+    t.rect(tx, 15 + y0, tw, 1, a.roupa2);  // cinto/faixa
+    if (a.avental && dir != 1) t.rect(tx + 1, 12 + y0, tw - 2, 5, hex("#6a5440"));
+    // Braços
+    if (dir == 2) {
+        t.rect(7 - passo, 11 + y0, 2, 5, roupaE);
+        t.px(7 - passo, 16 + y0, a.pele);
+    } else {
+        t.rect(3, 11 + y0 + (passo > 0), 1, 5, roupaE);
+        t.rect(12, 11 + y0 + (passo < 0), 1, 5, roupaE);
+        t.px(3, 16 + y0 + (passo > 0), peleE);
+        t.px(12, 16 + y0 + (passo < 0), peleE);
+    }
+    // Cabeça
+    if (dir == 1) {
+        t.rect(5, 3 + y0, 6, 7, a.cabelo);
+        t.rect(5, 3 + y0, 6, 1, clarear(a.cabelo, 0.15f));
+        t.rect(10, 4 + y0, 1, 6, cabeloE);
+    } else {
+        const int hx = dir == 2 ? 6 : 5;
+        t.rect(hx, 3 + y0, dir == 2 ? 5 : 6, 7, a.pele);
+        t.rect(hx, 8 + y0, dir == 2 ? 5 : 6, 1, peleE);
+        t.rect(hx, 2 + y0, dir == 2 ? 5 : 6, 2, a.cabelo);
+        if (dir == 2) {
+            t.rect(5, 2 + y0, 3, 5, a.cabelo);
+            t.px(10, 5 + y0, olho);
+        } else {
+            t.rect(4, 3 + y0, 1, 4, a.cabelo);
+            t.rect(11, 3 + y0, 1, 4, cabeloE);
+            t.px(6, 6 + y0, olho);
+            t.px(9, 6 + y0, olho);
+        }
+        if (a.barba) t.rect(hx + (dir == 2 ? 1 : 0), 8 + y0, dir == 2 ? 4 : 6, 3, a.cabelo);
+    }
+    // Cobertura da cabeça
+    if (a.capuz) {
+        t.rect(4, 1 + y0, 8, 3, a.roupa);
+        t.rect(4, 1 + y0, 1, 8, a.roupa);
+        t.rect(11, 1 + y0, 1, 8, roupaE);
+        if (dir == 1) t.rect(4, 1 + y0, 8, 9, a.roupa);
+    }
+    if (a.elmo) {
+        t.rect(4, 1 + y0, 8, 3, hex("#7a7a84"));
+        t.rect(4, 1 + y0, 8, 1, hex("#a0a0aa"));
+        t.rect(7, 0 + y0, 2, 1, a.roupa2);  // pluma
+    }
+    if (a.chapeu) {
+        t.rect(3, 2 + y0, 10, 1, hex("#8a7448"));
+        t.rect(5, 0 + y0, 6, 2, hex("#9a8454"));
+    }
+    t.contornar(CONTORNO);
+    return t;
+}
+
+void moradores(Lista& l) {
+    std::ifstream f("Data/NPCs/npcs.json");
+    if (!f) {
+        std::fprintf(stderr, "aviso: Data/NPCs/npcs.json não encontrado (rode a partir da raiz do projeto)\n");
+        return;
+    }
+    const auto j = nlohmann::json::parse(f, nullptr, false);
+    if (j.is_discarded()) return;
+    const char* dirs[] = {"baixo", "cima", "lado"};
+    for (const auto& n : j["npcs"]) {
+        const auto& ap = n["aparencia"];
+        AparenciaNpc a{hex(ap.value("pele", "#d0a080").c_str()), hex(ap.value("cabelo", "#3a2a20").c_str()),
+                       hex(ap.value("roupa", "#5a5050").c_str()), hex(ap.value("roupa2", "#3a3030").c_str())};
+        a.barba = ap.value("barba", false);
+        a.avental = ap.value("avental", false);
+        a.saia = ap.value("saia", false);
+        a.capuz = ap.value("capuz", false);
+        a.elmo = ap.value("elmo", false);
+        a.chapeu = ap.value("chapeu", false);
+        const std::string id = n["id"].get<std::string>();
+        for (int d = 0; d < 3; ++d)
+            for (int q = 0; q < 4; ++q) l.emplace_back(std::format("npc_{}_{}_{}", id, dirs[d], q), morador(a, d, q));
+    }
+}
+
+Img barraco() {
+    std::mt19937 r(3000);
+    Img t(48, 44);
+    t.elipse(24, 42, 22, 2, hex("#000000", 90));
+    // Paredes de tábuas escuras remendadas
+    tabuasVerticais(t, 4, 24, 40, 18, hex("#3e3328"), r);
+    t.rect(4, 40, 40, 2, hex("#2a221c"));
+    // Telhado de tábuas tortas, com lona remendada
+    for (int y = 0; y < 16; ++y) {
+        const int rec = (16 - y) / 2;
+        for (int x = rec; x < 48 - rec; ++x) t.px(x, 10 + y, ((x + y / 3) % 6 == 0) ? hex("#2e2620") : hex("#4a3c30"));
+    }
+    t.rect(26, 12, 12, 8, hex("#5a5444"));  // lona
+    t.rect(26, 12, 12, 1, hex("#6a6450"));
+    t.linha(2, 26, 46, 24, hex("#2a221c"));
+    // Porta (pano pendurado) e janelinha
+    t.rect(20, 30, 8, 12, hex("#120e0c"));
+    t.rect(20, 30, 8, 3, hex("#5a3a2a"));
+    t.rect(34, 30, 5, 4, hex("#1a1612"));
+    t.salpicar(r, 30, hex("#3a5230"), 4, 10, 43, 41);  // musgo
+    // Lenha empilhada ao lado
+    for (int i = 0; i < 3; ++i) t.elipse(7 + i * 3, 39 - (i % 2) * 2, 2, 2, hex("#5a4632"));
+    t.contornar(CONTORNO);
+    return t;
+}
+
+Img fogueira(int q) {
+    Img t(16, 20);
+    t.elipse(8, 17, 6, 2, hex("#2a2420"));
+    for (int i = 0; i < 6; ++i) t.px(3 + i * 2, 17 + (i % 2), hex("#6a6460"));  // pedras em volta
+    t.linha(3, 17, 12, 14, hex("#4a3420"));  // lenha cruzada
+    t.linha(4, 14, 13, 17, hex("#3a2a1a"));
+    const int alt = 7 + (q % 2) * 2;
+    const int dx = q == 1 ? 1 : q == 3 ? -1 : 0;
+    t.elipse(8, 15 - alt / 2, 4, alt / 2, hex("#c04a1c"));
+    t.elipse(8 + dx, 14 - alt / 2, 3, alt / 2 - 1, hex("#f0882c"));
+    t.elipse(8 - dx, 14 - alt / 3, 1, alt / 3, hex("#ffd27a"));
+    t.px(8 + dx * 2, 15 - alt, hex("#e06020"));
+    t.contornar(CONTORNO);
+    return t;
+}
+
+Img coracao(bool cheio) {
+    Img t(7, 6);
+    const Cor c = cheio ? hex("#d84a5a") : hex("#3a2a2e");
+    t.rect(1, 0, 2, 1, c);
+    t.rect(4, 0, 2, 1, c);
+    t.rect(0, 1, 7, 2, c);
+    t.rect(1, 3, 5, 1, c);
+    t.rect(2, 4, 3, 1, c);
+    t.px(3, 5, c);
+    if (cheio) t.px(1, 1, hex("#f0a0a8"));
+    return t;
+}
+
 // ---------- Interface e efeitos ----------
 
 Img icone(int tipo) {
@@ -646,6 +834,11 @@ std::vector<std::pair<std::string, Img>> gerarTodos() {
     for (int i = 0; i < 3; ++i) l.emplace_back(icones[i], icone(i));
     l.emplace_back("luz", luz());
     l.emplace_back("sombra", sombra());
+    l.emplace_back("barraco", barraco());
+    for (int q = 0; q < 4; ++q) l.emplace_back(std::format("fogueira_{}", q), fogueira(q));
+    l.emplace_back("coracao_cheio", coracao(true));
+    l.emplace_back("coracao_vazio", coracao(false));
+    moradores(l);
     return l;
 }
 

@@ -8,6 +8,7 @@
 #include <nlohmann/json_fwd.hpp>
 
 #include "Game/Inventory/Inventory.h"
+#include "Game/NPC/Npc.h"
 
 namespace koa {
 
@@ -36,6 +37,7 @@ struct BuildingDef {
 struct GameData {
     std::map<std::string, RecursoDef> recursos;
     std::map<std::string, BuildingDef> construcoes;
+    std::map<std::string, NpcDef> npcs;
 
     bool carregar(const std::filesystem::path& pastaData, std::string* erro = nullptr);
     bool lerJson(const nlohmann::json& recursos, const nlohmann::json& construcoes, std::string* erro = nullptr);

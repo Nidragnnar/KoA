@@ -27,6 +27,17 @@ Este arquivo registra **como** ele foi seguido e **onde** houve desvio, e por qu
 - **Saves** em `Saves/Save_001/{metadata,player,inventory,kingdom,world}.json`, com versão do formato, backup em `Save_001.bak` antes de sobrescrever, gravação atômica (.tmp → rename), validação (negativos viram 0, posição inválida volta ao início), queda para o backup se o principal estiver corrompido e um ponto de migração (`SaveSystem::migrar`). Só se salvam as **alterações** do mundo.
 - **Dear ImGui** (F1): FPS, chamadas de desenho, colisões, inventário, forçar era, nível das construções, salvar/recarregar.
 
+## Fase 4 — sistemas de vida
+
+- **Relógio** (`Game/Kingdom/Clock`): das 6:00 às 2:00, 10 minutos a cada 7 s reais, semanas, 4 estações de 28 dias. Para em menus, painéis, conversas e no sono.
+- **Dia e noite**: `ke::LightMap` (Engine/Renderer/Lighting) é um framebuffer que começa na cor ambiente e soma as luzes; o resultado multiplica a cena. Tochas, fogueira, janelas das casas reconstruídas e uma luz fraca no herói.
+- **Moradores** como entidades EnTT com os componentes do documento: `Posicao`, `Movimento`, `Agenda` (rotina) e `Relacionamento`. Definições em `Data/NPCs/npcs.json`, falas em `Data/Dialogues/dialogos.json`, locais das rotinas em `Data/World/vilarejo.json`.
+- **Rotina por horário** e caminho por **A\*** (`Engine/World/Pathfinding`) numa grade de bloqueio refeita quando um objeto some. **Simulação simplificada para quem está longe**: a mais de 380 px do herói, o morador anda em passos maiores, 4 vezes por segundo. Sem caminho possível, vai direto ao destino (para nunca travar).
+- **Diálogos**: vale a primeira entrada cujas condições batem (primeiro encontro, já falou hoje, período, estação, nível da casa, amizade). Entradas `uma_vez` viram **memória** de acontecimentos e não se repetem. Amizade: +25 na primeira conversa do dia (100 = um coração, máximo 10).
+- **Save v2**: o relógio vai no `world.json`, e há dois arquivos novos, `npcs.json` (conheceu, memória) e `relationships.json` (amizade). Um save v1 é migrado sozinho (`SaveSystem::migrar`).
+
+Ainda não feito nesta fase: necessidades dos moradores, presentes (os gostos e desgostos já estão nos dados, mas faltam itens para dar) e chegada de moradores novos.
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

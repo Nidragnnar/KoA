@@ -17,6 +17,10 @@ const char* OPCOES[] = {"Novo Jogo", "Continuar", "Sair"};
 TitleScene::TitleScene(Contexto& ctx) : ctx_(ctx), rend_(ctx.app.recursos()) {
     fundo_.carregar(ctx_.dados, ctx_.pastaData);
     fundo_.jogador.pos = {-100, -100};  // o herói ainda não chegou
+    fundo_.relogio.minutos = 22 * 60;   // o vilarejo à noite, só tochas e a fogueira
+    fundo_.relogio.parado = true;
+    fundo_.posicionarMoradores();
+    luz_.criar(640, 360);
     cam_.vista = {640, 360};
     cam_.limite = fundo_.tamanhoPixels();
     temSave_ = ctx_.saves->existe();
@@ -78,12 +82,20 @@ void TitleScene::atualizar(double dtD) {
 void TitleScene::renderizar(float) {
     ke::Renderer2D& r = ctx_.app.renderer();
     const ke::BitmapFont& f = ctx_.app.fonte();
+    luz_.comecar(fundo_.relogio.luzAmbiente());
+    r.comecar(cam_.projecao());
+    rend_.desenharLuzes(r, fundo_, cam_, tempo_);
+    r.terminar();
+    luz_.terminar();
     r.comecar(cam_.projecao());
     rend_.desenhar(r, fundo_, cam_, tempo_, part_, false);
+    r.definirMistura(ke::Mistura::Multiplicar);
+    r.quad(luz_.textura(), cam_.canto(), cam_.vista, {0, 1, 1, 0});
+    r.definirMistura(ke::Mistura::Normal);
     r.terminar();
 
     r.comecar(glm::ortho(0.0f, 640.0f, 360.0f, 0.0f, -1.0f, 1.0f));
-    r.retangulo({0, 0}, {640, 360}, {0.03f, 0.03f, 0.04f, 0.45f});
+    r.retangulo({0, 0}, {640, 360}, {0.03f, 0.03f, 0.04f, 0.25f});
     for (int i = 0; i < 60; ++i) r.retangulo({0, 300.0f + i}, {640, 1}, {0.02f, 0.02f, 0.03f, i / 60.0f * 0.8f});
     const float brilho = 0.85f + 0.15f * std::sin(tempo_ * 1.5f);
     f.desenharCentralizado(r, "KINGDOM OF ASHES", {320, 92}, {cor::ouro.r * brilho, cor::ouro.g * brilho, cor::ouro.b * brilho, 1}, true, 3);

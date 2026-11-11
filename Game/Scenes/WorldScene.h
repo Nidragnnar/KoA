@@ -6,6 +6,7 @@
 
 #include "Engine/Core/SceneManager.h"
 #include "Engine/Renderer/Camera2D.h"
+#include "Engine/Renderer/Lighting.h"
 #include "Engine/Renderer/ParticleSystem.h"
 #include "Game/App/Contexto.h"
 #include "Game/Render/WorldRenderer.h"
@@ -22,20 +23,25 @@ public:
     void atualizar(double dt) override;
     void renderizar(float alfa) override;
     void interfaceDepuracao() override;
-    ke::ColorGrade grade() const override { return gradeDaEra(mundo_.reino.eraVisual); }
+    ke::ColorGrade grade() const override;
 
     World& mundo() { return mundo_; }
     bool carregou() const { return carregou_; }
     const std::string& painelAberto() const { return painel_; }
     bool pausado() const { return pausa_; }
+    const std::optional<Conversa>& conversa() const { return conversa_; }
+    bool emTransicao() const { return transicao_ >= 0.0f; }
     bool salvar();
 
 private:
+    std::vector<std::string> opcoesPainel() const;
     void entradaJogo();
     void entradaPainel();
     void entradaPausa();
+    void entradaDialogo(float dt);
     void tratarEventos();
     void efeitosAmbiente(float dt);
+    void iniciarSono(bool desmaio);
     void poeira(glm::vec2 centro, glm::vec2 meia, int n, glm::vec4 cor);
     void textoFlutuante(glm::vec2 pos, std::string t, glm::vec4 c) { flutuantes_.push_back({pos, std::move(t), c, 1.4f}); }
 
@@ -45,12 +51,19 @@ private:
     Hud hud_;
     ke::Camera2D cam_;
     ke::ParticleSystem part_;
+    ke::LightMap luz_;
     std::mt19937 rng_{42};
 
     bool carregou_ = false;
     std::string painel_;  // id da construção com o painel aberto ("" = fechado)
+    int selPainel_ = 0;
     bool pausa_ = false;
     int selPausa_ = 0;
+    std::optional<Conversa> conversa_;
+    int linhaFala_ = 0;
+    float letras_ = 0.0f;
+    float transicao_ = -1.0f;  // -1 = nenhuma; 0..2 = escurece, troca o dia (em 1), clareia
+    bool desmaio_ = false;
     bool mostrarColisoes_ = false;
     float tempo_ = 0.0f, flash_ = 0.0f, tempoFumaca_ = 0.0f, tempoCinzas_ = 0.0f;
 

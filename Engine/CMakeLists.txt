@@ -4,6 +4,7 @@ add_library(KingdomEngineCore STATIC
     Core/Time.cpp
     Platform/FileSystem.cpp
     World/TileMap.cpp
+    World/Pathfinding.cpp
     Physics/Collision.cpp
     Renderer/Animation.cpp
     Renderer/ParticleSystem.cpp)
@@ -21,6 +22,7 @@ add_library(KingdomEngine STATIC
     Renderer/Renderer2D.cpp
     Renderer/Camera2D.cpp
     Renderer/RenderTarget.cpp
+    Renderer/Lighting.cpp
     Resources/ResourceManager.cpp
     UI/BitmapFont.cpp
     Debug/DebugUI.cpp

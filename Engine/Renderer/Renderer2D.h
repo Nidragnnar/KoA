@@ -10,7 +10,7 @@
 
 namespace ke {
 
-enum class Mistura { Normal, Aditiva };
+enum class Mistura { Normal, Aditiva, Multiplicar };
 
 // Lote de quadriláteros: junta tudo que usa a mesma textura numa única chamada de desenho
 class Renderer2D {

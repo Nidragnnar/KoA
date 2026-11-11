@@ -29,7 +29,11 @@ const char* MAPA =
     "..........\n";
 
 json defTeste() {
-    return {{"construcoes", {{{"id", "casa_herdeiro"}, {"def", "casa"}, {"tile", {3, 4}}, {"nivel", 1}}}}};
+    json j = {{"construcoes", {{{"id", "casa_herdeiro"}, {"def", "casa"}, {"tile", {3, 4}}, {"nivel", 1}}}}};
+    // Todos os locais das rotinas num canto, longe das interações do teste
+    for (const auto& [id, n] : dadosReais().npcs)
+        for (const auto& r : n.rotina) j["locais"][r.local] = {0, 0};
+    return j;
 }
 
 void passos(World& w, int n, EntradaMundo e = {}) {
@@ -100,6 +104,9 @@ TEST(Mundo, CarregaOVilarejoReal) {
     EXPECT_EQ(w.mapa.altura(), 40);
     EXPECT_NE(w.reino.construcao("casa_herdeiro"), nullptr);
     EXPECT_FALSE(ke::colide(w.mapa, w.jogador.caixa(), w.obstaculos())) << "o herói não pode nascer preso";
+    int fogueiras = 0;
+    for (auto [e, id] : w.reg.view<IdMundo>().each()) fogueiras += id.id.starts_with("fogueira_");
+    EXPECT_EQ(fogueiras, 1) << "a fogueira da praça existe";
     // O mapa precisa ter recursos para a primeira casa
     int madeira = 0, pedra = 0, ouro = 0;
     for (auto [e, c] : w.reg.view<Coletavel>().each()) (c.recurso == "madeira" ? madeira : pedra) += c.rendimento;

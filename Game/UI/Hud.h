@@ -20,8 +20,12 @@ public:
     void pulsar(const std::string& recurso) { pulso_[recurso] = 0.4f; }
 
     void desenhar(ke::Renderer2D& r, const World& w, float tempo);
-    void painelConstrucao(ke::Renderer2D& r, const World& w, const std::string& id, float tempo);
+    void painelConstrucao(ke::Renderer2D& r, const World& w, const std::string& id, const std::vector<std::string>& opcoes, int sel,
+                          float tempo);
     void menuPausa(ke::Renderer2D& r, const std::vector<std::string>& opcoes, int selecionada);
+    // `letras`: quantos caracteres da fala atual já apareceram
+    void caixaDialogo(ke::Renderer2D& r, const Conversa& c, int linha, int letras, float tempo);
+    static int tamanhoUtf8(const std::string& s);
 
 private:
     struct Aviso {

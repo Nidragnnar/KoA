@@ -61,7 +61,20 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
         if (erro) *erro = "JSON inválido em Data/";
         return false;
     }
-    return lerJson(jr, jc, erro);
+    if (!lerJson(jr, jc, erro)) return false;
+    const auto n = ke::fs::lerTexto(pasta / "NPCs/npcs.json");
+    const auto d = ke::fs::lerTexto(pasta / "Dialogues/dialogos.json");
+    if (!n || !d) {
+        if (erro) *erro = "Data/NPCs/npcs.json ou Data/Dialogues/dialogos.json ausente";
+        return false;
+    }
+    const auto jn = nlohmann::json::parse(*n, nullptr, false);
+    const auto jd = nlohmann::json::parse(*d, nullptr, false);
+    if (jn.is_discarded() || jd.is_discarded()) {
+        if (erro) *erro = "JSON inválido em Data/NPCs ou Data/Dialogues";
+        return false;
+    }
+    return lerNpcs(jn, jd, npcs, erro);
 }
 
 }

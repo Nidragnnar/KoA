@@ -29,10 +29,18 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
     json reino = {{"construcoes", d.niveis}, {"era_visual", d.eraVisual}};
     json objs = json::array();
     for (const auto& o : d.objetos) objs.push_back({{"id", o.id}, {"hp", o.hp}, {"esgotado", o.esgotado}, {"aberto", o.aberto}});
-    json mundo = {{"objetos", objs}};
+    json mundo = {{"relogio", {{"dia", d.dia}, {"minutos", d.minutos}}}, {"objetos", objs}};
+    json npcs = json::array(), relacoes = json::object();
+    for (const auto& m : d.moradores) {
+        npcs.push_back({{"id", m.id}, {"conheceu", m.conheceu}, {"memoria", m.memoria}});
+        relacoes[m.id] = {{"afinidade", m.afinidade}, {"falou_hoje", m.falouHoje}};
+    }
+    json jNpcs = {{"moradores", npcs}};
+    json jRel = {{"afinidades", relacoes}};
 
     const std::pair<const char*, const json*> arquivos[] = {
         {"player.json", &player}, {"inventory.json", &inv}, {"kingdom.json", &reino}, {"world.json", &mundo},
+        {"npcs.json", &jNpcs}, {"relationships.json", &jRel},
         {"metadata.json", &meta}};  // metadata por último: só existe save "válido" quando tudo foi gravado
     for (const auto& [nome, conteudo] : arquivos) {
         if (!ke::fs::gravarTextoSeguro(dir / nome, conteudo->dump(2))) {
@@ -44,9 +52,15 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
 }
 
 json SaveSystem::migrar(json tudo, int deVersao) {
-    // Exemplo de como ficará: if (deVersao < 2) { ...converte campos...; deVersao = 2; }
-    (void)deVersao;
-    tudo["metadata"]["versao_formato"] = VERSAO_SAVE;
+    // Cada passo leva o save uma versão adiante
+    if (deVersao < 2) {
+        // v1 não tinha relógio nem moradores: começa no dia 1, às 6:00, sem conhecer ninguém
+        tudo["world"]["relogio"] = {{"dia", 1}, {"minutos", 360.0}};
+        tudo["npcs"] = {{"moradores", json::array()}};
+        tudo["relationships"] = {{"afinidades", json::object()}};
+        deVersao = 2;
+    }
+    tudo["metadata"]["versao_formato"] = deVersao;
     return tudo;
 }
 
@@ -70,6 +84,17 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
             if (erro) *erro = "versão de save desconhecida: " + std::to_string(versao);
             return std::nullopt;
         }
+        // Arquivos que só existem a partir da v2
+        if (versao >= 2) {
+            for (const char* nome : {"npcs", "relationships"}) {
+                const auto texto = ke::fs::lerTexto(dir / (std::string(nome) + ".json"));
+                tudo[nome] = texto ? json::parse(*texto, nullptr, false) : json();
+                if (tudo[nome].is_discarded() || !tudo[nome].is_object()) {
+                    if (erro) *erro = std::string("arquivo ausente ou corrompido: ") + nome + ".json";
+                    return std::nullopt;
+                }
+            }
+        }
         if (versao < VERSAO_SAVE) tudo = migrar(std::move(tudo), versao);
 
         DadosSave d;
@@ -89,6 +114,21 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
         d.eraVisual = std::clamp(r.value("era_visual", 0.0f), 0.0f, 3.0f);
         for (const auto& o : tudo["world"].value("objetos", json::array()))
             d.objetos.push_back({o.value("id", ""), o.value("hp", 0), o.value("esgotado", false), o.value("aberto", false)});
+        const json& rel = tudo["world"].value("relogio", json::object());
+        d.dia = std::max(1, rel.value("dia", 1));
+        d.minutos = std::clamp(rel.value("minutos", 360.0f), 360.0f, 26.0f * 60.0f - 1.0f);
+        const json& afin = tudo["relationships"].value("afinidades", json::object());
+        for (const auto& jm : tudo["npcs"].value("moradores", json::array())) {
+            EstadoMorador e;
+            e.id = jm.value("id", "");
+            e.conheceu = jm.value("conheceu", false);
+            e.memoria = jm.value("memoria", std::vector<std::string>{});
+            if (afin.contains(e.id)) {
+                e.afinidade = std::clamp(afin[e.id].value("afinidade", 0), 0, 1000);
+                e.falouHoje = afin[e.id].value("falou_hoje", false);
+            }
+            if (!e.id.empty()) d.moradores.push_back(std::move(e));
+        }
         return d;
     } catch (const std::exception& ex) {
         if (erro) *erro = std::string("save inválido: ") + ex.what();

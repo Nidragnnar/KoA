@@ -5,6 +5,7 @@
 #include <format>
 
 #include "Game/Exploration/Components.h"
+#include "Game/NPC/Npc.h"
 
 namespace koa {
 
@@ -88,6 +89,14 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
         const ke::AABB c = w.caixaConstrucao(b);
         lista.push_back({c.max.y, &s, {std::floor((c.min.x + c.max.x) * 0.5f - s.tamanho.x / 2), c.max.y - s.tamanho.y}});
     }
+    for (auto [e, p, m, mv, a] : w.reg.view<const Posicao, const Morador, const Movimento, const Agenda>().each()) {
+        if (a.dormindo || !visivel(p.v)) continue;
+        const char* dir = mv.dir == Direcao::Baixo ? "baixo" : mv.dir == Direcao::Cima ? "cima" : "lado";
+        const ke::SpriteRegion& s =
+            rec_.regiao(std::format("npc_{}_{}_{}", m.id, dir, mv.andando ? static_cast<int>(mv.tempoAnim * 7.0f) % 4 : 0));
+        r.sprite(sombra, {std::floor(p.v.x) - 8, std::floor(p.v.y) - 3});
+        lista.push_back({p.v.y, &s, glm::floor(p.v - glm::vec2(8, 22)), mv.dir == Direcao::Esquerda});
+    }
     {
         const Jogador& j = w.jogador;
         const char* dir = j.dir == Direcao::Baixo ? "baixo" : j.dir == Direcao::Cima ? "cima" : "lado";
@@ -125,6 +134,18 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
         r.sprite(luz, p.v + l.desloc - raio, glm::vec4(l.cor, 0.38f * cint), false, raio * 2.0f / 64.0f);
         r.sprite(luz, p.v + l.desloc - raio * 0.35f, glm::vec4(1.0f, 0.85f, 0.6f, 0.35f), false, raio * 0.7f / 64.0f);
     }
+    // Vidro das janelas acesas à noite (o mapa de luz ilumina em volta; isto faz o vidro brilhar)
+    const float escuro = w.relogio.escuridao();
+    if (escuro > 0.0f) {
+        for (const auto& b : w.reino.construcoes) {
+            if (b.level < 2) continue;
+            const ke::AABB c = w.caixaConstrucao(b);
+            for (const float x : {0.25f, 0.75f}) {
+                const glm::vec2 jan{c.min.x + (c.max.x - c.min.x) * x, c.max.y - 22.0f};
+                r.sprite(luz, jan - 8.0f, {1.0f, 0.7f, 0.35f, 0.8f * escuro}, false, 16.0f / 64.0f);
+            }
+        }
+    }
     for (const auto& p : part.particulas()) {
         if (!p.aditiva) continue;
         glm::vec4 c = p.cor;
@@ -156,11 +177,39 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     }
 }
 
+void WorldRenderer::desenharLuzes(ke::Renderer2D& r, const World& w, const ke::Camera2D& cam, float tempo) {
+    const ke::SpriteRegion& luz = rec_.regiao("luz");
+    const glm::vec2 canto = cam.canto();
+    r.definirMistura(ke::Mistura::Aditiva);
+    for (auto [e, p, l] : w.reg.view<const Posicao, const Luz>().each()) {
+        if (p.v.x < canto.x - 200 || p.v.x > canto.x + cam.vista.x + 200 || p.v.y < canto.y - 200 || p.v.y > canto.y + cam.vista.y + 200)
+            continue;
+        const float cint = 0.9f + 0.1f * std::sin(tempo * 8.0f + p.v.x) * std::sin(tempo * 4.7f + p.v.y);
+        const float raio = l.raio * 1.8f * cint;
+        r.sprite(luz, p.v + l.desloc - raio, glm::vec4(l.cor * 1.2f, 1.0f), false, raio * 2.0f / 64.0f);
+        r.sprite(luz, p.v + l.desloc - raio * 0.5f, glm::vec4(1.0f, 0.9f, 0.7f, 0.9f), false, raio / 64.0f);
+    }
+    // Janelas acesas das casas reconstruídas
+    for (const auto& b : w.reino.construcoes) {
+        if (b.level < 2) continue;
+        const ke::AABB c = w.caixaConstrucao(b);
+        for (const float x : {0.25f, 0.75f}) {
+            const glm::vec2 jan{c.min.x + (c.max.x - c.min.x) * x, c.max.y - 22.0f};
+            r.sprite(luz, jan - 26.0f, {1.0f, 0.75f, 0.4f, 0.9f}, false, 52.0f / 64.0f);
+        }
+    }
+    // O herói carrega uma luz fraquinha (para não andar no breu total)
+    r.sprite(luz, w.jogador.pos - glm::vec2(0, 10) - 40.0f, {0.55f, 0.55f, 0.65f, 0.6f}, false, 80.0f / 64.0f);
+    r.definirMistura(ke::Mistura::Normal);
+}
+
 void WorldRenderer::desenharAlvo(ke::Renderer2D& r, const ke::BitmapFont& f, const World& w, float tempo) {
     const AlvoInteracao& a = w.alvo();
     if (a.tipo == TipoInteracao::Nenhuma) return;
     glm::vec2 topo = a.ponto - glm::vec2(0, 18);
-    if (a.tipo == TipoInteracao::Construcao) {
+    if (a.tipo == TipoInteracao::Conversar) {
+        topo = w.reg.get<Posicao>(a.entidade).v - glm::vec2(0, 28);
+    } else if (a.tipo == TipoInteracao::Construcao) {
         if (const BuildingData* b = w.reino.construcao(w.reg.get<ConstrucaoRef>(a.entidade).id)) topo = w.pontoPorta(*b) - glm::vec2(0, 30);
     } else if (const auto* v = w.reg.try_get<Visual>(a.entidade)) {
         topo.y = w.reg.get<Posicao>(a.entidade).v.y - rec_.regiao(v->sprite).tamanho.y - 4.0f;

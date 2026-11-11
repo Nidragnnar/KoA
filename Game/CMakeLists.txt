@@ -3,6 +3,8 @@ add_library(KingdomGame STATIC
     Inventory/Inventory.cpp
     Data/GameData.cpp
     Kingdom/Kingdom.cpp
+    Kingdom/Clock.cpp
+    NPC/Npc.cpp
     Buildings/Building.cpp
     Player/Player.cpp
     World/World.cpp

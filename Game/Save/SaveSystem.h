@@ -10,7 +10,15 @@
 
 namespace koa {
 
-constexpr int VERSAO_SAVE = 1;  // sobe quando o formato muda (com migração)
+constexpr int VERSAO_SAVE = 2;  // sobe quando o formato muda (com migração). v2: relógio e moradores
+
+struct EstadoMorador {
+    std::string id;
+    int afinidade = 0;
+    bool falouHoje = false;
+    bool conheceu = false;
+    std::vector<std::string> memoria;
+};
 
 struct EstadoObjeto {
     std::string id;
@@ -34,8 +42,12 @@ struct DadosSave {
     // kingdom.json
     std::map<std::string, int> niveis;  // construção → nível
     float eraVisual = 0.0f;
-    // world.json (só objetos alterados)
+    // world.json (relógio + só objetos alterados)
+    int dia = 1;
+    float minutos = 360.0f;
     std::vector<EstadoObjeto> objetos;
+    // npcs.json (conheceu, memória) + relationships.json (afinidade)
+    std::vector<EstadoMorador> moradores;
 };
 
 // Saves em pastas (Saves/Save_001/*.json) com backup antes de sobrescrever

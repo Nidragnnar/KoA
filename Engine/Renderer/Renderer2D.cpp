@@ -77,6 +77,7 @@ void Renderer2D::definirMistura(Mistura m) {
     descarregar();
     mistura_ = m;
     if (m == Mistura::Aditiva) glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    else if (m == Mistura::Multiplicar) glBlendFunc(GL_DST_COLOR, GL_ZERO);
     else glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 

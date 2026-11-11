@@ -2,15 +2,27 @@
   "nome": "Vilarejo de Valdren",
   "mapa": "vilarejo.txt",
   "legenda": {
-    ".": "grama morta", ",": "terra batida", "=": "estrada de lama", "~": "água", ":": "calçada em ruínas", "#": "muro caído (sólido)",
-    "T": "árvore morta (madeira)", "R": "rocha (pedra)", "C": "baú esquecido (ouro)", "G": "túmulo", "t": "tocha",
-    "f": "cerca quebrada", "B": "arbusto seco", "W": "poço", "P": "ponto inicial do herdeiro"
+    ".": "grama", ",": "terra batida", "=": "estrada de lama", "~": "água", ":": "calçada em ruínas", "#": "muro caído (sólido)",
+    "T": "árvore (madeira)", "R": "rocha (pedra)", "C": "baú esquecido (ouro)", "G": "túmulo", "t": "tocha",
+    "f": "cerca quebrada", "B": "arbusto", "W": "poço", "F": "fogueira", "P": "ponto inicial do herdeiro"
   },
   "inventario_inicial": { "madeira": 0, "pedra": 0, "ouro": 0 },
   "construcoes": [
     { "id": "casa_herdeiro", "def": "casa", "tile": [20, 13], "nivel": 1 }
   ],
   "decoracoes": [
-    { "sprite": "castelo_ruina", "tile": [27, 2], "base": [10, 5] }
-  ]
+    { "sprite": "castelo_ruina", "tile": [27, 2], "base": [10, 5] },
+    { "sprite": "barraco", "tile": [38, 10], "base": [3, 2] },
+    { "sprite": "barraco", "tile": [11, 14], "base": [3, 2] },
+    { "sprite": "barraco", "tile": [8, 29], "base": [3, 2] },
+    { "sprite": "barraco", "tile": [56, 16], "base": [3, 2] },
+    { "sprite": "barraco", "tile": [40, 6], "base": [3, 2] }
+  ],
+  "_locais": "Tiles onde os moradores ficam (rotinas em Data/NPCs/npcs.json). O que estiver em cima é limpo ao carregar.",
+  "locais": {
+    "casa_bram": [39, 12], "casa_edda": [12, 16], "casa_tilda": [9, 31], "casa_oswin": [57, 18], "casa_maelis": [41, 8],
+    "forja_ruina": [35, 9], "poco": [28, 20], "praca": [30, 22], "praca_fogueira": [33, 23], "taverna_ruina": [26, 21],
+    "cemiterio": [49, 9], "castelo": [32, 8], "portao_leste": [61, 18], "estrada": [45, 19], "campo": [15, 26],
+    "floresta_borda": [12, 7]
+  }
 }

@@ -41,7 +41,7 @@ private:
     int falhas_ = 0;
     std::vector<std::string> relatorio_;
     entt::entity alvo_ = entt::null;
-    float xInicial_ = 0.0f;
+    float xInicial_ = 0.0f, yInicial_ = 0.0f;
     std::map<std::string, int> inventarioSalvo_;
     int esgotadosSalvos_ = 0;
 };

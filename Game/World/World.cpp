@@ -8,6 +8,7 @@
 #include <nlohmann/json.hpp>
 
 #include "Engine/Platform/FileSystem.h"
+#include "Engine/World/Pathfinding.h"
 #include "Game/Exploration/Components.h"
 
 namespace koa {
@@ -66,6 +67,10 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
     inventario = {};
     jogador = {};
     tempoJogado = 0.0;
+    relogio = {};
+    locais.clear();
+    bloqueio_.clear();
+    desmaioPendente_ = false;
 
     std::vector<std::string> linhas;
     std::istringstream ss(texto);
@@ -123,9 +128,25 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
             reg.emplace<Posicao>(e, glm::vec2{(b.tile.x + it->second.tamanho.x * 0.5f) * LADO, (b.tile.y + it->second.tamanho.y) * LADO});
             reg.emplace<ConstrucaoRef>(e, b.id);
         }
+        // Limpa objetos (árvores, rochas...) que estejam em cima de uma área reservada
+        auto limpar = [&](glm::ivec2 t0, glm::ivec2 tam) {
+            std::vector<entt::entity> remover;
+            for (auto [e, p, id] : reg.view<const Posicao, const IdMundo>().each()) {
+                const glm::ivec2 t{static_cast<int>(p.v.x) / LADO, static_cast<int>(p.v.y) / LADO};
+                if (t.x >= t0.x && t.y >= t0.y && t.x < t0.x + tam.x && t.y < t0.y + tam.y) remover.push_back(e);
+            }
+            reg.destroy(remover.begin(), remover.end());
+        };
+        // Guardado numa variável: iterar .items() de um temporário lê memória já liberada
+        const nlohmann::json jLocais = j.value("locais", nlohmann::json::object());
+        for (const auto& [nome, t] : jLocais.items()) {
+            locais[nome] = {t[0].get<int>(), t[1].get<int>()};
+            limpar(locais[nome], {1, 1});
+        }
         for (const auto& d : j.value("decoracoes", nlohmann::json::array())) {
             const glm::ivec2 tile{d.at("tile")[0].get<int>(), d.at("tile")[1].get<int>()};
             const glm::ivec2 base{d.at("base")[0].get<int>(), d.at("base")[1].get<int>()};
+            limpar(tile, base);
             const auto e = reg.create();
             reg.emplace<Posicao>(e, glm::vec2{(tile.x + base.x * 0.5f) * LADO, static_cast<float>((tile.y + base.y) * LADO)});
             reg.emplace<Visual>(e, d.at("sprite").get<std::string>());
@@ -137,6 +158,14 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
         return false;
     }
     jogador.pos = spawn;
+    for (const auto& [id, def] : dados.npcs)
+        for (const auto& r : def.rotina)
+            if (!locais.contains(r.local)) {
+                if (erro) *erro = "rotina de " + id + " usa local inexistente: " + r.local;
+                return false;
+            }
+    criarMoradores();
+    posicionarMoradores();
     return true;
 }
 
@@ -202,6 +231,14 @@ void World::criarObjeto(char c, int x, int y) {
         reg.emplace<Colisor>(e, glm::vec2{8, 5}, glm::vec2{0, -5});
         break;
     }
+    case 'F': {  // fogueira da praça
+        const auto e = novo("fogueira");
+        reg.emplace<Visual>(e, "fogueira_0");
+        reg.emplace<Animado>(e, "fogueira", 4, 10.0f);
+        reg.emplace<Colisor>(e, glm::vec2{6, 3}, glm::vec2{0, -3});
+        reg.emplace<Luz>(e, glm::vec3{1.0f, 0.55f, 0.25f}, 80.0f, glm::vec2{0.0f, -6.0f});
+        break;
+    }
     case 'P': spawn = base; break;
     default: break;
     }
@@ -258,6 +295,16 @@ AlvoInteracao World::procurarAlvo() const {
         if (!s.aberto) considerar(e, p.v + glm::vec2(0, -4), 13.0f, TipoInteracao::Saquear, "Abrir baú");
     for (auto [e, p, r] : reg.view<const Posicao, const ConstrucaoRef>().each())
         if (const BuildingData* b = reino.construcao(r.id)) considerar(e, pontoPorta(*b), 15.0f, TipoInteracao::Construcao, b->name);
+    // Moradores têm prioridade quando estão perto: falar com alguém é o que se espera
+    for (auto [e, p, m, a] : reg.view<const Posicao, const Morador, const Agenda>().each()) {
+        if (a.dormindo) continue;
+        const NpcDef& d = dados().npcs.at(m.id);
+        const float dist = glm::distance(ponto, p.v + glm::vec2(0, -6));
+        if (dist <= 16.0f && dist - 6.0f < melhorDist) {
+            melhorDist = dist - 6.0f;
+            melhor = {e, TipoInteracao::Conversar, "Falar com " + d.nome, p.v + glm::vec2(0, -6)};
+        }
+    }
     return melhor;
 }
 
@@ -280,6 +327,7 @@ void World::executar(const AlvoInteracao& a) {
         if (c.hp == 0) {
             c.esgotado = true;
             v.sprite = c.spriteEsgotado;
+            bloqueio_.clear();  // o caminho dos moradores pode ter mudado
             inventario.adicionar(c.recurso, c.rendimento);
             eventos_.push_back({EventoJogo::Tipo::Esgotou, a.ponto, c.tipo});
             eventos_.push_back({EventoJogo::Tipo::Ganhou, a.ponto, c.tipo, c.recurso, c.rendimento});
@@ -298,6 +346,17 @@ void World::executar(const AlvoInteracao& a) {
     case TipoInteracao::Construcao:
         eventos_.push_back({EventoJogo::Tipo::AbrirConstrucao, a.ponto, reg.get<ConstrucaoRef>(a.entidade).id});
         break;
+    case TipoInteracao::Conversar: {
+        // O morador para e se vira para o herói
+        reg.get<Agenda>(a.entidade).conversando = true;
+        auto& mv = reg.get<Movimento>(a.entidade);
+        mv.andando = false;
+        const glm::vec2 d = jogador.pos - reg.get<Posicao>(a.entidade).v;
+        if (std::abs(d.x) > std::abs(d.y)) mv.dir = d.x < 0 ? Direcao::Esquerda : Direcao::Direita;
+        else mv.dir = d.y < 0 ? Direcao::Cima : Direcao::Baixo;
+        eventos_.push_back({EventoJogo::Tipo::AbrirConversa, a.ponto, reg.get<Morador>(a.entidade).id});
+        break;
+    }
     case TipoInteracao::Nenhuma: break;
     }
 }
@@ -320,8 +379,197 @@ void World::passo(float dt, const EntradaMundo& in) {
         alvo_ = procurarAlvo();  // o alvo pode ter sumido (rocha quebrada, baú aberto)
     }
     bufferInteragir_ = std::max(0.0f, bufferInteragir_ - dt);
+    if (relogio.avancar(dt) && !desmaioPendente_) {
+        desmaioPendente_ = true;  // 2:00 da manhã: a cena escurece e chama dormir(true)
+        eventos_.push_back({EventoJogo::Tipo::Desmaiou, jogador.pos});
+    }
+    atualizarMoradores(dt);
     reino.atualizarEra(dt);
     tempoJogado += dt;
+}
+
+// ---------- Moradores ----------
+
+void World::criarMoradores() {
+    int i = 0;
+    for (const auto& [id, def] : dados().npcs) {
+        const auto e = reg.create();
+        reg.emplace<Posicao>(e);
+        reg.emplace<Morador>(e, id, i++);
+        reg.emplace<Movimento>(e);
+        reg.emplace<Agenda>(e);
+        reg.emplace<Relacionamento>(e);
+    }
+}
+
+entt::entity World::morador(const std::string& id) const {
+    for (auto [e, m] : reg.view<const Morador>().each())
+        if (m.id == id) return e;
+    return entt::null;
+}
+
+bool World::tileBloqueado(int x, int y) {
+    if (bloqueio_.empty()) {
+        // Tiles sólidos + tudo que tem colisor (com 2 px de folga para não travar em quinas)
+        bloqueio_.assign(static_cast<size_t>(mapa.largura()) * mapa.altura(), 0);
+        for (int ty = 0; ty < mapa.altura(); ++ty)
+            for (int tx = 0; tx < mapa.largura(); ++tx) bloqueio_[ty * mapa.largura() + tx] = mapa.em(tx, ty).solido;
+        for (const ke::AABB& c : obstaculos()) {
+            const int x0 = static_cast<int>(c.min.x + 2) / LADO, x1 = static_cast<int>(c.max.x - 2) / LADO;
+            const int y0 = static_cast<int>(c.min.y + 2) / LADO, y1 = static_cast<int>(c.max.y - 2) / LADO;
+            for (int ty = y0; ty <= y1; ++ty)
+                for (int tx = x0; tx <= x1; ++tx)
+                    if (mapa.dentro(tx, ty)) bloqueio_[ty * mapa.largura() + tx] = 1;
+        }
+    }
+    return !mapa.dentro(x, y) || bloqueio_[y * mapa.largura() + x];
+}
+
+glm::ivec2 World::destinoDe(entt::entity e, const ItemRotina& item) const {
+    // Quem divide o mesmo local fica lado a lado, não empilhado
+    static const glm::ivec2 vizinhos[] = {{0, 0}, {1, 0}, {-1, 0}, {0, 1}, {1, 1}, {-1, 1}};
+    const glm::ivec2 base = locais.at(item.local);
+    const int i = reg.get<Morador>(e).indice;
+    int n = 0;
+    for (auto [o, m, a] : reg.view<const Morador, const Agenda>().each())
+        if (o != e && m.indice < i && a.itemAtual >= 0 && dados().npcs.at(m.id).rotina[a.itemAtual].local == item.local) ++n;
+    const glm::ivec2 t = base + vizinhos[n % 6];
+    return mapa.dentro(t.x, t.y) && !mapa.em(t.x, t.y).solido ? t : base;
+}
+
+void World::caminharPara(entt::entity e, glm::ivec2 destino) {
+    auto& mv = reg.get<Movimento>(e);
+    const glm::vec2 p = reg.get<Posicao>(e).v;
+    const glm::ivec2 inicio{static_cast<int>(p.x) / LADO, static_cast<int>(p.y) / LADO};
+    mv.caminho.clear();
+    const auto tiles = ke::buscarCaminho(mapa.largura(), mapa.altura(), inicio, destino, [this](int x, int y) { return tileBloqueado(x, y); });
+    if (tiles.empty() && inicio != destino) {
+        // Sem caminho (cercado por obstáculos): vai direto, para não ficar preso para sempre
+        reg.get<Posicao>(e).v = {destino.x * LADO + LADO / 2.0f, destino.y * LADO + 12.0f};
+        return;
+    }
+    for (const glm::ivec2 t : tiles) mv.caminho.push_back({t.x * LADO + LADO / 2.0f, t.y * LADO + 12.0f});
+}
+
+void World::posicionarMoradores() {
+    for (auto [e, m, p, mv, a] : reg.view<const Morador, Posicao, Movimento, Agenda>().each()) {
+        const NpcDef& def = dados().npcs.at(m.id);
+        const ItemRotina* item = def.rotinaEm(relogio.minutos);
+        a.itemAtual = item ? static_cast<int>(item - def.rotina.data()) : -1;
+        a.conversando = false;
+        mv.caminho.clear();
+        mv.andando = false;
+        mv.dir = Direcao::Baixo;
+    }
+    // Segunda passada: destinoDe consulta o item atual dos outros
+    for (auto [e, m, p, a] : reg.view<const Morador, Posicao, Agenda>().each()) {
+        if (a.itemAtual < 0) continue;
+        const ItemRotina& item = dados().npcs.at(m.id).rotina[a.itemAtual];
+        const glm::ivec2 t = destinoDe(e, item);
+        p.v = {t.x * LADO + LADO / 2.0f, t.y * LADO + 12.0f};
+        a.dormindo = item.acao == "dormir";
+    }
+}
+
+void World::atualizarMoradores(float dt) {
+    for (auto [e, m, p, mv, a] : reg.view<const Morador, Posicao, Movimento, Agenda>().each()) {
+        const NpcDef& def = dados().npcs.at(m.id);
+        const ItemRotina* item = def.rotinaEm(relogio.minutos);
+        if (!item) continue;
+        const int idx = static_cast<int>(item - def.rotina.data());
+        if (idx != a.itemAtual) {
+            // Hora de mudar de atividade: sai de casa (se dormia) e vai para o próximo local
+            a.itemAtual = idx;
+            a.dormindo = false;
+            caminharPara(e, destinoDe(e, *item));
+        }
+        if (a.conversando || a.dormindo) {
+            mv.andando = false;
+            continue;
+        }
+        // Longe do herói: anda em passos maiores, 4 vezes por segundo (ninguém está vendo)
+        float passo = dt;
+        if (glm::distance(p.v, jogador.pos) > 380.0f) {
+            mv.acumuladoLod += dt;
+            if (mv.acumuladoLod < 0.25f) continue;
+            passo = mv.acumuladoLod;
+            mv.acumuladoLod = 0.0f;
+        }
+        float resta = mv.velocidade * passo;
+        bool andou = false;
+        while (resta > 0.0f && !mv.caminho.empty()) {
+            const glm::vec2 alvo = mv.caminho.front();
+            const glm::vec2 d = alvo - p.v;
+            const float dist = glm::length(d);
+            if (dist <= resta) {
+                p.v = alvo;
+                resta -= dist;
+                mv.caminho.erase(mv.caminho.begin());
+            } else {
+                p.v += d / dist * resta;
+                resta = 0.0f;
+            }
+            if (dist > 0.01f) {
+                if (std::abs(d.x) > std::abs(d.y)) mv.dir = d.x < 0 ? Direcao::Esquerda : Direcao::Direita;
+                else mv.dir = d.y < 0 ? Direcao::Cima : Direcao::Baixo;
+            }
+            andou = true;
+        }
+        mv.andando = andou;
+        if (andou) mv.tempoAnim += passo;
+        // Chegou em casa na hora de dormir: entra e some até de manhã
+        if (mv.caminho.empty() && item->acao == "dormir") {
+            a.dormindo = true;
+            mv.dir = Direcao::Baixo;
+        }
+    }
+}
+
+Conversa World::conversar(const std::string& id) {
+    Conversa c;
+    const entt::entity e = morador(id);
+    if (e == entt::null) return c;
+    const NpcDef& def = dados().npcs.at(id);
+    auto& rel = reg.get<Relacionamento>(e);
+    ContextoFala ctx{relogio.periodo(), relogio.estacao(), 1};
+    if (const BuildingData* casa = reino.construcao("casa_herdeiro")) ctx.nivelCasa = casa->level;
+    const EntradaFala* fala = escolherFala(def, rel, ctx);
+    c.npc = id;
+    c.nome = def.nome;
+    c.profissao = def.profissao;
+    c.falas = fala ? fala->falas : std::vector<std::string>{"..."};
+    // Amizade cresce uma vez por dia de conversa
+    if (!rel.falouHoje) {
+        rel.afinidade = std::min(1000, rel.afinidade + 25);
+        c.ganhouAmizade = true;
+    }
+    rel.falouHoje = true;
+    rel.conheceu = true;
+    if (fala && fala->umaVez) rel.memoria.insert(fala->id);
+    c.coracoes = rel.coracoes();
+    reg.get<Agenda>(e).conversando = true;
+    return c;
+}
+
+void World::encerrarConversa(const std::string& id) {
+    if (const entt::entity e = morador(id); e != entt::null) reg.get<Agenda>(e).conversando = false;
+}
+
+void World::dormir(bool desmaio) {
+    int perda = 0;
+    if (desmaio) {
+        // Desmaiar de cansaço custa 10% do ouro (no máximo 50): alguém "cuidou" de você
+        perda = std::min(50, inventario.quantidade("ouro") / 10);
+        inventario.remover("ouro", perda);
+    }
+    relogio.novoDia();
+    desmaioPendente_ = false;
+    if (const BuildingData* casa = reino.construcao("casa_herdeiro")) jogador.pos = pontoPorta(*casa) + glm::vec2(0, 8);
+    jogador.dir = Direcao::Baixo;
+    jogador.acao = 0.0f;
+    for (auto [e, r] : reg.view<Relacionamento>().each()) r.falouHoje = false;
+    posicionarMoradores();
+    eventos_.push_back({EventoJogo::Tipo::NovoDia, jogador.pos, desmaio ? "desmaio" : "", "ouro", perda, relogio.textoData()});
 }
 
 bool World::melhorarConstrucao(const std::string& id) {
@@ -349,6 +597,10 @@ DadosSave World::capturar() const {
             d.objetos.push_back({id.id, c->hp, c->esgotado, false});
         if (const auto* s = reg.try_get<Saqueavel>(e); s && s->aberto) d.objetos.push_back({id.id, 0, false, true});
     }
+    d.dia = relogio.dia;
+    d.minutos = relogio.minutos;
+    for (auto [e, m, r] : reg.view<const Morador, const Relacionamento>().each())
+        d.moradores.push_back({m.id, r.afinidade, r.falouHoje, r.conheceu, {r.memoria.begin(), r.memoria.end()}});
     return d;
 }
 
@@ -388,6 +640,19 @@ void World::aplicar(const DadosSave& d) {
             reg.get<Visual>(e).sprite = s->spriteAberto;
         }
     }
+    bloqueio_.clear();
+    relogio.dia = std::max(1, d.dia);
+    relogio.minutos = std::clamp(d.minutos, static_cast<float>(Relogio::INICIO_DIA), static_cast<float>(Relogio::FIM_DIA) - 1.0f);
+    for (const auto& m : d.moradores) {
+        const entt::entity e = morador(m.id);
+        if (e == entt::null) continue;  // morador que não existe mais nesta versão
+        auto& r = reg.get<Relacionamento>(e);
+        r.afinidade = std::clamp(m.afinidade, 0, 1000);
+        r.falouHoje = m.falouHoje;
+        r.conheceu = m.conheceu;
+        r.memoria = {m.memoria.begin(), m.memoria.end()};
+    }
+    posicionarMoradores();
 }
 
 }

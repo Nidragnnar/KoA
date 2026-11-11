@@ -4,6 +4,7 @@
 
 #include "Engine/Core/SceneManager.h"
 #include "Engine/Renderer/Camera2D.h"
+#include "Engine/Renderer/Lighting.h"
 #include "Engine/Renderer/ParticleSystem.h"
 #include "Game/App/Contexto.h"
 #include "Game/Render/WorldRenderer.h"
@@ -29,6 +30,7 @@ private:
     WorldRenderer rend_;
     ke::Camera2D cam_;
     ke::ParticleSystem part_;
+    ke::LightMap luz_;
     int sel_ = 0;
     bool temSave_ = false;
     float tempo_ = 0.0f;
