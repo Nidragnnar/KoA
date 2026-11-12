@@ -15,16 +15,18 @@ const char* nomeEra(KingdomEra e) {
 }
 
 KingdomEra eraPorDesenvolvimento(int d) {
-    if (d >= 30) return KingdomEra::HighFantasy;
-    if (d >= 15) return KingdomEra::Prosperity;
-    if (d >= 6) return KingdomEra::Restoration;
+    if (d >= 35) return KingdomEra::HighFantasy;
+    if (d >= 20) return KingdomEra::Prosperity;
+    if (d >= 8) return KingdomEra::Restoration;
     return KingdomEra::DarkAge;
 }
 
+// Soma dos níveis de tudo que está de pé (a cabana inicial não conta)
 int Kingdom::desenvolvimento() const {
     int d = 0;
-    for (const auto& c : construcoes) d += std::max(0, c.level - 1);
-    return d;
+    for (const auto& c : construcoes)
+        if (c.constructed) d += c.level;
+    return std::max(0, d - 1);
 }
 
 KingdomEra Kingdom::eraAlvo() const {

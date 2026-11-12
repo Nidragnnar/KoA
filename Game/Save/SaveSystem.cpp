@@ -26,7 +26,15 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
     json meta = {{"versao_formato", VERSAO_SAVE}, {"versao_jogo", d.versaoJogo}, {"data_hora", d.dataHora}, {"tempo_jogado", d.tempoJogado}};
     json player = {{"x", d.posJogador.x}, {"y", d.posJogador.y}, {"direcao", d.direcao}};
     json inv = d.inventario;
-    json reino = {{"construcoes", d.niveis}, {"era_visual", d.eraVisual}};
+    json obras = json::array();
+    for (const auto& c : d.construcoes) {
+        json o = {{"id", c.id}, {"def", c.def}, {"nivel", c.nivel}, {"construida", c.construida}};
+        if (c.temPosicao) o["tile"] = {c.tile.x, c.tile.y};
+        obras.push_back(o);
+    }
+    json reino = {{"construcoes", obras},
+                  {"era_visual", d.eraVisual},
+                  {"povo", {{"populacao", d.populacao}, {"felicidade", d.felicidade}, {"imposto", d.imposto}}}};
     json objs = json::array();
     for (const auto& o : d.objetos) objs.push_back({{"id", o.id}, {"hp", o.hp}, {"esgotado", o.esgotado}, {"aberto", o.aberto}});
     json mundo = {{"relogio", {{"dia", d.dia}, {"minutos", d.minutos}}}, {"objetos", objs}};
@@ -59,6 +67,15 @@ json SaveSystem::migrar(json tudo, int deVersao) {
         tudo["npcs"] = {{"moradores", json::array()}};
         tudo["relationships"] = {{"afinidades", json::object()}};
         deVersao = 2;
+    }
+    if (deVersao < 3) {
+        // v2 guardava só {"construção": nível} das construções fixas do mapa
+        json lista = json::array();
+        const json antigas = tudo["kingdom"].value("construcoes", json::object());  // variável: .items() de temporário quebra
+        for (const auto& [id, nivel] : antigas.items())
+            lista.push_back({{"id", id}, {"nivel", nivel}, {"construida", true}});
+        tudo["kingdom"]["construcoes"] = lista;
+        deVersao = 3;
     }
     tudo["metadata"]["versao_formato"] = deVersao;
     return tudo;
@@ -109,9 +126,25 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
         for (const auto& [id, q] : tudo["inventory"].items())
             if (q.is_number_integer()) d.inventario[id] = std::max(0, q.get<int>());
         const json& r = tudo["kingdom"];
-        if (r.contains("construcoes"))
-            for (const auto& [id, n] : r["construcoes"].items()) d.niveis[id] = n.get<int>();
+        for (const auto& o : r.value("construcoes", json::array())) {
+            EstadoConstrucao c;
+            c.id = o.value("id", "");
+            c.def = o.value("def", "");
+            c.nivel = o.value("nivel", 1);
+            c.construida = o.value("construida", true);
+            if (o.contains("tile")) {
+                c.tile = {o["tile"][0].get<int>(), o["tile"][1].get<int>()};
+                c.temPosicao = true;
+            }
+            if (!c.id.empty()) d.construcoes.push_back(std::move(c));
+        }
         d.eraVisual = std::clamp(r.value("era_visual", 0.0f), 0.0f, 3.0f);
+        if (r.contains("povo")) {
+            d.temPovo = true;
+            d.populacao = std::max(1, r["povo"].value("populacao", 8));
+            d.felicidade = std::clamp(r["povo"].value("felicidade", 40.0f), 0.0f, 100.0f);
+            d.imposto = std::clamp(r["povo"].value("imposto", 1), 0, 2);
+        }
         for (const auto& o : tudo["world"].value("objetos", json::array()))
             d.objetos.push_back({o.value("id", ""), o.value("hp", 0), o.value("esgotado", false), o.value("aberto", false)});
         const json& rel = tudo["world"].value("relogio", json::object());

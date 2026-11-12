@@ -11,7 +11,7 @@ namespace koa {
 namespace {
 
 // Recursos sempre na mesma ordem na interface
-const char* ORDEM_RECURSOS[] = {"madeira", "pedra", "ouro"};
+const char* ORDEM_RECURSOS[] = {"madeira", "pedra", "ouro", "comida"};
 
 // Quebra o texto em linhas que caibam em `largura` pixels
 std::vector<std::string> quebrarLinhas(const ke::BitmapFont& f, const std::string& texto, int largura) {
@@ -53,8 +53,15 @@ void Hud::aviso(std::string texto, glm::vec4 c) {
 
 void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
     // Recursos (canto superior esquerdo)
-    desenharPainel(r, {6, 6}, {104, 46});
-    for (int i = 0; i < 3; ++i) {
+    desenharPainel(r, {6, 6}, {116, 72});
+    {
+        const ResumoReino rr = w.resumo();
+        const std::string povo = std::format("{}/{}", w.estado.populacao, rr.populacaoMax);
+        f_.desenhar(r, "Povo", {12, 63}, cor::apagado);
+        const glm::vec4 c = w.estado.felicidade >= 50 ? cor::bom : w.estado.felicidade < 25 ? cor::ruim : cor::texto;
+        f_.desenhar(r, povo, {116.0f - f_.largura(povo), 63}, c);
+    }
+    for (int i = 0; i < 4; ++i) {
         const std::string id = ORDEM_RECURSOS[i];
         const float y = 11.0f + i * 13.0f;
         const float p = pulso_.contains(id) ? pulso_[id] : 0.0f;
@@ -62,7 +69,7 @@ void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
         r.sprite(rec_.regiao(it != dados_.recursos.end() ? it->second.icone : "icone_" + id), {12, y - 1 - std::round(p * 5)});
         f_.desenhar(r, dados_.nomeRecurso(id), {25, y}, cor::apagado);
         const std::string n = std::to_string(w.inventario.quantidade(id));
-        f_.desenhar(r, n, {104.0f - f_.largura(n), y}, p > 0 ? cor::ouro : cor::texto);
+        f_.desenhar(r, n, {116.0f - f_.largura(n), y}, p > 0 ? cor::ouro : cor::texto);
     }
 
     // Data, hora e era (canto superior direito)
@@ -89,7 +96,7 @@ void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
     // Dica de controles nos primeiros segundos
     if (tempoDica_ > 0.0f) {
         const float a = std::min(1.0f, tempoDica_);
-        const std::string dica = "WASD/setas: andar   E: interagir   Esc: menu   F5: salvar";
+        const std::string dica = "WASD: andar   E: interagir   B: obras   K: reino   Esc: menu";
         f_.desenharCentralizado(r, dica, {320, 348}, {0.85f, 0.82f, 0.75f, a});
     }
     (void)tempo;
@@ -160,6 +167,138 @@ void Hud::painelConstrucao(ke::Renderer2D& r, const World& w, const std::string&
 }
 
 int Hud::tamanhoUtf8(const std::string& s) { return static_cast<int>(ke::decodificarUtf8(s).size()); }
+
+void Hud::custoEmLinha(ke::Renderer2D& r, const Custo& c, const Inventory& inv, glm::vec2 pos) {
+    for (const char* rid : ORDEM_RECURSOS) {
+        const auto it = c.find(rid);
+        if (it == c.end()) continue;
+        const auto def = dados_.recursos.find(rid);
+        r.sprite(rec_.regiao(def != dados_.recursos.end() ? def->second.icone : std::string("icone_") + rid), pos - glm::vec2(0, 1));
+        const std::string n = std::to_string(it->second);
+        f_.desenhar(r, n, pos + glm::vec2(12, 0), inv.quantidade(rid) >= it->second ? cor::texto : cor::ruim);
+        pos.x += 16.0f + f_.largura(n) + 6.0f;
+    }
+}
+
+void Hud::barra(ke::Renderer2D& r, glm::vec2 p, float l, float fr, glm::vec4 c) {
+    r.retangulo(p, {l, 6}, {0.12f, 0.1f, 0.09f, 1});
+    r.retangulo(p + 1.0f, {(l - 2) * std::clamp(fr, 0.0f, 1.0f), 4}, c);
+    r.contorno(p, {l, 6}, {0.3f, 0.25f, 0.18f, 1});
+}
+
+void Hud::menuObras(ke::Renderer2D& r, const World& w, const std::vector<std::string>& defs, int sel) {
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.45f});
+    const float alt = 48.0f + defs.size() * 26.0f;
+    const glm::vec2 p{100, std::floor(180 - alt / 2)}, s{440, alt};
+    desenharPainel(r, p, s);
+    f_.desenharCentralizado(r, "Obras do Reino", {320, p.y + 12}, cor::ouro);
+    for (size_t i = 0; i < defs.size(); ++i) {
+        const BuildingDef& d = dados_.construcoes.at(defs[i]);
+        const NivelConstrucao& n1 = *d.nivel(1);
+        const float y = p.y + 28 + i * 26.0f;
+        const bool s1 = static_cast<int>(i) == sel;
+        const int tem = w.contarConstrucoes(d.id);
+        const bool esgotada = d.limite > 0 && tem >= d.limite;
+        if (s1) r.retangulo({p.x + 8, y - 3}, {s.x - 16, 25}, {0.45f, 0.36f, 0.22f, 0.45f});
+        f_.desenhar(r, n1.nome, {p.x + 14, y}, esgotada ? cor::apagado : s1 ? cor::ouro : cor::texto);
+        const std::string qtd = d.limite > 0 ? std::format("{}/{}", tem, d.limite) : std::to_string(tem);
+        f_.desenhar(r, qtd, {p.x + s.x - 14 - f_.largura(qtd), y}, cor::apagado);
+        if (esgotada) f_.desenhar(r, "limite atingido", {p.x + 24, y + 11}, cor::apagado);
+        else custoEmLinha(r, n1.custo, w.inventario, {p.x + 24, y + 11});
+    }
+    // Descrição da selecionada
+    const NivelConstrucao& n1 = *dados_.construcoes.at(defs[sel]).nivel(1);
+    f_.desenharCentralizado(r, n1.descricao, {320, p.y + s.y - 14}, cor::apagado);
+    f_.desenharCentralizado(r, "W/S escolher   E posicionar   Esc fechar", {320, p.y + s.y + 10}, cor::texto);
+}
+
+void Hud::dicaColocacao(ke::Renderer2D& r, const std::string& nome, bool valido, const std::string& motivo) {
+    const std::string l1 = "Construir: " + nome;
+    const std::string l2 = valido ? "E confirmar   Esc cancelar   (ande para escolher o lugar)" : motivo;
+    const float l = static_cast<float>(std::max(f_.largura(l1), f_.largura(l2))) + 16;
+    desenharPainel(r, {320 - l / 2, 300}, {l, 30});
+    f_.desenharCentralizado(r, l1, {320, 309}, cor::ouro);
+    f_.desenharCentralizado(r, l2, {320, 321}, valido ? cor::texto : cor::ruim);
+}
+
+void Hud::painelReino(ke::Renderer2D& r, const World& w) {
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.45f});
+    const ResumoReino rr = w.resumo();
+    const glm::vec2 p{140, 52}, s{360, 256};
+    desenharPainel(r, p, s);
+    f_.desenharCentralizado(r, "Reino de Valdren", {320, p.y + 12}, cor::ouro);
+    f_.desenharCentralizado(r, nomeEra(w.reino.eraAtual()), {320, p.y + 24}, cor::apagado);
+    float y = p.y + 42;
+    const float xR = p.x + 16, xV = p.x + 150;
+    auto linha = [&](const std::string& rot, const std::string& val, glm::vec4 c = cor::texto) {
+        f_.desenhar(r, rot, {xR, y}, cor::apagado);
+        f_.desenhar(r, val, {xV, y}, c);
+        y += 13;
+    };
+    linha("População", std::format("{} de {} (moradias)", w.estado.populacao, rr.populacaoMax));
+    f_.desenhar(r, "Felicidade", {xR, y}, cor::apagado);
+    const glm::vec4 cf = w.estado.felicidade >= 50 ? cor::bom : w.estado.felicidade < 25 ? cor::ruim : cor::ouro;
+    barra(r, {xV, y + 1}, 100, w.estado.felicidade / 100.0f, cf);
+    f_.desenhar(r, std::format("{:.0f} -> {:.0f}", w.estado.felicidade, rr.felicidadeAlvo), {xV + 108, y}, cor::texto);
+    y += 13;
+    linha("Segurança", std::to_string(rr.seguranca), rr.seguranca >= w.estado.populacao ? cor::bom : cor::texto);
+    const int saldo = rr.comidaProduzida - rr.comidaConsumida;
+    linha("Comida", std::format("{} guardada, {:+} por dia", w.inventario.quantidade("comida"), saldo), saldo < 0 ? cor::ruim : cor::bom);
+    linha("Ouro por dia", std::format("{} impostos + {} construções", rr.impostos, rr.ouroProducao));
+    y += 4;
+    f_.desenhar(r, "Impostos", {xR, y}, cor::apagado);
+    f_.desenhar(r, std::string("< ") + nomeImposto(w.estado.imposto) + " >", {xV, y}, cor::ouro);
+    static const char* efeito[] = {"1 ouro/morador, +10 feliz", "2 ouro/morador", "3 ouro/morador, -12 feliz"};
+    y += 11;
+    f_.desenhar(r, efeito[static_cast<int>(w.estado.imposto)], {xV, y}, cor::apagado);
+    y += 17;
+    const int dev = w.reino.desenvolvimento();
+    static const int limites[] = {8, 20, 35};
+    const int era = static_cast<int>(w.reino.eraAlvo());
+    linha("Desenvolvimento", era < 3 ? std::format("{} (próxima era em {})", dev, limites[era]) : std::to_string(dev));
+    y += 2;
+    f_.desenhar(r, "Construções", {xR, y}, cor::apagado);
+    std::string lista;
+    int n = 0;
+    for (const auto& b : w.reino.construcoes) {
+        lista += (n++ ? ", " : "") + b.name + (b.constructed ? "" : " (obra)");
+    }
+    float yl = y;
+    for (const auto& l : quebrarLinhas(f_, lista, static_cast<int>(s.x) - 150 - 14)) f_.desenhar(r, l, {xV, yl}, cor::texto), yl += 10;
+    f_.desenharCentralizado(r, "A/D mudar impostos   K ou Esc fechar", {320, p.y + s.y - 12}, cor::apagado);
+}
+
+void Hud::relatorioManha(ke::Renderer2D& r, const World& w) {
+    const RelatorioDia& rel = w.ultimoRelatorio;
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.35f});
+    std::vector<std::string> notas;
+    for (const auto& n : rel.notas)
+        for (const auto& l : quebrarLinhas(f_, n, 360)) notas.push_back(l);
+    const float alt = 92.0f + rel.variacoes.size() * 11.0f + notas.size() * 11.0f;
+    const glm::vec2 p{130, std::floor(176 - alt / 2)}, s{380, alt};
+    desenharPainel(r, p, s);
+    f_.desenharCentralizado(r, "Relatório da manhã", {320, p.y + 12}, cor::ouro);
+    f_.desenharCentralizado(r, w.relogio.textoData(), {320, p.y + 24}, cor::apagado);
+    float y = p.y + 40;
+    for (const auto& [rid, v] : rel.variacoes) {
+        const std::string nome = rid == "ouro (desmaio)" ? "Ouro (desmaio)" : dados_.nomeRecurso(rid);
+        f_.desenhar(r, nome, {p.x + 40, y}, cor::texto);
+        const std::string val = std::format("{:+}", v);
+        f_.desenhar(r, val, {p.x + s.x - 40 - f_.largura(val), y}, v > 0 ? cor::bom : v < 0 ? cor::ruim : cor::apagado);
+        y += 11;
+    }
+    y += 4;
+    f_.desenhar(r, "Povo", {p.x + 40, y}, cor::texto);
+    const std::string pv = std::format("{} -> {}", rel.populacaoAntes, rel.populacaoDepois);
+    f_.desenhar(r, pv, {p.x + s.x - 40 - f_.largura(pv), y}, rel.populacaoDepois > rel.populacaoAntes ? cor::bom : cor::texto);
+    y += 11;
+    f_.desenhar(r, "Felicidade", {p.x + 40, y}, cor::texto);
+    const std::string fv = std::format("{:.0f} -> {:.0f}", rel.felicidadeAntes, rel.felicidadeDepois);
+    f_.desenhar(r, fv, {p.x + s.x - 40 - f_.largura(fv), y}, rel.felicidadeDepois >= rel.felicidadeAntes ? cor::bom : cor::ruim);
+    y += 15;
+    for (const auto& n : notas) f_.desenharCentralizado(r, n, {320, y + 3}, cor::ouro), y += 11;
+    f_.desenharCentralizado(r, "E continuar", {320, p.y + s.y - 11}, cor::apagado);
+}
 
 void Hud::caixaDialogo(ke::Renderer2D& r, const Conversa& c, int linha, int letras, float tempo) {
     const glm::vec2 p{20, 262}, s{600, 90};

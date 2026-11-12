@@ -2,6 +2,7 @@
   "recursos": {
     "madeira": { "nome": "Madeira", "icone": "icone_madeira" },
     "pedra":   { "nome": "Pedra",   "icone": "icone_pedra" },
-    "ouro":    { "nome": "Ouro",    "icone": "icone_ouro" }
+    "ouro":    { "nome": "Ouro",    "icone": "icone_ouro" },
+    "comida":  { "nome": "Comida",  "icone": "icone_comida" }
   }
 }

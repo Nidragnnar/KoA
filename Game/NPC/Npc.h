@@ -80,6 +80,13 @@ struct Relacionamento {
     int coracoes() const { return afinidade / 100; }
 };
 
+// Aldeões sem nome: aparecem conforme a população cresce e passeiam pelo vilarejo
+struct Aldeao {
+    int variante = 0;
+    float espera = 0.0f;  // segundos parado antes de escolher outro lugar
+    bool dormindo = false;
+};
+
 // Situação do mundo para escolher a fala
 struct ContextoFala {
     Periodo periodo = Periodo::Manha;

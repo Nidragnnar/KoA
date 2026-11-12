@@ -7,7 +7,10 @@
 #include <nlohmann/json_fwd.hpp>
 
 #include "Engine/World/TileMap.h"
+#include <random>
+
 #include "Game/Data/GameData.h"
+#include "Game/Economy/Economia.h"
 #include "Game/Inventory/Inventory.h"
 #include "Game/Kingdom/Clock.h"
 #include "Game/Kingdom/Kingdom.h"
@@ -39,7 +42,7 @@ struct AlvoInteracao {
 
 // O que aconteceu neste passo, para a apresentação (partículas, textos, sons)
 struct EventoJogo {
-    enum class Tipo { Golpe, Esgotou, Ganhou, AbrirConstrucao, Construiu, Aviso, AbrirConversa, Desmaiou, NovoDia };
+    enum class Tipo { Golpe, Esgotou, Ganhou, AbrirConstrucao, Construiu, Aviso, AbrirConversa, Desmaiou, NovoDia, ObraIniciada };
     Tipo tipo;
     glm::vec2 pos{0.0f};
     std::string alvo;     // tipo do objeto ou id da construção
@@ -77,6 +80,13 @@ public:
     void dormir(bool desmaio);
     bool aguardandoDesmaio() const { return desmaioPendente_; }
 
+    // Obras: escolher o lugar e construir (fica pronta na manhã seguinte)
+    bool podeConstruir(const std::string& def, glm::ivec2 tile, std::string* motivo = nullptr) const;
+    std::string construir(const std::string& def, glm::ivec2 tile);  // id da obra, ou "" se não deu
+    int contarConstrucoes(const std::string& def) const;
+    ResumoReino resumo() const { return calcularResumo(reino, *dados_, estado); }
+    void sincronizarAldeoes();  // tantos aldeões quanto a população pede
+
     std::vector<ke::AABB> obstaculos() const;
     ke::AABB caixaConstrucao(const BuildingData& b) const;
     glm::vec2 pontoPorta(const BuildingData& b) const;
@@ -92,11 +102,16 @@ public:
     double tempoJogado = 0.0;
     Relogio relogio;
     std::map<std::string, glm::ivec2> locais;  // pontos das rotinas, em tiles
+    EstadoReino estado;
+    RelatorioDia ultimoRelatorio;  // da última noite
 
 private:
     void criarObjeto(char c, int x, int y);
     void criarMoradores();
     void atualizarMoradores(float dt);
+    void atualizarAldeoes(float dt);
+    bool seguirCaminho(glm::vec2& pos, Movimento& mv, float dt);  // anda (com simulação simplificada se longe)
+    entt::entity criarEntidadeConstrucao(const BuildingData& b);
     void caminharPara(entt::entity e, glm::ivec2 destino);
     glm::ivec2 destinoDe(entt::entity e, const ItemRotina& item) const;
     bool tileBloqueado(int x, int y);
@@ -110,6 +125,7 @@ private:
     float bufferInteragir_ = 0.0f;
     bool desmaioPendente_ = false;
     std::vector<uint8_t> bloqueio_;  // grade do A* (tile sólido ou com obstáculo); vazia = refazer
+    std::mt19937 rng_{2026};        // determinístico: os testes repetem igual
 };
 
 uint32_t hashTile(int x, int y);

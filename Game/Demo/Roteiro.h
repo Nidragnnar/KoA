@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <entt/entity/entity.hpp>
+#include <glm/vec2.hpp>
 
 namespace koa {
 
@@ -42,6 +43,8 @@ private:
     std::vector<std::string> relatorio_;
     entt::entity alvo_ = entt::null;
     float xInicial_ = 0.0f, yInicial_ = 0.0f;
+    glm::ivec2 alvoObra_{0};
+    int comidaAntes_ = 0, popAntes_ = 0;
     std::map<std::string, int> inventarioSalvo_;
     int esgotadosSalvos_ = 0;
 };

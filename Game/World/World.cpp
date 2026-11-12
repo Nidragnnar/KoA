@@ -71,6 +71,9 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
     locais.clear();
     bloqueio_.clear();
     desmaioPendente_ = false;
+    estado = {};
+    ultimoRelatorio = {};
+    rng_.seed(2026);
 
     std::vector<std::string> linhas;
     std::istringstream ss(texto);
@@ -124,9 +127,14 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
             if (it == dados.construcoes.end()) throw std::runtime_error("definição inexistente: " + b.defId);
             if (const auto* nv = it->second.nivel(b.level)) b.name = nv->nome;
             reino.construcoes.push_back(b);
-            const auto e = reg.create();
-            reg.emplace<Posicao>(e, glm::vec2{(b.tile.x + it->second.tamanho.x * 0.5f) * LADO, (b.tile.y + it->second.tamanho.y) * LADO});
-            reg.emplace<ConstrucaoRef>(e, b.id);
+            criarEntidadeConstrucao(b);
+        }
+        if (j.contains("reino_inicial")) {
+            const auto& r = j["reino_inicial"];
+            estado.populacao = r.value("populacao", 8);
+            estado.populacaoBase = r.value("populacao_base", 8);
+            estado.felicidade = r.value("felicidade", 40.0f);
+            estado.imposto = static_cast<Imposto>(std::clamp(r.value("imposto", 1), 0, 2));
         }
         // Limpa objetos (árvores, rochas...) que estejam em cima de uma área reservada
         auto limpar = [&](glm::ivec2 t0, glm::ivec2 tam) {
@@ -166,7 +174,124 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
             }
     criarMoradores();
     posicionarMoradores();
+    sincronizarAldeoes();
     return true;
+}
+
+entt::entity World::criarEntidadeConstrucao(const BuildingData& b) {
+    const BuildingDef* d = def(b);
+    const glm::ivec2 t = d ? d->tamanho : glm::ivec2{1};
+    const auto e = reg.create();
+    reg.emplace<Posicao>(e, glm::vec2{(b.tile.x + t.x * 0.5f) * LADO, static_cast<float>((b.tile.y + t.y) * LADO)});
+    reg.emplace<ConstrucaoRef>(e, b.id);
+    return e;
+}
+
+int World::contarConstrucoes(const std::string& d) const {
+    return static_cast<int>(std::ranges::count_if(reino.construcoes, [&](const BuildingData& b) { return b.defId == d; }));
+}
+
+bool World::podeConstruir(const std::string& defId, glm::ivec2 tile, std::string* motivo) const {
+    auto falha = [&](const char* m) {
+        if (motivo) *motivo = m;
+        return false;
+    };
+    const auto it = dados().construcoes.find(defId);
+    if (it == dados().construcoes.end() || !it->second.construivel) return falha("Isso não se constrói.");
+    const BuildingDef& d = it->second;
+    if (d.limite > 0 && contarConstrucoes(defId) >= d.limite) return falha("O reino já tem o máximo desta construção.");
+    // Base dentro do mapa, longe da borda, e a fileira da porta livre
+    if (tile.x < 1 || tile.y < 1 || tile.x + d.tamanho.x > mapa.largura() - 1 || tile.y + d.tamanho.y + 1 > mapa.altura() - 1)
+        return falha("Fora dos limites do vilarejo.");
+    for (int y = tile.y; y <= tile.y + d.tamanho.y; ++y)
+        for (int x = tile.x; x < tile.x + d.tamanho.x; ++x)
+            if (mapa.em(x, y).solido) return falha("Terreno impróprio (água ou muro).");
+    const ke::AABB area{glm::vec2(tile * LADO) + 1.0f, glm::vec2((tile + d.tamanho + glm::ivec2(0, 1)) * LADO) - 1.0f};
+    for (const ke::AABB& o : obstaculos())
+        if (area.intersecta(o)) return falha("Há árvores, pedras ou construções no caminho.");
+    if (area.intersecta(jogador.caixa())) return falha("Saia de cima do terreno.");
+    // Os pontos das rotinas (praça, poço, fogueira, casas) ficam livres: é onde o povo vive
+    for (const auto& [nome, t] : locais)
+        if (t.x >= tile.x - 1 && t.x <= tile.x + d.tamanho.x && t.y >= tile.y - 1 && t.y <= tile.y + d.tamanho.y + 1)
+            return falha("Os moradores usam esse lugar (praça, poço, casas).");
+    if (motivo) motivo->clear();
+    return true;
+}
+
+std::string World::construir(const std::string& defId, glm::ivec2 tile) {
+    std::string motivo;
+    if (!podeConstruir(defId, tile, &motivo)) {
+        eventos_.push_back({EventoJogo::Tipo::Aviso, jogador.pos, defId, "", 0, motivo});
+        return "";
+    }
+    const BuildingDef& d = dados().construcoes.at(defId);
+    const NivelConstrucao* n1 = d.nivel(1);
+    if (!n1 || !inventario.pagar(n1->custo)) {
+        eventos_.push_back({EventoJogo::Tipo::Aviso, jogador.pos, defId, "", 0, "Faltam recursos para a obra."});
+        return "";
+    }
+    int n = 1;
+    std::string id;
+    do id = std::format("{}_{}", defId, n++);
+    while (reino.construcao(id));
+    BuildingData b{id, defId, n1->nome, 1, tile, true, false};  // constructed = false: em obras até amanhã
+    reino.construcoes.push_back(b);
+    criarEntidadeConstrucao(b);
+    bloqueio_.clear();
+    eventos_.push_back({EventoJogo::Tipo::ObraIniciada, pontoPorta(b), id, "", 1, n1->nome});
+    return id;
+}
+
+void World::sincronizarAldeoes() {
+    const int nomeados = static_cast<int>(dados().npcs.size());
+    const int alvo = std::clamp(estado.populacao - nomeados, 0, 16);
+    std::vector<entt::entity> existentes;
+    for (auto [e, a] : reg.view<Aldeao>().each()) existentes.push_back(e);
+    while (static_cast<int>(existentes.size()) > alvo) {
+        reg.destroy(existentes.back());
+        existentes.pop_back();
+    }
+    std::vector<glm::ivec2> pontos;
+    for (const auto& [n, t] : locais) pontos.push_back(t);
+    if (pontos.empty()) return;
+    std::uniform_int_distribution<size_t> qual(0, pontos.size() - 1);
+    for (int i = static_cast<int>(existentes.size()); i < alvo; ++i) {
+        const auto e = reg.create();
+        const glm::ivec2 t = pontos[qual(rng_)];
+        reg.emplace<Posicao>(e, glm::vec2{t.x * LADO + LADO / 2.0f, t.y * LADO + 12.0f});
+        reg.emplace<Movimento>(e).velocidade = 30.0f;
+        reg.emplace<Aldeao>(e, i % 4, 1.0f + i * 0.7f, false);
+    }
+}
+
+void World::atualizarAldeoes(float dt) {
+    std::vector<glm::ivec2> pontos;
+    for (const auto& [n, t] : locais) pontos.push_back(t);
+    for (const auto& b : reino.construcoes)
+        if (b.constructed) {
+            const glm::vec2 p = pontoPorta(b);
+            pontos.push_back({static_cast<int>(p.x) / LADO, static_cast<int>(p.y) / LADO});
+        }
+    std::uniform_int_distribution<size_t> qual(0, pontos.size() - 1);
+    std::uniform_real_distribution<float> espera(3.0f, 10.0f);
+    const bool noite = relogio.minutos >= 21 * 60;
+    for (auto [e, p, mv, a] : reg.view<Posicao, Movimento, Aldeao>().each()) {
+        a.dormindo = noite;  // de noite todo mundo está em casa
+        if (a.dormindo) {
+            mv.andando = false;
+            continue;
+        }
+        if (mv.caminho.empty()) {
+            mv.andando = false;
+            a.espera -= dt;
+            if (a.espera <= 0.0f) {
+                a.espera = espera(rng_);
+                caminharPara(e, pontos[qual(rng_)]);
+            }
+            continue;
+        }
+        seguirCaminho(p.v, mv, dt);
+    }
 }
 
 void World::criarObjeto(char c, int x, int y) {
@@ -384,6 +509,7 @@ void World::passo(float dt, const EntradaMundo& in) {
         eventos_.push_back({EventoJogo::Tipo::Desmaiou, jogador.pos});
     }
     atualizarMoradores(dt);
+    atualizarAldeoes(dt);
     reino.atualizarEra(dt);
     tempoJogado += dt;
 }
@@ -487,42 +613,47 @@ void World::atualizarMoradores(float dt) {
             mv.andando = false;
             continue;
         }
-        // Longe do herói: anda em passos maiores, 4 vezes por segundo (ninguém está vendo)
-        float passo = dt;
-        if (glm::distance(p.v, jogador.pos) > 380.0f) {
-            mv.acumuladoLod += dt;
-            if (mv.acumuladoLod < 0.25f) continue;
-            passo = mv.acumuladoLod;
-            mv.acumuladoLod = 0.0f;
-        }
-        float resta = mv.velocidade * passo;
-        bool andou = false;
-        while (resta > 0.0f && !mv.caminho.empty()) {
-            const glm::vec2 alvo = mv.caminho.front();
-            const glm::vec2 d = alvo - p.v;
-            const float dist = glm::length(d);
-            if (dist <= resta) {
-                p.v = alvo;
-                resta -= dist;
-                mv.caminho.erase(mv.caminho.begin());
-            } else {
-                p.v += d / dist * resta;
-                resta = 0.0f;
-            }
-            if (dist > 0.01f) {
-                if (std::abs(d.x) > std::abs(d.y)) mv.dir = d.x < 0 ? Direcao::Esquerda : Direcao::Direita;
-                else mv.dir = d.y < 0 ? Direcao::Cima : Direcao::Baixo;
-            }
-            andou = true;
-        }
-        mv.andando = andou;
-        if (andou) mv.tempoAnim += passo;
+        seguirCaminho(p.v, mv, dt);
         // Chegou em casa na hora de dormir: entra e some até de manhã
         if (mv.caminho.empty() && item->acao == "dormir") {
             a.dormindo = true;
             mv.dir = Direcao::Baixo;
         }
     }
+}
+
+bool World::seguirCaminho(glm::vec2& pos, Movimento& mv, float dt) {
+    // Longe do herói: anda em passos maiores, 4 vezes por segundo (ninguém está vendo)
+    float passo = dt;
+    if (glm::distance(pos, jogador.pos) > 380.0f) {
+        mv.acumuladoLod += dt;
+        if (mv.acumuladoLod < 0.25f) return false;
+        passo = mv.acumuladoLod;
+        mv.acumuladoLod = 0.0f;
+    }
+    float resta = mv.velocidade * passo;
+    bool andou = false;
+    while (resta > 0.0f && !mv.caminho.empty()) {
+        const glm::vec2 alvo = mv.caminho.front();
+        const glm::vec2 d = alvo - pos;
+        const float dist = glm::length(d);
+        if (dist <= resta) {
+            pos = alvo;
+            resta -= dist;
+            mv.caminho.erase(mv.caminho.begin());
+        } else {
+            pos += d / dist * resta;
+            resta = 0.0f;
+        }
+        if (dist > 0.01f) {
+            if (std::abs(d.x) > std::abs(d.y)) mv.dir = d.x < 0 ? Direcao::Esquerda : Direcao::Direita;
+            else mv.dir = d.y < 0 ? Direcao::Cima : Direcao::Baixo;
+        }
+        andou = true;
+    }
+    mv.andando = andou;
+    if (andou) mv.tempoAnim += passo;
+    return andou;
 }
 
 Conversa World::conversar(const std::string& id) {
@@ -568,7 +699,24 @@ void World::dormir(bool desmaio) {
     jogador.dir = Direcao::Baixo;
     jogador.acao = 0.0f;
     for (auto [e, r] : reg.view<Relacionamento>().each()) r.falouHoje = false;
+    // Obras que começaram ontem ficam prontas durante a noite
+    std::vector<std::string> prontas;
+    for (auto& b : reino.construcoes)
+        if (!b.constructed) {
+            b.constructed = true;
+            prontas.push_back(b.name);
+        }
+    // A noite do reino: impostos, produção, comida, felicidade e população
+    ultimoRelatorio = simularDia(reino, dados(), estado, inventario);
+    if (perda > 0) ultimoRelatorio.variacoes.push_back({"ouro (desmaio)", -perda});
+    for (auto it = prontas.rbegin(); it != prontas.rend(); ++it) ultimoRelatorio.notas.insert(ultimoRelatorio.notas.begin(), "Obra concluída: " + *it + "!");
+    bloqueio_.clear();
     posicionarMoradores();
+    sincronizarAldeoes();
+    for (auto [e, mv, a] : reg.view<Movimento, Aldeao>().each()) {
+        a.dormindo = false;
+        mv.caminho.clear();
+    }
     eventos_.push_back({EventoJogo::Tipo::NovoDia, jogador.pos, desmaio ? "desmaio" : "", "ouro", perda, relogio.textoData()});
 }
 
@@ -576,6 +724,10 @@ bool World::melhorarConstrucao(const std::string& id) {
     BuildingData* b = reino.construcao(id);
     const BuildingDef* d = b ? def(*b) : nullptr;
     if (!b || !d) return false;
+    if (!b->constructed) {
+        eventos_.push_back({EventoJogo::Tipo::Aviso, pontoPorta(*b), id, "", 0, "Ainda em obras: fica pronta amanhã."});
+        return false;
+    }
     if (!melhorar(*b, *d, inventario)) {
         eventos_.push_back({EventoJogo::Tipo::Aviso, pontoPorta(*b), id, "", 0, avaliarMelhoria(*b, *d, inventario).motivo});
         return false;
@@ -590,8 +742,12 @@ DadosSave World::capturar() const {
     d.posJogador = jogador.pos;
     d.direcao = static_cast<int>(jogador.dir);
     d.inventario = inventario.todos();
-    for (const auto& b : reino.construcoes) d.niveis[b.id] = b.level;
+    for (const auto& b : reino.construcoes) d.construcoes.push_back({b.id, b.defId, b.tile, true, b.level, b.constructed});
     d.eraVisual = reino.eraVisual;
+    d.temPovo = true;
+    d.populacao = estado.populacao;
+    d.felicidade = estado.felicidade;
+    d.imposto = static_cast<int>(estado.imposto);
     for (auto [e, id] : reg.view<const IdMundo>().each()) {
         if (const auto* c = reg.try_get<Coletavel>(e); c && (c->hp < c->hpMax || c->esgotado))
             d.objetos.push_back({id.id, c->hp, c->esgotado, false});
@@ -612,14 +768,28 @@ void World::aplicar(const DadosSave& d) {
     jogador.dir = static_cast<Direcao>(std::clamp(d.direcao, 0, 3));
     inventario = {};
     for (const auto& [id, q] : d.inventario) inventario.definir(id, q);
-    for (auto& b : reino.construcoes) {
-        const auto it = d.niveis.find(b.id);
-        const BuildingDef* df = def(b);
-        if (it == d.niveis.end() || !df) continue;
-        if (const auto* nv = df->nivel(it->second)) {
-            b.level = nv->nivel;
-            b.name = nv->nome;
+    for (const EstadoConstrucao& c : d.construcoes) {
+        BuildingData* b = reino.construcao(c.id);
+        if (!b) {
+            // Obra colocada pelo jogador: recria no lugar salvo (se a definição ainda existir)
+            const auto it = dados().construcoes.find(c.def);
+            if (!c.temPosicao || it == dados().construcoes.end()) continue;
+            reino.construcoes.push_back({c.id, c.def, "", 1, c.tile, true, c.construida});
+            b = &reino.construcoes.back();
+            criarEntidadeConstrucao(*b);
         }
+        const BuildingDef* df = def(*b);
+        if (!df) continue;
+        if (const auto* nv = df->nivel(std::clamp(c.nivel, 1, df->nivelMax()))) {
+            b->level = nv->nivel;
+            b->name = nv->nome;
+        }
+        b->constructed = c.construida;
+    }
+    if (d.temPovo) {
+        estado.populacao = d.populacao;
+        estado.felicidade = d.felicidade;
+        estado.imposto = static_cast<Imposto>(std::clamp(d.imposto, 0, 2));
     }
     reino.eraVisual = d.eraVisual;
     std::unordered_map<std::string, const EstadoObjeto*> porId;
@@ -653,6 +823,7 @@ void World::aplicar(const DadosSave& d) {
         r.memoria = {m.memoria.begin(), m.memoria.end()};
     }
     posicionarMoradores();
+    sincronizarAldeoes();
 }
 
 }

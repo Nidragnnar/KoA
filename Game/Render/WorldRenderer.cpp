@@ -17,6 +17,7 @@ WorldRenderer::WorldRenderer(ke::ResourceManager& rec) : rec_(rec) {
 const ke::SpriteRegion& WorldRenderer::spriteConstrucao(const World& w, const BuildingData& b) {
     const BuildingDef* d = w.def(b);
     if (!d) return rec_.regiao("?");
+    if (!b.constructed) return rec_.regiao(std::format("obra_{}x{}", d->tamanho.x, d->tamanho.y));  // canteiro com andaimes
     // Do mais específico (nível + era) ao genérico (só nível)
     for (const auto& nome : spritesAparencia(*d, b.level, w.reino.eraAtual()))
         if (rec_.temRegiao(nome)) return rec_.regiao(nome);
@@ -26,6 +27,7 @@ const ke::SpriteRegion& WorldRenderer::spriteConstrucao(const World& w, const Bu
 bool WorldRenderer::chamine(const World& w, const BuildingData& b, glm::vec2& saida) {
     const ke::AABB c = w.caixaConstrucao(b);
     const glm::vec2 topoSprite{(c.min.x + c.max.x) * 0.5f - 32.0f, c.max.y - 88.0f};
+    if (b.defId != "casa" || !b.constructed) return false;  // por enquanto só a casa do herdeiro solta fumaça
     if (b.level == 2) saida = topoSprite + glm::vec2(47, 8);
     else if (b.level == 3) saida = topoSprite + glm::vec2(13, 4);
     else return false;
@@ -94,6 +96,14 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
         const char* dir = mv.dir == Direcao::Baixo ? "baixo" : mv.dir == Direcao::Cima ? "cima" : "lado";
         const ke::SpriteRegion& s =
             rec_.regiao(std::format("npc_{}_{}_{}", m.id, dir, mv.andando ? static_cast<int>(mv.tempoAnim * 7.0f) % 4 : 0));
+        r.sprite(sombra, {std::floor(p.v.x) - 8, std::floor(p.v.y) - 3});
+        lista.push_back({p.v.y, &s, glm::floor(p.v - glm::vec2(8, 22)), mv.dir == Direcao::Esquerda});
+    }
+    for (auto [e, p, mv, a] : w.reg.view<const Posicao, const Movimento, const Aldeao>().each()) {
+        if (a.dormindo || !visivel(p.v)) continue;
+        const char* dir = mv.dir == Direcao::Baixo ? "baixo" : mv.dir == Direcao::Cima ? "cima" : "lado";
+        const ke::SpriteRegion& s =
+            rec_.regiao(std::format("aldeao_{}_{}_{}", a.variante, dir, mv.andando ? static_cast<int>(mv.tempoAnim * 7.0f) % 4 : 0));
         r.sprite(sombra, {std::floor(p.v.x) - 8, std::floor(p.v.y) - 3});
         lista.push_back({p.v.y, &s, glm::floor(p.v - glm::vec2(8, 22)), mv.dir == Direcao::Esquerda});
     }

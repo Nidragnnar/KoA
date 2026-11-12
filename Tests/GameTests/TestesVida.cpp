@@ -182,7 +182,10 @@ TEST(Sono, DesmaioAs2CustaOuro) {
     EXPECT_EQ(std::ranges::count_if(ev, [](const EventoJogo& e) { return e.tipo == EventoJogo::Tipo::Desmaiou; }), 1)
         << "o aviso de desmaio sai uma vez só";
     w.dormir(true);
-    EXPECT_EQ(w.inventario.quantidade("ouro"), 108);
+    const auto& v = w.ultimoRelatorio.variacoes;
+    const auto perda = std::ranges::find_if(v, [](const auto& p) { return p.first == "ouro (desmaio)"; });
+    ASSERT_NE(perda, v.end());
+    EXPECT_EQ(perda->second, -12) << "10% de 120";
     EXPECT_EQ(w.relogio.dia, 2);
 }
 
@@ -228,6 +231,9 @@ TEST(SaveV2, MigraSaveDaVersao1) {
     EXPECT_FLOAT_EQ(d->minutos, 360.0f);
     EXPECT_TRUE(d->moradores.empty());
     EXPECT_EQ(d->inventario.at("ouro"), 7);
-    EXPECT_EQ(d->niveis.at("casa_herdeiro"), 2);
+    ASSERT_EQ(d->construcoes.size(), 1u);
+    EXPECT_EQ(d->construcoes[0].id, "casa_herdeiro");
+    EXPECT_EQ(d->construcoes[0].nivel, 2);
+    EXPECT_FALSE(d->temPovo) << "save antigo fica com o povo inicial do mapa";
     std::filesystem::remove_all(pasta);
 }

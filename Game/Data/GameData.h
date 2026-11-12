@@ -19,7 +19,13 @@ struct RecursoDef {
 struct NivelConstrucao {
     int nivel = 1;
     std::string nome, descricao;
-    Custo custo;  // para chegar a este nível
+    Custo custo;  // para chegar a este nível (o nível 1 é o custo da obra)
+    std::map<std::string, float> efeitos;  // populacao_max, felicidade, seguranca, comida_dia, ouro_dia...
+
+    float efeito(const std::string& qual) const {
+        const auto it = efeitos.find(qual);
+        return it == efeitos.end() ? 0.0f : it->second;
+    }
 };
 
 // Definição fixa de um tipo de construção (vem de Data/Buildings)
@@ -27,6 +33,8 @@ struct BuildingDef {
     std::string id;
     std::string aparencia;            // prefixo dos sprites ("casa" → casa_n1, casa_n2_e3...)
     glm::ivec2 tamanho{4, 3};         // base em tiles (é o que colide)
+    bool construivel = false;         // aparece no menu de obras
+    int limite = 0;                   // quantas podem existir (0 = sem limite)
     std::vector<NivelConstrucao> niveis;
 
     const NivelConstrucao* nivel(int n) const;
@@ -37,6 +45,7 @@ struct BuildingDef {
 struct GameData {
     std::map<std::string, RecursoDef> recursos;
     std::map<std::string, BuildingDef> construcoes;
+    std::vector<std::string> ordemConstrucoes;  // como estão no arquivo (menu de obras)
     std::map<std::string, NpcDef> npcs;
 
     bool carregar(const std::filesystem::path& pastaData, std::string* erro = nullptr);

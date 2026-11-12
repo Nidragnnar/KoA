@@ -10,7 +10,15 @@
 
 namespace koa {
 
-constexpr int VERSAO_SAVE = 2;  // sobe quando o formato muda (com migração). v2: relógio e moradores
+constexpr int VERSAO_SAVE = 3;  // sobe quando o formato muda (com migração). v2: relógio e moradores; v3: obras e povo
+
+struct EstadoConstrucao {
+    std::string id, def;
+    glm::ivec2 tile{0};
+    bool temPosicao = false;  // saves antigos só guardavam o nível das construções fixas
+    int nivel = 1;
+    bool construida = true;
+};
 
 struct EstadoMorador {
     std::string id;
@@ -40,8 +48,12 @@ struct DadosSave {
     // inventory.json
     std::map<std::string, int> inventario;
     // kingdom.json
-    std::map<std::string, int> niveis;  // construção → nível
+    std::vector<EstadoConstrucao> construcoes;
     float eraVisual = 0.0f;
+    bool temPovo = false;  // saves antigos não tinham: fica o povo inicial do mapa
+    int populacao = 8;
+    float felicidade = 40.0f;
+    int imposto = 1;
     // world.json (relógio + só objetos alterados)
     int dia = 1;
     float minutos = 360.0f;

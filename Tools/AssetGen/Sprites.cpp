@@ -765,6 +765,340 @@ Img coracao(bool cheio) {
     return t;
 }
 
+// ---------- Construções da fase 5 (3 níveis: madeira podre → enxaimel → pedra) ----------
+
+// Parede frontal: retângulo [x, y, w, h]
+void parede(Img& t, int x, int y, int w, int h, int nivel, std::mt19937& r) {
+    if (nivel == 1) {
+        tabuasVerticais(t, x, y, w, h, hex("#3e3328"), r);
+        t.salpicar(r, w * h / 18, hex("#33452c"), x, y, x + w - 1, y + h - 1);  // musgo
+    } else if (nivel == 2) {
+        t.rect(x, y + h - 5, w, 5, hex("#5f5c57"));  // alicerce de pedra
+        for (int i = x; i < x + w; i += 5) t.rect(i, y + h - 5, 1, 5, hex("#45423e"));
+        t.rect(x, y, w, h - 5, hex("#b4a88e"));  // reboco
+        for (int i = x; i < x + w; i += 8) t.rect(i, y, 2, h - 5, hex("#3c2c20"));  // vigas
+        t.rect(x, y, w, 2, hex("#3c2c20"));
+        t.salpicar(r, w * h / 30, hex("#9a8e76"), x, y, x + w - 1, y + h - 6);
+    } else {
+        t.rect(x, y, w, h, hex("#6a665f"));
+        for (int j = y; j < y + h; j += 4) {
+            t.rect(x, j, w, 1, hex("#4c4944"));
+            for (int i = x + ((j / 4) % 2) * 3; i < x + w; i += 7) t.rect(i, j, 1, 4, hex("#4c4944"));
+        }
+        t.rect(x, y, w, 1, hex("#85817a"));
+    }
+}
+
+// Telhado em trapézio sobre a parede; nível 3 usa a cor dada
+void telhado(Img& t, int x, int y, int w, int h, int nivel, Cor corN3, std::mt19937& r) {
+    const Cor base = nivel == 1 ? hex("#4a3c30") : nivel == 2 ? hex("#7a4a32") : corN3;
+    for (int j = 0; j < h; ++j) {
+        const int rec = (h - j) * w / (h * 5);
+        for (int i = rec; i < w - rec; ++i) {
+            Cor c = ((i / 3 + j / 2) % 2) ? base : clarear(base, -0.12f);
+            if (j % 4 == 3) c = clarear(base, -0.22f);
+            if (j < 2) c = clarear(base, 0.12f);
+            t.px(x + i, y + j, c);
+        }
+    }
+    t.rect(x, y + h - 1, w, 1, clarear(base, -0.35f));
+    if (nivel == 1) {  // buracos e tábuas soltas
+        std::uniform_int_distribution<int> dx(x + 6, x + w - 8), dy(y + 3, y + h - 4);
+        for (int k = 0; k < 2 + w / 30; ++k) {
+            const int px = dx(r), py = dy(r);
+            t.elipse(px, py, 2, 1, hex("#16110f"));
+        }
+    }
+}
+
+void porta(Img& t, int cx, int yBase, int nivel) {
+    const int w = 8, h = nivel == 3 ? 13 : 11;
+    t.rect(cx - w / 2, yBase - h, w, h, nivel == 1 ? hex("#1a1412") : hex("#4a321e"));
+    if (nivel > 1) {
+        t.rect(cx - w / 2, yBase - h, w, 1, hex("#2e2014"));
+        t.px(cx + 2, yBase - h / 2, hex("#c9a54a"));
+    }
+    if (nivel == 3) t.elipse(cx, yBase - h, w / 2, 2, hex("#4a321e"));
+}
+
+void janela(Img& t, int x, int y, int nivel) {
+    if (nivel == 1) {
+        t.rect(x, y, 6, 5, hex("#141010"));
+        t.linha(x, y, x + 5, y + 4, hex("#5a4a3a"));
+        return;
+    }
+    t.rect(x, y, 6, 6, hex("#2a3440"));
+    t.rect(x + 2, y, 1, 6, hex("#3c2c20"));
+    t.rect(x, y + 2, 6, 1, hex("#3c2c20"));
+    if (nivel == 3) t.rect(x - 1, y + 6, 8, 1, hex("#85817a"));
+}
+
+// Casa genérica (moradia, taverna, forja, base do posto): parede + telhado + porta + janelas
+Img predio(int W, int H, int alturaParede, int nivel, Cor telhadoN3, uint32_t semente, int janelas = 2) {
+    std::mt19937 r(semente);
+    Img t(W, H);
+    t.elipse(W / 2, H - 2, W / 2 - 1, 2, hex("#000000", 90));
+    const int yParede = H - alturaParede - 2;
+    parede(t, 2, yParede, W - 4, alturaParede, nivel, r);
+    telhado(t, 0, 2, W, yParede - 1, nivel, telhadoN3, r);
+    porta(t, W / 2, H - 2, nivel);
+    for (int i = 0; i < janelas; ++i) {
+        const int x = i == 0 ? 7 : W - 13;
+        janela(t, x, yParede + 4, nivel);
+    }
+    return t;
+}
+
+Img moradia(int n) {
+    Img t = predio(48, 60, 20, n, hex("#8a3a2e"), 5000 + n);
+    if (n >= 2) t.rect(36, 6, 5, 12, hex("#5f5c57"));  // chaminé
+    t.contornar(CONTORNO);
+    return t;
+}
+
+Img taverna(int n) {
+    Img t = predio(80, 88, n == 3 ? 34 : 26, n, hex("#3a5a7a"), 5100 + n, 2);
+    // Placa com caneca pendurada
+    t.linha(60, 50, 70, 50, hex("#3a2a1a"));
+    t.rect(64, 51, 10, 9, hex("#6a4a2a"));
+    t.rect(66, 53, 5, 5, hex("#d8b048"));
+    t.rect(71, 54, 1, 3, hex("#d8b048"));
+    t.rect(66, 53, 5, 1, hex("#f0f0e0"));  // espuma
+    // Barris na frente
+    for (int i = 0; i < (n == 1 ? 1 : 2); ++i) {
+        t.elipse(8 + i * 8, 82, 3, 4, hex("#5a3a22"));
+        t.rect(5 + i * 8, 80, 7, 1, hex("#3c3c42"));
+    }
+    if (n >= 2) t.rect(10, 4, 6, 18, hex("#5f5c57"));
+    if (n == 3) {  // sacada
+        t.rect(14, 46, 52, 2, hex("#3c2c20"));
+        for (int x = 14; x < 66; x += 4) t.rect(x, 42, 1, 4, hex("#3c2c20"));
+    }
+    t.contornar(CONTORNO);
+    return t;
+}
+
+Img mercado(int n) {
+    std::mt19937 r(5200 + n);
+    Img t(80, 72);
+    t.elipse(40, 70, 38, 2, hex("#000000", 90));
+    const Cor listra1[] = {hex("#8a3a32"), hex("#2e5a8a"), hex("#6a2a7a")};
+    const Cor listra2[] = {hex("#c8b890"), hex("#d8d0b8"), hex("#e0b848")};
+    const int barracas = n == 1 ? 2 : 3;
+    for (int b = 0; b < barracas; ++b) {
+        const int x = 4 + b * (n == 1 ? 38 : 25), w = n == 1 ? 34 : 23;
+        // Balcão com mercadoria
+        t.rect(x, 46, w, 20, hex(n == 3 ? "#6a4a2a" : "#4a3828"));
+        t.rect(x, 46, w, 2, hex("#7a5a38"));
+        for (int i = 0; i < w - 4; i += 4) t.elipse(x + 3 + i, 44, 2, 2, b % 2 ? hex("#b04a2a") : hex("#c8a040"));
+        // Postes e toldo listrado
+        t.rect(x, 24, 2, 42, hex("#3a2a1a"));
+        t.rect(x + w - 2, 24, 2, 42, hex("#3a2a1a"));
+        for (int j = 0; j < 12; ++j)
+            for (int i = -2; i < w + 2; ++i) t.px(x + i, 18 + j, ((i + 2) / 4) % 2 ? listra1[n - 1] : listra2[n - 1]);
+        if (n == 1) t.salpicar(r, 20, hex("#3a2a20"), x - 2, 18, x + w + 1, 29);  // toldo remendado
+        for (int i = -2; i < w + 2; i += 4) t.px(x + i, 30, listra1[n - 1]);
+    }
+    // Caixotes
+    t.rect(70, 58, 8, 8, hex("#6a4e30"));
+    t.linha(70, 58, 77, 65, hex("#4a3420"));
+    t.contornar(CONTORNO);
+    return t;
+}
+
+Img capela(int n) {
+    std::mt19937 r(5300 + n);
+    Img t(64, 100);
+    t.elipse(32, 98, 30, 2, hex("#000000", 90));
+    parede(t, 6, 66, 52, 32, n, r);
+    telhado(t, 2, 50, 60, 17, n, hex("#4a5568"), r);
+    // Campanário
+    const int tw = n == 3 ? 16 : 12, tx = 32 - tw / 2;
+    parede(t, tx, 26, tw, 26, n, r);
+    for (int j = 0; j < 22; ++j) {
+        const int meia = j * tw / 44 + 1;
+        t.rect(32 - meia, 4 + j, meia * 2, 1, n == 1 ? hex("#4a3c30") : n == 2 ? hex("#7a4a32") : hex("#3a4a6a"));
+    }
+    t.rect(30, 34, 4, 5, hex("#16110f"));
+    t.elipse(32, 36, 2, 2, hex(n == 1 ? "#5a4a2a" : "#c9a54a"));  // sino
+    // Rosácea
+    if (n >= 2) {
+        t.elipse(32, 76, 5, 5, hex("#2a3440"));
+        if (n == 3) {
+            t.elipse(32, 76, 4, 4, hex("#8a3a6a"));
+            t.elipse(32, 76, 2, 2, hex("#3a6aaa"));
+            t.px(32, 76, hex("#e0c050"));
+        }
+    }
+    porta(t, 32, 98, n);
+    if (n == 3) {  // torres laterais da catedral
+        for (const int x : {6, 50}) {
+            parede(t, x, 46, 8, 22, n, r);
+            for (int j = 0; j < 12; ++j) t.rect(x + 4 - j / 3, 34 + j, (j / 3) * 2 + 1, 1, hex("#3a4a6a"));
+        }
+    }
+    t.contornar(CONTORNO);
+    return t;
+}
+
+Img forja(int n) {
+    Img t = predio(64, 84, 26, n, hex("#4a3a3a"), 5400 + n, 1);
+    // Chaminé larga com brasa
+    t.rect(44, 4, 10, 30, hex("#4c4944"));
+    t.rect(44, 4, 10, 2, hex("#6a665f"));
+    t.rect(46, 2, 6, 3, hex(n == 3 ? "#f08a30" : "#a04a20"));
+    // Abertura da forja com fogo
+    t.rect(10, 62, 14, 12, hex("#1a1412"));
+    t.elipse(17, 70, 5, 3, hex("#c04a1c"));
+    t.elipse(17, 70, 3, 2, hex("#f0a040"));
+    // Bigorna na frente
+    t.rect(40, 76, 12, 3, hex("#3c3c44"));
+    t.rect(43, 79, 6, 4, hex("#2c2c34"));
+    t.rect(38, 76, 3, 2, hex("#3c3c44"));
+    t.contornar(CONTORNO);
+    return t;
+}
+
+Img posto(int n) {
+    std::mt19937 r(5500 + n);
+    Img t(48, 84);
+    t.elipse(24, 82, 22, 2, hex("#000000", 90));
+    if (n == 1) {
+        // Paliçada e plataforma de vigia de madeira
+        for (int x = 2; x < 46; x += 4) {
+            t.rect(x, 56, 3, 26, hex("#4a3a2a"));
+            t.px(x + 1, 55, hex("#4a3a2a"));
+        }
+        t.rect(16, 18, 2, 40, hex("#3a2a1a"));
+        t.rect(30, 18, 2, 40, hex("#3a2a1a"));
+        t.rect(12, 16, 24, 4, hex("#5a4632"));
+        t.linha(16, 30, 31, 44, hex("#3a2a1a"));
+        t.linha(31, 30, 16, 44, hex("#3a2a1a"));
+        t.rect(14, 8, 20, 8, hex("#4a3c30"));
+    } else {
+        parede(t, 2, 40, 44, 42, n, r);
+        for (int x = 2; x < 46; x += 6) parede(t, x, 34, 4, 6, n, r);  // ameias
+        porta(t, 24, 82, n);
+        janela(t, 8, 50, n);
+        janela(t, 34, 50, n);
+        // Estandarte
+        t.rect(22, 14, 1, 22, hex("#3a2a1a"));
+        t.rect(23, 14, 10, 8, hex(n == 3 ? "#d04a3a" : "#8a2a2a"));
+        if (n == 3) t.px(27, 17, hex("#e0c050"));
+    }
+    t.contornar(CONTORNO);
+    return t;
+}
+
+Img torre(int n) {
+    std::mt19937 r(5600 + n);
+    Img t(32, 96);
+    t.elipse(16, 94, 14, 2, hex("#000000", 90));
+    if (n == 1) {
+        for (const int x : {5, 25}) t.rect(x, 20, 2, 74, hex("#3a2a1a"));
+        for (int y = 30; y < 92; y += 16) {
+            t.linha(5, y, 26, y + 14, hex("#4a3a2a"));
+            t.linha(26, y, 5, y + 14, hex("#4a3a2a"));
+        }
+        t.rect(2, 16, 28, 5, hex("#5a4632"));
+        t.rect(4, 6, 24, 10, hex("#4a3c30"));
+    } else {
+        parede(t, 5, 22, 22, 72, n, r);
+        for (int x = 3; x < 29; x += 6) parede(t, x, 16, 4, 6, n, r);
+        janela(t, 13, 40, n);
+        janela(t, 13, 62, n);
+        porta(t, 16, 94, n);
+        if (n == 3) {  // cristal arcano flutuando e runas
+            t.elipse(16, 6, 3, 5, hex("#6ad0ff"));
+            t.elipse(16, 5, 1, 3, hex("#e0f8ff"));
+            for (int y = 30; y < 90; y += 12) t.px(8, y, hex("#6ad0ff"));
+        }
+    }
+    t.contornar(CONTORNO);
+    return t;
+}
+
+Img campo(int n) {
+    std::mt19937 r(5700 + n);
+    Img t(64, 52);
+    t.rect(1, 6, 62, 44, hex("#3a2c22"));  // terra arada
+    const Cor broto = n == 1 ? hex("#4a6a34") : n == 2 ? hex("#6a8a3a") : hex("#c8a840");
+    for (int fila = 0; fila < 6; ++fila) {
+        const int y = 10 + fila * 7;
+        t.rect(2, y + 3, 60, 1, hex("#2a2018"));
+        for (int x = 4; x < 60; x += (n == 1 ? 6 : 3)) {
+            if (n == 1 && r() % 3 == 0) continue;
+            t.rect(x, y - (n == 3 ? 3 : 1), 1, n == 3 ? 4 : 2, broto);
+            if (n == 3) t.px(x, y - 4, hex("#e0c860"));
+        }
+    }
+    // Cerca
+    const Cor cerca = hex(n == 1 ? "#4a3a2a" : "#6a5038");
+    for (int x = 0; x < 64; x += 8) t.rect(x, 2, 2, 8, cerca);
+    if (n >= 2) t.rect(0, 4, 64, 1, cerca);
+    if (n == 1) t.linha(20, 4, 34, 7, cerca);
+    if (n == 3) {  // espantalho
+        t.rect(52, 20, 1, 22, hex("#4a3a2a"));
+        t.rect(47, 26, 11, 1, hex("#4a3a2a"));
+        t.elipse(52, 19, 3, 3, hex("#c8a860"));
+        t.rect(49, 15, 7, 2, hex("#5a4a30"));
+    }
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Canteiro de obras: fundação, andaimes e tábuas empilhadas
+Img obra(int wTiles, int hTiles) {
+    const int W = wTiles * 16, H = hTiles * 16 + 24;
+    std::mt19937 r(5800 + wTiles * 10 + hTiles);
+    Img t(W, H);
+    t.rect(1, H - hTiles * 16 + 4, W - 2, hTiles * 16 - 6, hex("#4a3e32"));
+    t.salpicar(r, W * hTiles, hex("#3a3026"), 1, H - hTiles * 16 + 4, W - 2, H - 3);
+    // Fundação de pedra
+    for (int x = 2; x < W - 2; x += 6) t.rect(x, H - 8, 5, 4, hex("#6a665f"));
+    // Andaimes
+    for (int x = 3; x < W - 2; x += std::max(10, W / 4)) t.rect(x, 6, 2, H - 10, hex("#6a5038"));
+    for (int y = 10; y < H - 8; y += 12) t.rect(2, y, W - 4, 2, hex("#7a5e40"));
+    t.linha(3, H - 10, W - 4, 10, hex("#5a4430"));
+    // Tábuas empilhadas e balde
+    for (int i = 0; i < 3; ++i) t.rect(W - 18, H - 6 - i * 2, 14, 2, hex(i % 2 ? "#8a6a48" : "#7a5a3a"));
+    t.contornar(CONTORNO);
+    return t;
+}
+
+Img iconeComida() {
+    Img t(10, 10);
+    t.elipse(5, 5, 4, 3, hex("#a8743a"));
+    t.elipse(5, 4, 3, 2, hex("#c8944a"));
+    t.px(3, 3, hex("#e8c070"));
+    t.linha(3, 6, 7, 6, hex("#7a5028"));
+    t.contornar(CONTORNO);
+    return t;
+}
+
+void construcoesFase5(Lista& l) {
+    Img (*tipos[])(int) = {moradia, taverna, mercado, capela, forja, posto, torre, campo};
+    const char* nomes[] = {"moradia", "taverna", "mercado", "capela", "forja", "posto", "torre", "campo"};
+    for (int i = 0; i < 8; ++i)
+        for (int n = 1; n <= 3; ++n) l.emplace_back(std::format("{}_n{}", nomes[i], n), tipos[i](n));
+    for (const auto& [w, h] : {std::pair{3, 2}, {4, 3}, {5, 3}, {3, 3}, {2, 2}}) l.emplace_back(std::format("obra_{}x{}", w, h), obra(w, h));
+    l.emplace_back("icone_comida", iconeComida());
+    // Aldeões: 4 variações de roupa
+    const char* cores[4][4] = {{"#d0a080", "#4a3020", "#5a6a4a", "#3a2a1a"},
+                               {"#e0b898", "#8a5a2a", "#6a4a5a", "#c8b890"},
+                               {"#b08060", "#2a2020", "#4a5a6a", "#5a4030"},
+                               {"#c89878", "#7a7a7a", "#6a5a3a", "#3a3a4a"}};
+    const char* dirs[] = {"baixo", "cima", "lado"};
+    for (int v = 0; v < 4; ++v) {
+        AparenciaNpc a{hex(cores[v][0]), hex(cores[v][1]), hex(cores[v][2]), hex(cores[v][3])};
+        a.saia = v % 2 == 1;
+        a.chapeu = v == 2;
+        a.capuz = v == 3;
+        for (int d = 0; d < 3; ++d)
+            for (int q = 0; q < 4; ++q) l.emplace_back(std::format("aldeao_{}_{}_{}", v, dirs[d], q), morador(a, d, q));
+    }
+}
+
 // ---------- Interface e efeitos ----------
 
 Img icone(int tipo) {
@@ -839,6 +1173,7 @@ std::vector<std::pair<std::string, Img>> gerarTodos() {
     l.emplace_back("coracao_cheio", coracao(true));
     l.emplace_back("coracao_vazio", coracao(false));
     moradores(l);
+    construcoesFase5(l);
     return l;
 }
 

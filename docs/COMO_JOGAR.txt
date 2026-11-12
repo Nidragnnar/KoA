@@ -21,6 +21,8 @@ CONTROLES
   E ou Espaço ........ interagir (cortar, quebrar, abrir, construir, conversar)
                        segure para continuar golpeando
   W/S + E ............ escolher opções nos menus e no painel da casa
+  B .................. obras: escolher e posicionar uma construção
+  K .................. painel do reino (população, felicidade, impostos)
   Esc ................ menu (continuar, salvar, título, sair)
   F5 ................. salvar
   F11 ................ tela cheia
@@ -45,6 +47,25 @@ O VILAREJO
   O dia vai das 6:00 às 2:00 da madrugada. Para dormir, aperte E na porta
   da sua casa e escolha "Dormir até amanhã". Se ficar acordado até as 2:00,
   você desmaia e acorda em casa no dia seguinte, com um pouco menos de ouro.
+
+RECONSTRUIR O REINO
+-------------------
+  Aperte B, escolha uma obra e ande até o lugar: a prévia fica VERDE onde
+  dá para construir e VERMELHA (com o motivo) onde não dá. E confirma.
+  A obra fica pronta na manhã seguinte.
+
+    Choupana ......... mais moradias = mais gente pode morar aqui
+    Horta ............ comida (cada morador come 1 por dia)
+    Taverna, Capela .. deixam o povo feliz
+    Mercado, Forja ... ouro todo dia
+    Posto, Torre ..... segurança
+
+  Toda noite o reino cobra impostos, produz e come. Se o povo estiver feliz
+  (50 ou mais) e houver casa sobrando, chegam famílias novas. Com fome ou
+  infeliz (menos de 25), famílias vão embora. Impostos altos dão mais ouro
+  e menos felicidade; baixos, o contrário (mude no painel K).
+  Cada manhã aparece o relatório do que aconteceu durante a noite.
+  Construindo e melhorando, o reino avança de era.
 
 O jogo salva sozinho depois de cada obra, a cada manhã e ao sair pelo menu.
 Os saves ficam em:  %APPDATA%\Nidragnnar\KingdomOfAshes\Saves

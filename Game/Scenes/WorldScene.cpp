@@ -82,7 +82,85 @@ void WorldScene::entradaJogo() {
         return;
     }
     if (in.pressionou(SDL_SCANCODE_F5)) salvar();
+    if (in.pressionou(SDL_SCANCODE_B)) {
+        menuObras_ = true;
+        return;
+    }
+    if (in.pressionou(SDL_SCANCODE_K)) {
+        painelReino_ = true;
+        return;
+    }
     mundo_.passo(static_cast<float>(1.0 / 60.0), e);
+}
+
+std::vector<std::string> WorldScene::opcoesObras() const {
+    std::vector<std::string> v;
+    for (const auto& id : ctx_.dados.ordemConstrucoes)
+        if (ctx_.dados.construcoes.at(id).construivel) v.push_back(id);
+    return v;
+}
+
+void WorldScene::entradaMenuObras() {
+    ke::Input& in = ctx_.app.input();
+    const auto opcoes = opcoesObras();
+    const int n = static_cast<int>(opcoes.size());
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_B)) menuObras_ = false;
+    if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selObra_ = (selObra_ + n - 1) % n;
+    if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selObra_ = (selObra_ + 1) % n;
+    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE)) {
+        const BuildingDef& d = ctx_.dados.construcoes.at(opcoes[selObra_]);
+        if (d.limite > 0 && mundo_.contarConstrucoes(d.id) >= d.limite) {
+            hud_.aviso("O reino já tem o máximo desta construção.", cor::ruim);
+        } else if (!mundo_.inventario.tem(d.nivel(1)->custo)) {
+            hud_.aviso("Faltam recursos para " + d.nivel(1)->nome + ".", cor::ruim);
+        } else {
+            menuObras_ = false;
+            colocando_ = d.id;
+        }
+    }
+}
+
+glm::ivec2 WorldScene::tileFantasma() const {
+    if (colocando_.empty()) return {0, 0};
+    const glm::ivec2 t = ctx_.dados.construcoes.at(colocando_).tamanho;
+    const glm::ivec2 p{static_cast<int>(mundo_.jogador.pos.x) / 16, static_cast<int>(mundo_.jogador.pos.y - 1) / 16};
+    // A obra fica na frente do herói, com a porta (fileira de baixo + 1) livre
+    switch (mundo_.jogador.dir) {
+    case Direcao::Cima: return {p.x - t.x / 2, p.y - t.y - 1};
+    case Direcao::Baixo: return {p.x - t.x / 2, p.y + 1};
+    case Direcao::Esquerda: return {p.x - t.x - 1, p.y - t.y / 2};
+    case Direcao::Direita: return {p.x + 2, p.y - t.y / 2};
+    }
+    return p;
+}
+
+void WorldScene::entradaColocacao() {
+    ke::Input& in = ctx_.app.input();
+    EntradaMundo e;
+    if (in.segurando(SDL_SCANCODE_A) || in.segurando(SDL_SCANCODE_LEFT)) e.mover.x -= 1;
+    if (in.segurando(SDL_SCANCODE_D) || in.segurando(SDL_SCANCODE_RIGHT)) e.mover.x += 1;
+    if (in.segurando(SDL_SCANCODE_W) || in.segurando(SDL_SCANCODE_UP)) e.mover.y -= 1;
+    if (in.segurando(SDL_SCANCODE_S) || in.segurando(SDL_SCANCODE_DOWN)) e.mover.y += 1;
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_B)) {
+        colocando_.clear();
+        return;
+    }
+    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE)) {
+        if (!mundo_.construir(colocando_, tileFantasma()).empty()) colocando_.clear();
+    }
+    mundo_.passo(static_cast<float>(1.0 / 60.0), e);  // sem interagir: o E serve para confirmar
+}
+
+void WorldScene::entradaPainelReino() {
+    ke::Input& in = ctx_.app.input();
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_K) || in.pressionou(SDL_SCANCODE_E)) painelReino_ = false;
+    int imp = static_cast<int>(mundo_.estado.imposto);
+    if (in.pressionou(SDL_SCANCODE_A) || in.pressionou(SDL_SCANCODE_LEFT)) imp = std::max(0, imp - 1);
+    if (in.pressionou(SDL_SCANCODE_D) || in.pressionou(SDL_SCANCODE_RIGHT)) imp = std::min(2, imp + 1);
+    if (imp != static_cast<int>(mundo_.estado.imposto)) {
+        mundo_.estado.imposto = static_cast<Imposto>(imp);
+        hud_.aviso(std::string("Impostos agora: ") + nomeImposto(mundo_.estado.imposto), cor::ouro);
+    }
 }
 
 void WorldScene::entradaPainel() {
@@ -217,9 +295,21 @@ void WorldScene::tratarEventos() {
                 hud_.aviso(e.quantidade > 0 ? std::format("Acordou em casa, dolorido. Faltam {} de ouro.", e.quantidade)
                                             : "Acordou em casa, dolorido e confuso.",
                            cor::ruim);
-            ke::log::info("novo dia: {}{}", e.texto, e.alvo == "desmaio" ? " (desmaio)" : "");
-            salvar();  // salvamento automático a cada manhã
+            ke::log::info("novo dia: {}{} | povo {} | felicidade {:.0f}", e.texto, e.alvo == "desmaio" ? " (desmaio)" : "",
+                          mundo_.estado.populacao, mundo_.estado.felicidade);
+            relatorio_ = true;  // relatório da manhã
+            salvar();           // salvamento automático a cada manhã
             break;
+        case EventoJogo::Tipo::ObraIniciada: {
+            if (const BuildingData* b = mundo_.reino.construcao(e.alvo)) {
+                const ke::AABB c = mundo_.caixaConstrucao(*b);
+                poeira((c.min + c.max) * 0.5f, (c.max - c.min) * 0.5f, 60, {0.5f, 0.42f, 0.32f, 1});
+            }
+            cam_.tremor = 2.0f;
+            hud_.aviso("Obra iniciada: " + e.texto + ". Fica pronta amanhã.", cor::ouro);
+            ke::log::info("obra iniciada: {} ({})", e.alvo, e.texto);
+            break;
+        }
         }
     }
 }
@@ -277,7 +367,8 @@ void WorldScene::atualizar(double dtD) {
     if (ctx_.roteiro) ctx_.roteiro->noMundo(*this);
 
     // O relógio para em menus, painéis, conversas e no sono
-    mundo_.relogio.parado = pausa_ || !painel_.empty() || conversa_.has_value() || transicao_ >= 0.0f;
+    mundo_.relogio.parado = pausa_ || !painel_.empty() || conversa_.has_value() || transicao_ >= 0.0f || menuObras_ || painelReino_ ||
+                            relatorio_;
 
     if (transicao_ >= 0.0f) {
         const float antes = transicao_;
@@ -286,8 +377,17 @@ void WorldScene::atualizar(double dtD) {
         if (transicao_ >= 2.0f) transicao_ = -1.0f;
         mundo_.passo(dt, {});
     } else if (pausa_) entradaPausa();
-    else if (conversa_) entradaDialogo(dt);
+    else if (relatorio_) {
+        ke::Input& in = ctx_.app.input();
+        if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_ESCAPE) ||
+            in.pressionou(SDL_SCANCODE_SPACE))
+            relatorio_ = false;
+        mundo_.passo(dt, {});
+    } else if (conversa_) entradaDialogo(dt);
     else if (!painel_.empty()) entradaPainel();
+    else if (menuObras_) entradaMenuObras();
+    else if (painelReino_) entradaPainelReino();
+    else if (!colocando_.empty()) entradaColocacao();
     else entradaJogo();
 
     tratarEventos();
@@ -327,7 +427,24 @@ void WorldScene::renderizar(float) {
         r.quad(luz_.textura(), cam_.canto(), cam_.vista, {0, 1, 1, 0});
         r.definirMistura(ke::Mistura::Normal);
     }
-    if (painel_.empty() && !pausa_ && !conversa_ && transicao_ < 0.0f) rend_.desenharAlvo(r, f, mundo_, tempo_);
+    if (painel_.empty() && !pausa_ && !conversa_ && transicao_ < 0.0f && colocando_.empty() && !menuObras_ && !painelReino_ &&
+        !relatorio_)
+        rend_.desenharAlvo(r, f, mundo_, tempo_);
+    std::string motivoObra;
+    bool obraValida = false;
+    if (!colocando_.empty()) {
+        // Prévia da obra: verde onde dá para construir, vermelho onde não dá
+        const BuildingDef& d = ctx_.dados.construcoes.at(colocando_);
+        const glm::ivec2 t = tileFantasma();
+        obraValida = mundo_.podeConstruir(colocando_, t, &motivoObra);
+        const glm::vec4 c = obraValida ? glm::vec4(0.3f, 0.9f, 0.4f, 1) : glm::vec4(0.95f, 0.3f, 0.25f, 1);
+        const float pulso = 0.25f + 0.08f * std::sin(tempo_ * 6.0f);
+        r.retangulo(glm::vec2(t * 16), glm::vec2(d.tamanho * 16), {c.r, c.g, c.b, pulso});
+        r.retangulo({t.x * 16.0f, (t.y + d.tamanho.y) * 16.0f}, {d.tamanho.x * 16.0f, 16.0f}, {c.r, c.g, c.b, pulso * 0.4f});
+        r.contorno(glm::vec2(t * 16), glm::vec2(d.tamanho * 16), c);
+        const ke::SpriteRegion& s = ctx_.app.recursos().regiao(std::format("{}_n1", d.aparencia));
+        r.sprite(s, {t.x * 16.0f + d.tamanho.x * 8.0f - s.tamanho.x / 2.0f, (t.y + d.tamanho.y) * 16.0f - s.tamanho.y}, {1, 1, 1, 0.55f});
+    }
     for (const auto& t : flutuantes_) {
         glm::vec4 c = t.cor;
         c.a = std::min(1.0f, t.vida * 1.5f);
@@ -341,6 +458,10 @@ void WorldScene::renderizar(float) {
     hud_.desenhar(r, mundo_, tempo_);
     if (!painel_.empty()) hud_.painelConstrucao(r, mundo_, painel_, opcoesPainel(), selPainel_, tempo_);
     if (conversa_) hud_.caixaDialogo(r, *conversa_, linhaFala_, static_cast<int>(letras_), tempo_);
+    if (menuObras_) hud_.menuObras(r, mundo_, opcoesObras(), selObra_);
+    if (!colocando_.empty()) hud_.dicaColocacao(r, ctx_.dados.construcoes.at(colocando_).nivel(1)->nome, obraValida, motivoObra);
+    if (painelReino_) hud_.painelReino(r, mundo_);
+    if (relatorio_ && transicao_ < 0.0f) hud_.relatorioManha(r, mundo_);
     if (pausa_) hud_.menuPausa(r, OPCOES_PAUSA, selPausa_);
     if (transicao_ >= 0.0f) {
         const float a = transicao_ < 1.0f ? transicao_ : 2.0f - transicao_;

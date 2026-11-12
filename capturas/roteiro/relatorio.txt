@@ -24,6 +24,7 @@ captura: 08d_painel_dormir
 [OK] a tela escurece ao dormir
 [OK] acordou no dia 2 às 06:00
 [OK] novo dia libera nova conversa
+[OK] de manhã aparece o relatório
 captura: 08e_novo_dia
 [OK] Esc abre o menu de pausa
 captura: 08b_menu_pausa
@@ -43,6 +44,27 @@ captura: 12_noite_fogueira
 captura: 12b_noite_casa
 [OK] desmaio às 2:00 leva ao dia 3 (dia 3)
 captura: 13_depois_do_desmaio
+[OK] B abre o menu de obras
+captura: 15_menu_obras
+[OK] E no menu começa a posicionar o campo
+[OK] a prévia fica verde num terreno livre
+captura: 16_colocando_campo
+[OK] o campo vira obra no lugar escolhido
+[OK] a obra cobrou o custo
+captura: 17_obra_campo
+[OK] taverna e moradia começaram
+[OK] K abre o painel do reino
+[OK] A/D muda os impostos
+captura: 18_painel_reino
+[OK] K fecha o painel
+[OK] de manhã aparece o relatório
+[OK] as obras ficaram prontas durante a noite
+[OK] comida: 118 (esperado 118 = 120 + 6 do campo - 8 comidos)
+captura: 19_relatorio_manha
+[OK] E fecha o relatório
+[OK] a população cresceu: 8 -> 13
+[OK] 8 aldeões andando pelo vilarejo
+captura: 20_vilarejo_crescendo
 captura: 14_era_1
 captura: 14_era_2
 captura: 14_era_3

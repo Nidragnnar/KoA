@@ -5,6 +5,7 @@ add_library(KingdomGame STATIC
     Kingdom/Kingdom.cpp
     Kingdom/Clock.cpp
     NPC/Npc.cpp
+    Economy/Economia.cpp
     Buildings/Building.cpp
     Player/Player.cpp
     World/World.cpp

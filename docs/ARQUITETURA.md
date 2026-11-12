@@ -38,6 +38,15 @@ Este arquivo registra **como** ele foi seguido e **onde** houve desvio, e por qu
 
 Ainda não feito nesta fase: necessidades dos moradores, presentes (os gostos e desgostos já estão nos dados, mas faltam itens para dar) e chegada de moradores novos.
 
+## Fase 5 — construção e reino
+
+- **Construções** em `Data/Buildings/construcoes.json`: 8 tipos construíveis (moradia, campo, taverna, mercado, capela, forja, posto de guarda, torre), com 3 níveis, custos, `efeitos` por nível (`populacao_max`, `felicidade`, `seguranca`, `comida_dia`, `ouro_dia`...) e `limite`.
+- **Colocação**: `World::podeConstruir` confere borda, água e muro, obstáculos, o herói e os locais das rotinas. A obra nasce com `constructed = false` (o campo do documento) e fica pronta na troca de dia. A prévia segue o herói (fica na frente dele).
+- **Economia** (`Game/Economy`): `calcularResumo` soma os efeitos das construções prontas. `simularDia` roda em cada noite: impostos (1, 2 ou 3 ouro por morador), produção, consumo de comida (1 por morador), felicidade caminhando 40% rumo ao alvo, população que cresce (felicidade ≥ 50 e casa sobrando) ou vai embora (fome ou felicidade < 25).
+- **Aldeões**: entidades com o componente `Aldeao`, tantas quanto `população − moradores com nome` (até 16). Passeiam entre locais e portas e somem à noite.
+- **Eras**: desenvolvimento = soma dos níveis das construções prontas − 1. Limiares 8, 20 e 35.
+- **Save v3**: `kingdom.json` guarda a lista de construções (com o tile das que o jogador colocou) e o estado do povo. Os saves v1 e v2 são migrados.
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

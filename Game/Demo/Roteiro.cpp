@@ -16,6 +16,15 @@ namespace koa {
 
 namespace {
 
+// Primeiro lugar livre para a obra, em espiral a partir de um ponto
+glm::ivec2 lugarLivre(const World& w, const std::string& def, glm::ivec2 perto) {
+    for (int raio = 0; raio < 30; ++raio)
+        for (int dy = -raio; dy <= raio; ++dy)
+            for (int dx = -raio; dx <= raio; ++dx)
+                if (std::max(std::abs(dx), std::abs(dy)) == raio && w.podeConstruir(def, perto + glm::ivec2(dx, dy))) return perto + glm::ivec2(dx, dy);
+    return {-1, -1};
+}
+
 int contarEsgotados(World& w) {
     int n = 0;
     for (auto [e, c] : w.reg.view<Coletavel>().each()) n += c.esgotado;
@@ -185,8 +194,117 @@ void Roteiro::noMundo(WorldScene& cena) {
                 proxima();
             }
             return;
-        case 4: case 5: case 6: {  // prévia das eras (só a cor da tela muda por enquanto)
-            const int era = etapa_ - 3;
+        case 4: {  // fase 5: menu de obras → posicionar um campo com as teclas de verdade
+            if (quadro_ == 1) {
+                // Recursos de teste (equivale a horas de coleta)
+                for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 400);
+                w.inventario.definir("comida", 120);
+                w.relogio.minutos = 9 * 60;
+            }
+            if (quadro_ == 2 && cena.relatorioAberto()) in.simularToque(SDL_SCANCODE_E);  // relatório do desmaio
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_B);
+            if (quadro_ == 20) {
+                verificar(cena.menuObrasAberto(), "B abre o menu de obras");
+                capturar("15_menu_obras");
+            }
+            if (quadro_ == 22) in.simularToque(SDL_SCANCODE_S);  // 2ª opção: campo
+            if (quadro_ == 26) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 30) {
+                verificar(cena.colocando() == "campo", "E no menu começa a posicionar o campo");
+                const glm::ivec2 t = lugarLivre(w, "campo", {30, 27});
+                alvoObra_ = t;
+                const glm::ivec2 tam = ctx_.dados.construcoes.at("campo").tamanho;
+                w.jogador.pos = {(t.x + tam.x / 2) * 16 + 8.0f, (t.y + tam.y + 1) * 16 + 12.0f};
+                w.jogador.dir = Direcao::Cima;
+            }
+            if (quadro_ == 45) {
+                verificar(cena.tileFantasma() == alvoObra_ && w.podeConstruir("campo", alvoObra_), "a prévia fica verde num terreno livre");
+                capturar("16_colocando_campo");
+            }
+            if (quadro_ == 50) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 70) {
+                const BuildingData* b = w.reino.construcao("campo_1");
+                verificar(b && !b->constructed && b->tile == alvoObra_, "o campo vira obra no lugar escolhido");
+                verificar(w.inventario.quantidade("madeira") == 400 - 8, "a obra cobrou o custo");
+                capturar("17_obra_campo");
+                proxima();
+            }
+            return;
+        }
+        case 5:  // mais obras: taverna (felicidade) e moradia (população)
+            if (quadro_ == 1) {
+                const std::string t = w.construir("taverna", lugarLivre(w, "taverna", {30, 27}));
+                const std::string m = w.construir("moradia", lugarLivre(w, "moradia", {44, 27}));
+                verificar(!t.empty() && !m.empty(), "taverna e moradia começaram");
+            }
+            if (quadro_ == 10) proxima();
+            return;
+        case 6:  // painel do reino e impostos
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_K);
+            if (quadro_ == 15) in.simularToque(SDL_SCANCODE_A);  // impostos: médio → baixo
+            if (quadro_ == 30) {
+                verificar(cena.painelReinoAberto(), "K abre o painel do reino");
+                verificar(w.estado.imposto == Imposto::Baixo, "A/D muda os impostos");
+                capturar("18_painel_reino");
+            }
+            if (quadro_ == 35) in.simularToque(SDL_SCANCODE_K);
+            if (quadro_ == 45) {
+                verificar(!cena.painelReinoAberto(), "K fecha o painel");
+                proxima();
+            }
+            return;
+        case 7: {  // dormir: obras prontas e relatório da manhã
+            if (quadro_ == 1) {
+                const BuildingData* casa = w.reino.construcao("casa_herdeiro");
+                w.jogador.pos = w.pontoPorta(*casa) + glm::vec2(0, 9);
+                w.jogador.dir = Direcao::Cima;
+                comidaAntes_ = w.inventario.quantidade("comida");
+                popAntes_ = w.estado.populacao;
+            }
+            if (quadro_ == 10) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 20) in.simularToque(SDL_SCANCODE_S);
+            if (quadro_ == 26) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 200) {
+                verificar(cena.relatorioAberto(), "de manhã aparece o relatório");
+                bool prontas = true;
+                for (const auto& b : w.reino.construcoes) prontas = prontas && b.constructed;
+                verificar(prontas, "as obras ficaram prontas durante a noite");
+                const int esperado = comidaAntes_ + 6 - popAntes_;
+                verificar(w.inventario.quantidade("comida") == esperado,
+                          std::format("comida: {} (esperado {} = {} + 6 do campo - {} comidos)", w.inventario.quantidade("comida"), esperado,
+                                      comidaAntes_, popAntes_));
+                capturar("19_relatorio_manha");
+            }
+            if (quadro_ == 205) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 215) {
+                verificar(!cena.relatorioAberto(), "E fecha o relatório");
+                proxima();
+            }
+            return;
+        }
+        case 8: {  // uma semana depois: o vilarejo cresce
+            if (quadro_ == 1) {
+                popAntes_ = w.estado.populacao;
+                for (int i = 0; i < 6; ++i) w.dormir(false);
+                w.relogio.minutos = 10 * 60;
+                w.posicionarMoradores();
+                w.jogador.pos = {30 * 16 + 8, 24 * 16 + 12};
+                w.jogador.dir = Direcao::Baixo;
+            }
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_E);  // fecha o relatório
+            if (quadro_ == 150) {
+                int aldeoes = 0;
+                for (auto [e, a] : w.reg.view<Aldeao>().each()) ++aldeoes;
+                verificar(w.estado.populacao > popAntes_, std::format("a população cresceu: {} -> {}", popAntes_, w.estado.populacao));
+                verificar(aldeoes == w.estado.populacao - static_cast<int>(ctx_.dados.npcs.size()),
+                          std::format("{} aldeões andando pelo vilarejo", aldeoes));
+                capturar("20_vilarejo_crescendo");
+                proxima();
+            }
+            return;
+        }
+        case 9: case 10: case 11: {  // prévia das eras (só a cor da tela muda por enquanto)
+            const int era = etapa_ - 8;
             if (quadro_ == 1) {
                 w.reino.eraForcada = era;
                 w.reino.eraVisual = static_cast<float>(era);
@@ -197,7 +315,7 @@ void Roteiro::noMundo(WorldScene& cena) {
             }
             return;
         }
-        case 7:
+        case 12:
             w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();
@@ -335,7 +453,11 @@ void Roteiro::noMundo(WorldScene& cena) {
         if (quadro_ == 200) {
             verificar(w.relogio.dia == 2 && w.relogio.minutos < 6 * 60 + 30, std::format("acordou no dia {} às {}", w.relogio.dia, w.relogio.textoHora()));
             verificar(!w.reg.get<Relacionamento>(w.morador("bram")).falouHoje, "novo dia libera nova conversa");
+            verificar(cena.relatorioAberto(), "de manhã aparece o relatório");
             capturar("08e_novo_dia");
+        }
+        if (quadro_ == 205) in.simularToque(SDL_SCANCODE_E);  // fecha o relatório
+        if (quadro_ == 215) {
             inventarioSalvo_ = w.inventario.todos();
             esgotadosSalvos_ = contarEsgotados(w);
             proxima();

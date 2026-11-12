@@ -32,8 +32,18 @@ public:
     const std::optional<Conversa>& conversa() const { return conversa_; }
     bool emTransicao() const { return transicao_ >= 0.0f; }
     bool salvar();
+    // Fase 5 (o roteiro de teste consulta)
+    bool menuObrasAberto() const { return menuObras_; }
+    const std::string& colocando() const { return colocando_; }
+    glm::ivec2 tileFantasma() const;
+    bool painelReinoAberto() const { return painelReino_; }
+    bool relatorioAberto() const { return relatorio_; }
 
 private:
+    std::vector<std::string> opcoesObras() const;
+    void entradaMenuObras();
+    void entradaColocacao();
+    void entradaPainelReino();
     std::vector<std::string> opcoesPainel() const;
     void entradaJogo();
     void entradaPainel();
@@ -62,6 +72,11 @@ private:
     std::optional<Conversa> conversa_;
     int linhaFala_ = 0;
     float letras_ = 0.0f;
+    bool menuObras_ = false;
+    int selObra_ = 0;
+    std::string colocando_;  // definição sendo posicionada ("" = nenhuma)
+    bool painelReino_ = false;
+    bool relatorio_ = false;
     float transicao_ = -1.0f;  // -1 = nenhuma; 0..2 = escurece, troca o dia (em 1), clareia
     bool desmaio_ = false;
     bool mostrarColisoes_ = false;

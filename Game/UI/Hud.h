@@ -26,6 +26,17 @@ public:
     // `letras`: quantos caracteres da fala atual já apareceram
     void caixaDialogo(ke::Renderer2D& r, const Conversa& c, int linha, int letras, float tempo);
     static int tamanhoUtf8(const std::string& s);
+    // Fase 5
+    void menuObras(ke::Renderer2D& r, const World& w, const std::vector<std::string>& defs, int sel);
+    void dicaColocacao(ke::Renderer2D& r, const std::string& nome, bool valido, const std::string& motivo);
+    void painelReino(ke::Renderer2D& r, const World& w);
+    void relatorioManha(ke::Renderer2D& r, const World& w);
+
+private:
+    void custoEmLinha(ke::Renderer2D& r, const Custo& c, const Inventory& inv, glm::vec2 pos);
+    void barra(ke::Renderer2D& r, glm::vec2 pos, float largura, float fracao, glm::vec4 cor);
+
+public:
 
 private:
     struct Aviso {

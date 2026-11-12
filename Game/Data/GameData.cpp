@@ -27,6 +27,8 @@ bool GameData::lerJson(const nlohmann::json& jr, const nlohmann::json& jc, std::
             BuildingDef d;
             d.id = c.at("id").get<std::string>();
             d.aparencia = c.value("aparencia", d.id);
+            d.construivel = c.value("construivel", false);
+            d.limite = c.value("limite", 0);
             if (c.contains("tamanho")) d.tamanho = {c["tamanho"][0].get<int>(), c["tamanho"][1].get<int>()};
             for (const auto& n : c.at("niveis")) {
                 NivelConstrucao nv;
@@ -35,10 +37,13 @@ bool GameData::lerJson(const nlohmann::json& jr, const nlohmann::json& jc, std::
                 nv.descricao = n.value("descricao", "");
                 if (n.contains("custo"))
                     for (const auto& [rid, q] : n["custo"].items()) nv.custo[rid] = q.get<int>();
+                if (n.contains("efeitos"))
+                    for (const auto& [ef, v] : n["efeitos"].items()) nv.efeitos[ef] = v.get<float>();
                 d.niveis.push_back(std::move(nv));
             }
             std::ranges::sort(d.niveis, {}, &NivelConstrucao::nivel);
             if (d.niveis.empty()) throw std::runtime_error("construção sem níveis: " + d.id);
+            ordemConstrucoes.push_back(d.id);
             construcoes[d.id] = std::move(d);
         }
     } catch (const std::exception& ex) {

@@ -1,17 +1,105 @@
 {
+  "_efeitos": "Por nível: populacao_max, felicidade, seguranca, comida_dia, ouro_dia, madeira_dia, pedra_dia. 'limite' = quantas podem existir (0 = sem limite). 'construivel' = aparece no menu de obras (B).",
   "construcoes": [
     {
-      "id": "casa",
-      "aparencia": "casa",
-      "tamanho": [4, 3],
+      "id": "casa", "aparencia": "casa", "tamanho": [4, 3], "construivel": false, "limite": 1,
       "niveis": [
-        { "nivel": 1, "nome": "Cabana Abandonada", "descricao": "Abrigo inicial, estrutura deteriorada." },
+        { "nivel": 1, "nome": "Cabana Abandonada", "descricao": "Abrigo inicial, estrutura deteriorada.",
+          "efeitos": { "populacao_max": 2 } },
         { "nivel": 2, "nome": "Casa Reconstruída", "descricao": "Paredes firmes e um teto que não deixa a chuva entrar.",
-          "custo": { "madeira": 15, "pedra": 8, "ouro": 10 } },
+          "custo": { "madeira": 15, "pedra": 8, "ouro": 10 }, "efeitos": { "populacao_max": 3, "felicidade": 3 } },
         { "nivel": 3, "nome": "Mansão Medieval", "descricao": "Pedra, vigas de carvalho e lareira para o inverno.",
-          "custo": { "madeira": 40, "pedra": 45, "ouro": 60 } },
+          "custo": { "madeira": 40, "pedra": 45, "ouro": 60 }, "efeitos": { "populacao_max": 4, "felicidade": 6, "seguranca": 3 } },
         { "nivel": 4, "nome": "Residência Encantada", "descricao": "Pedra branca, telhado azul e cristais que brilham à noite.",
-          "custo": { "madeira": 60, "pedra": 90, "ouro": 150 } }
+          "custo": { "madeira": 60, "pedra": 90, "ouro": 150 }, "efeitos": { "populacao_max": 6, "felicidade": 10, "seguranca": 6 } }
+      ]
+    },
+    {
+      "id": "moradia", "aparencia": "moradia", "tamanho": [3, 2], "construivel": true, "limite": 0,
+      "niveis": [
+        { "nivel": 1, "nome": "Choupana", "descricao": "Teto para quatro famílias que chegam à vila.",
+          "custo": { "madeira": 12, "pedra": 2 }, "efeitos": { "populacao_max": 4 } },
+        { "nivel": 2, "nome": "Casa de Madeira", "descricao": "Mais gente, mais conforto.",
+          "custo": { "madeira": 20, "pedra": 10, "ouro": 15 }, "efeitos": { "populacao_max": 8, "felicidade": 1 } },
+        { "nivel": 3, "nome": "Casa de Pedra", "descricao": "Paredes que aguentam qualquer inverno.",
+          "custo": { "madeira": 15, "pedra": 30, "ouro": 40 }, "efeitos": { "populacao_max": 12, "felicidade": 2 } }
+      ]
+    },
+    {
+      "id": "campo", "aparencia": "campo", "tamanho": [4, 3], "construivel": true, "limite": 0,
+      "niveis": [
+        { "nivel": 1, "nome": "Horta Remexida", "descricao": "Terra preta, sementes velhas e esperança.",
+          "custo": { "madeira": 8, "ouro": 5 }, "efeitos": { "comida_dia": 6 } },
+        { "nivel": 2, "nome": "Campo Cultivado", "descricao": "Fileiras retas e cerca firme.",
+          "custo": { "madeira": 15, "pedra": 5, "ouro": 15 }, "efeitos": { "comida_dia": 10 } },
+        { "nivel": 3, "nome": "Plantação Farta", "descricao": "Irrigação e celeiro: comida de sobra.",
+          "custo": { "madeira": 25, "pedra": 20, "ouro": 40 }, "efeitos": { "comida_dia": 16, "felicidade": 2 } }
+      ]
+    },
+    {
+      "id": "taverna", "aparencia": "taverna", "tamanho": [5, 3], "construivel": true, "limite": 1,
+      "niveis": [
+        { "nivel": 1, "nome": "Pequena Taverna", "descricao": "Sopa quente e um balcão torto. O povo sorri de novo.",
+          "custo": { "madeira": 25, "pedra": 10, "ouro": 20 }, "efeitos": { "felicidade": 8, "ouro_dia": 2 } },
+        { "nivel": 2, "nome": "Taverna Real", "descricao": "Música, cerveja e histórias de viajantes.",
+          "custo": { "madeira": 35, "pedra": 30, "ouro": 60 }, "efeitos": { "felicidade": 14, "ouro_dia": 4 } },
+        { "nivel": 3, "nome": "Grande Estalagem", "descricao": "Quartos para viajantes de todos os reinos.",
+          "custo": { "madeira": 50, "pedra": 60, "ouro": 140 }, "efeitos": { "felicidade": 20, "ouro_dia": 8 } }
+      ]
+    },
+    {
+      "id": "mercado", "aparencia": "mercado", "tamanho": [5, 3], "construivel": true, "limite": 1,
+      "niveis": [
+        { "nivel": 1, "nome": "Pequeno Mercado", "descricao": "Duas barracas e muito regateio.",
+          "custo": { "madeira": 20, "pedra": 5, "ouro": 25 }, "efeitos": { "ouro_dia": 5, "felicidade": 2 } },
+        { "nivel": 2, "nome": "Mercado Central", "descricao": "Mercadores de vilas vizinhas vêm vender aqui.",
+          "custo": { "madeira": 30, "pedra": 30, "ouro": 70 }, "efeitos": { "ouro_dia": 10, "felicidade": 3 } },
+        { "nivel": 3, "nome": "Grande Bazar", "descricao": "Sedas, especiarias e ouro de terras distantes.",
+          "custo": { "madeira": 40, "pedra": 60, "ouro": 160 }, "efeitos": { "ouro_dia": 18, "felicidade": 5 } }
+      ]
+    },
+    {
+      "id": "capela", "aparencia": "capela", "tamanho": [4, 3], "construivel": true, "limite": 1,
+      "niveis": [
+        { "nivel": 1, "nome": "Capela", "descricao": "Uma vela acesa entre as ruínas.",
+          "custo": { "madeira": 15, "pedra": 20, "ouro": 15 }, "efeitos": { "felicidade": 6 } },
+        { "nivel": 2, "nome": "Igreja", "descricao": "Sinos voltam a tocar sobre o vale.",
+          "custo": { "madeira": 25, "pedra": 50, "ouro": 60 }, "efeitos": { "felicidade": 10, "seguranca": 2 } },
+        { "nivel": 3, "nome": "Catedral Sagrada", "descricao": "Vitrais que pintam o chão de luz.",
+          "custo": { "madeira": 30, "pedra": 100, "ouro": 180 }, "efeitos": { "felicidade": 16, "seguranca": 4 } }
+      ]
+    },
+    {
+      "id": "forja", "aparencia": "forja", "tamanho": [4, 3], "construivel": true, "limite": 1,
+      "niveis": [
+        { "nivel": 1, "nome": "Oficina Simples", "descricao": "Bram volta a bater o martelo.",
+          "custo": { "madeira": 15, "pedra": 20, "ouro": 15 }, "efeitos": { "seguranca": 3, "ouro_dia": 1 } },
+        { "nivel": 2, "nome": "Ferraria", "descricao": "Ferramentas e lâminas para a vila.",
+          "custo": { "madeira": 20, "pedra": 40, "ouro": 50 }, "efeitos": { "seguranca": 6, "ouro_dia": 3 } },
+        { "nivel": 3, "nome": "Forja Real", "descricao": "O fogo que forjou as espadas dos antigos reis.",
+          "custo": { "madeira": 30, "pedra": 80, "ouro": 150 }, "efeitos": { "seguranca": 10, "ouro_dia": 6 } }
+      ]
+    },
+    {
+      "id": "posto_guarda", "aparencia": "posto", "tamanho": [3, 3], "construivel": true, "limite": 2,
+      "niveis": [
+        { "nivel": 1, "nome": "Posto de Guarda", "descricao": "Uma paliçada e uma tocha que nunca apaga.",
+          "custo": { "madeira": 20, "pedra": 5, "ouro": 10 }, "efeitos": { "seguranca": 10 } },
+        { "nivel": 2, "nome": "Quartel", "descricao": "Recrutas treinam ao amanhecer.",
+          "custo": { "madeira": 25, "pedra": 35, "ouro": 50 }, "efeitos": { "seguranca": 20 } },
+        { "nivel": 3, "nome": "Academia dos Cavaleiros", "descricao": "Onde nascem os novos juramentos.",
+          "custo": { "madeira": 30, "pedra": 70, "ouro": 150 }, "efeitos": { "seguranca": 35, "felicidade": 3 } }
+      ]
+    },
+    {
+      "id": "torre", "aparencia": "torre", "tamanho": [2, 2], "construivel": true, "limite": 1,
+      "niveis": [
+        { "nivel": 1, "nome": "Torre de Madeira", "descricao": "Daqui se vê a borda da floresta.",
+          "custo": { "madeira": 25, "ouro": 10 }, "efeitos": { "seguranca": 5 } },
+        { "nivel": 2, "nome": "Torre de Pedra", "descricao": "Sólida contra vento e criaturas.",
+          "custo": { "madeira": 10, "pedra": 40, "ouro": 40 }, "efeitos": { "seguranca": 8, "felicidade": 1 } },
+        { "nivel": 3, "nome": "Torre Arcana", "descricao": "Os primeiros sinais de magia retornando ao mundo.",
+          "custo": { "pedra": 60, "ouro": 150 }, "efeitos": { "seguranca": 12, "felicidade": 4 } }
       ]
     }
   ]
