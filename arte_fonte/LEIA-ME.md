@@ -30,3 +30,10 @@ o que não tem arte importada continua procedural.
 - `textura`: gera uma textura, reduz 16×, recorta 4 variantes e funde as bordas para emendar sem costura.
   A água usa a mesma variante deslocada em cada quadro, então a animação também emenda.
 - `prancha`: vários quadros numa imagem só (tentado no herói; desativado, veja o `prompts.json`).
+
+## O que veio do NidraIA
+
+- Fase 1–4: casas (n1–n4), castelo, árvores, rochas, baús, túmulos, poço e terreno.
+- Fase 5: moradia, taverna, mercado, capela, forja, posto, torre e campo (n1–n3), canteiros `obra_*` e `barraco`.
+- Ficam procedurais: herói, NPCs e aldeões (nas pranchas os quadros saem diferentes entre si e os rostos somem),
+  fogueira (a prancha de 4 quadros saiu sem chama), ícones, tocha, cerca, arbusto, toco, luz e sombra.
