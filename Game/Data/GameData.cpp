@@ -79,7 +79,18 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
         if (erro) *erro = "JSON inválido em Data/NPCs ou Data/Dialogues";
         return false;
     }
-    return lerNpcs(jn, jd, npcs, erro);
+    if (!lerNpcs(jn, jd, npcs, erro)) return false;
+    nlohmann::json jc3[3];
+    const char* arquivos[3] = {"Enemies/inimigos.json", "Items/equipamentos.json", "Quests/missoes.json"};
+    for (int i = 0; i < 3; ++i) {
+        const auto t = ke::fs::lerTexto(pasta / arquivos[i]);
+        jc3[i] = t ? nlohmann::json::parse(*t, nullptr, false) : nlohmann::json();
+        if (!t || jc3[i].is_discarded()) {
+            if (erro) *erro = std::string("Data/") + arquivos[i] + " ausente ou inválido";
+            return false;
+        }
+    }
+    return lerCombate(jc3[0], jc3[1], jc3[2], inimigos, equipamentos, ordemEquipamentos, missoes, erro);
 }
 
 }

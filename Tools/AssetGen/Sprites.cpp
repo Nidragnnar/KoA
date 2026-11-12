@@ -511,14 +511,25 @@ struct Visu {
         calca = hex("#3c3a44"), bota = hex("#2a2220"), cinto = hex("#3a2a1e"), ouro = hex("#b8963e"), olho = hex("#1a1414");
 };
 
-void machado(Img& t, int x0, int y0, int x1, int y1) {
+}  // namespace
+
+void machadoFerramenta(Img& t, int x0, int y0, int x1, int y1) {
     t.linha(x0, y0, x1, y1, hex("#6a4a2a"));
     t.rect(x1 - 1, y1 - 1, 3, 3, hex("#8a8a92"));
     t.px(x1 + 1, y1 - 1, hex("#b0b0b8"));
 }
 
+namespace {
+
+void espada(Img& t, int x0, int y0, int x1, int y1) {
+    t.linha(x0, y0, x1, y1, hex("#c8ccd8"));
+    t.px(x1, y1, hex("#ffffff"));
+    t.rect(x0 - 1, y0 - 1, 3, 3, hex("#8a6a2a"));  // guarda dourada
+}
+
 // dir: 0 baixo, 1 cima, 2 lado (virado para a direita); quadro 0..3 (andar) ou 4..5 (golpe)
-Img heroi(int dir, int q) {
+Img heroi(int dir, int q, bool comEspada = false) {
+    void (*machado)(Img&, int, int, int, int) = comEspada ? espada : gen::machadoFerramenta;
     const Visu c;
     Img t(16, 24);
     const bool golpe = q >= 4;
@@ -1099,6 +1110,104 @@ void construcoesFase5(Lista& l) {
     }
 }
 
+// ---------- Inimigos (fase 6): 2 quadros, virados para a direita ----------
+
+Img inimigoSombra(int q) {
+    Img t(16, 16);
+    const int b = q;  // flutua 1 px
+    t.elipse(8, 9 - b, 6, 6, hex("#2e2440"));
+    t.elipse(8, 8 - b, 5, 4, hex("#423658"));
+    t.elipse(7, 6 - b, 2, 1, hex("#5a4a76"));
+    for (int i = 0; i < 4; ++i) t.px(3 + i * 3, 15 - (i + q) % 2, hex("#2e2440"));  // fiapos de fumaça
+    t.px(6, 7 - b, hex("#e04040"));
+    t.px(10, 7 - b, hex("#e04040"));
+    t.px(6, 6 - b, hex("#ff9090"));
+    t.contornar(hex("#0a080c"));
+    return t;
+}
+
+Img inimigoLobo(int q) {
+    Img t(20, 16);
+    const Cor pelo = hex("#3a3632"), escuro = hex("#24201e");
+    t.elipse(9, 9, 7, 4, pelo);                   // corpo
+    t.elipse(16, 7, 3, 3, pelo);                  // cabeça
+    t.rect(18, 7, 2, 2, escuro);                  // focinho
+    t.px(17, 6, hex("#e0d040"));                  // olho amarelo
+    t.rect(14, 3, 2, 3, escuro);                  // orelha
+    t.linha(2, 8, 0, 5 + q, pelo);                // rabo
+    const int p = q ? 1 : -1;
+    for (const int x : {4, 7, 12, 15}) t.rect(x + (x % 2 ? p : -p), 12, 2, 3, escuro);  // patas
+    std::mt19937 r(6000 + q);
+    t.salpicar(r, 10, hex("#4a2a3a"));  // manchas corrompidas
+    t.contornar(CONTORNO);
+    return t;
+}
+
+Img inimigoEsqueleto(int q) {
+    Img t(16, 24);
+    const Cor osso = hex("#c8c0a8"), sombraO = hex("#8a8270");
+    t.elipse(8, 5, 4, 4, osso);
+    t.px(6, 5, hex("#1a1414"));
+    t.px(9, 5, hex("#1a1414"));
+    t.rect(6, 8, 5, 1, sombraO);
+    t.rect(7, 10, 2, 8, osso);                   // coluna
+    for (int y = 11; y < 16; y += 2) t.rect(4, y, 8, 1, osso);  // costelas
+    t.rect(3 - q, 11, 1, 6, osso);
+    t.rect(12 + q, 11, 1, 6, osso);
+    t.linha(13 + q, 10, 15, 4, hex("#7a7a82"));   // espada velha
+    t.rect(5, 18, 2, 5 - q, osso);
+    t.rect(9, 18, 2, 4 + q, osso);
+    t.contornar(CONTORNO);
+    return t;
+}
+
+Img inimigoCavaleiro(int q) {
+    Img t(32, 40);
+    const Cor placa = hex("#3a3c48"), placaC = hex("#5a5c6a"), capa = hex("#4a1820");
+    t.rect(6, 12, 20, 18, capa);                 // capa rasgada
+    for (int x = 6; x < 26; x += 3) t.px(x, 30 + (x / 3 + q) % 3, capa);
+    t.rect(9, 10, 14, 16, placa);                // couraça
+    t.rect(9, 10, 14, 2, placaC);
+    t.rect(15, 12, 2, 12, placaC);
+    t.elipse(16, 7, 5, 5, placa);                // elmo
+    t.rect(12, 7, 9, 1, hex("#e03030"));         // fresta com brilho vermelho
+    t.rect(14, 1, 4, 3, placaC);                 // crista
+    t.rect(10, 26, 5, 11 - q, placa);            // pernas
+    t.rect(17, 26, 5, 10 + q, placa);
+    t.linha(25, 8 + q, 30, 34, hex("#9a9aa8"));  // espada grande
+    t.linha(26, 8 + q, 31, 34, hex("#6a6a78"));
+    t.rect(23, 14 + q, 6, 2, hex("#6a5020"));
+    std::mt19937 r(6100 + q);
+    t.salpicar(r, 25, hex("#2a1a2a"), 6, 0, 26, 36);
+    t.contornar(hex("#0a080c"));
+    return t;
+}
+
+Img escada(bool desce) {
+    Img t(16, 16);
+    t.rect(1, 2, 14, 13, hex("#2a2622"));
+    for (int i = 0; i < 4; ++i) {
+        const int y = desce ? 3 + i * 3 : 12 - i * 3;
+        t.rect(2 + i, y, 12 - i * 2, 2, clarear(hex("#6a665f"), -0.12f * i));
+    }
+    t.contornar(CONTORNO);
+    return t;
+}
+
+void fase6(Lista& l) {
+    for (int q = 0; q < 2; ++q) {
+        l.emplace_back(std::format("inimigo_sombra_{}", q), inimigoSombra(q));
+        l.emplace_back(std::format("inimigo_lobo_{}", q), inimigoLobo(q));
+        l.emplace_back(std::format("inimigo_esqueleto_{}", q), inimigoEsqueleto(q));
+        l.emplace_back(std::format("inimigo_cavaleiro_caido_{}", q), inimigoCavaleiro(q));
+    }
+    const char* dirs[] = {"baixo", "cima", "lado"};
+    for (int d = 0; d < 3; ++d)
+        for (int q = 0; q < 2; ++q) l.emplace_back(std::format("heroi_{}_espada_{}", dirs[d], q), heroi(d, 4 + q, true));
+    l.emplace_back("escada_desce", escada(true));
+    l.emplace_back("escada_sobe", escada(false));
+}
+
 // ---------- Interface e efeitos ----------
 
 Img icone(int tipo) {
@@ -1174,6 +1283,7 @@ std::vector<std::pair<std::string, Img>> gerarTodos() {
     l.emplace_back("coracao_vazio", coracao(false));
     moradores(l);
     construcoesFase5(l);
+    fase6(l);
     return l;
 }
 

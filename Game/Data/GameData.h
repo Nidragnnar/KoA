@@ -7,6 +7,7 @@
 #include <glm/vec2.hpp>
 #include <nlohmann/json_fwd.hpp>
 
+#include "Game/Combat/Combate.h"
 #include "Game/Inventory/Inventory.h"
 #include "Game/NPC/Npc.h"
 
@@ -47,6 +48,16 @@ struct GameData {
     std::map<std::string, BuildingDef> construcoes;
     std::vector<std::string> ordemConstrucoes;  // como estão no arquivo (menu de obras)
     std::map<std::string, NpcDef> npcs;
+    std::map<std::string, InimigoDef> inimigos;
+    std::map<std::string, EquipDef> equipamentos;
+    std::vector<std::string> ordemEquipamentos;
+    std::vector<MissaoDef> missoes;
+
+    const InimigoDef* inimigoPorLetra(char c) const {
+        for (const auto& [id, d] : inimigos)
+            if (d.letra == c) return &d;
+        return nullptr;
+    }
 
     bool carregar(const std::filesystem::path& pastaData, std::string* erro = nullptr);
     bool lerJson(const nlohmann::json& recursos, const nlohmann::json& construcoes, std::string* erro = nullptr);

@@ -63,8 +63,27 @@ std::vector<std::string> WorldScene::opcoesPainel() const {
     const BuildingDef* d = b ? mundo_.def(*b) : nullptr;
     if (d && d->nivel(b->level + 1)) o.push_back("Reconstruir");
     if (painel_ == "casa_herdeiro") o.push_back("Dormir até amanhã");
+    if (b && b->defId == "forja" && b->constructed) o.push_back("Forjar equipamento");
     o.push_back("Fechar");
     return o;
+}
+
+std::vector<std::string> WorldScene::opcoesForja() const {
+    std::vector<std::string> v;
+    for (const auto& id : ctx_.dados.ordemEquipamentos)
+        if (ctx_.dados.equipamentos.at(id).forja > 0) v.push_back(id);
+    return v;
+}
+
+void WorldScene::entradaForja() {
+    ke::Input& in = ctx_.app.input();
+    const auto opcoes = opcoesForja();
+    const int n = static_cast<int>(opcoes.size());
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_Q)) forja_ = false;
+    if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selForja_ = (selForja_ + n - 1) % n;
+    if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selForja_ = (selForja_ + 1) % n;
+    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE))
+        mundo_.forjar(opcoes[selForja_]);
 }
 
 void WorldScene::entradaJogo() {
@@ -76,14 +95,21 @@ void WorldScene::entradaJogo() {
     if (in.segurando(SDL_SCANCODE_S) || in.segurando(SDL_SCANCODE_DOWN)) e.mover.y += 1;
     e.interagir = in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_SPACE);
     e.interagirSegurando = in.segurando(SDL_SCANCODE_E) || in.segurando(SDL_SCANCODE_SPACE);
+    e.atacar = in.pressionou(SDL_SCANCODE_J);
+    e.comer = in.pressionou(SDL_SCANCODE_H);
     if (in.pressionou(SDL_SCANCODE_ESCAPE)) {
         pausa_ = true;
         selPausa_ = 0;
         return;
     }
     if (in.pressionou(SDL_SCANCODE_F5)) salvar();
+    if (in.pressionou(SDL_SCANCODE_L)) {
+        diario_ = true;
+        return;
+    }
     if (in.pressionou(SDL_SCANCODE_B)) {
-        menuObras_ = true;
+        if (!mundo_.noVilarejo()) hud_.aviso("Só dá para construir no vilarejo.", cor::ruim);
+        else menuObras_ = true;
         return;
     }
     if (in.pressionou(SDL_SCANCODE_K)) {
@@ -181,6 +207,10 @@ void WorldScene::entradaPainel() {
         } else if (o == "Dormir até amanhã") {
             painel_.clear();
             iniciarSono(false);
+        } else if (o == "Forjar equipamento") {
+            painel_.clear();
+            forja_ = true;
+            selForja_ = 0;
         } else {
             painel_.clear();
         }
@@ -232,6 +262,7 @@ void WorldScene::entradaDialogo(float dt) {
 void WorldScene::iniciarSono(bool desmaio) {
     transicao_ = 0.0f;
     desmaio_ = desmaio;
+    derrota_ = false;
 }
 
 void WorldScene::poeira(glm::vec2 c, glm::vec2 meia, int n, glm::vec4 corBase) {
@@ -299,6 +330,69 @@ void WorldScene::tratarEventos() {
                           mundo_.estado.populacao, mundo_.estado.felicidade);
             relatorio_ = true;  // relatório da manhã
             salvar();           // salvamento automático a cada manhã
+            break;
+        case EventoJogo::Tipo::Ataque: {
+            // Rastro do golpe: um leque de faíscas claras na frente do herói
+            std::uniform_real_distribution<float> u(-1.0f, 1.0f);
+            for (int i = 0; i < 10; ++i) {
+                ke::Particula p;
+                p.pos = e.pos + glm::vec2(u(rng_) * 8.0f, u(rng_) * 6.0f);
+                p.vel = vetor(mundo_.jogador.dir) * 40.0f + glm::vec2(u(rng_), u(rng_)) * 20.0f;
+                p.cor = {0.9f, 0.92f, 1.0f, 0.8f};
+                p.vida = p.vidaMax = 0.16f;
+                p.aditiva = true;
+                part_.emitir(p);
+            }
+            break;
+        }
+        case EventoJogo::Tipo::AcertouInimigo:
+            textoFlutuante(e.pos - glm::vec2(0, 8), std::to_string(e.quantidade), {1.0f, 0.95f, 0.7f, 1});
+            poeira(e.pos, {4, 4}, 8, {0.25f, 0.2f, 0.3f, 1});
+            cam_.tremor = std::max(cam_.tremor, 1.6f);
+            break;
+        case EventoJogo::Tipo::InimigoDerrotado:
+            poeira(e.pos - glm::vec2(0, 6), {7, 7}, 26, {0.2f, 0.16f, 0.26f, 1});
+            textoFlutuante(e.pos - glm::vec2(0, 20), std::format("+{} Ouro", e.quantidade), cor::ouro);
+            hud_.pulsar("ouro");
+            if (ctx_.dados.inimigos.at(e.alvo).chefe) {
+                hud_.aviso(e.texto + " foi derrotado!", cor::ouro);
+                flash_ = 1.0f;
+                cam_.tremor = 4.0f;
+            }
+            break;
+        case EventoJogo::Tipo::HeroiFerido:
+            feridoFlash_ = 0.5f;
+            cam_.tremor = std::max(cam_.tremor, 2.5f);
+            textoFlutuante(e.pos - glm::vec2(0, 26), std::format("-{}", e.quantidade), cor::ruim);
+            break;
+        case EventoJogo::Tipo::HeroiDerrotado:
+            hud_.aviso("Suas forças acabaram...", cor::ruim);
+            transicao_ = 0.0f;
+            desmaio_ = true;
+            derrota_ = true;
+            break;
+        case EventoJogo::Tipo::MudouRegiao:
+            nomeRegiao_ = e.texto;
+            tituloRegiao_ = 2.5f;
+            flash_ = 0.0f;
+            cam_.limite = mundo_.tamanhoPixels();
+            cam_.posicionar(mundo_.jogador.pos - glm::vec2(0, 10));
+            part_.limpar();
+            ke::log::info("entrou em {}", e.alvo);
+            break;
+        case EventoJogo::Tipo::MissaoNova: hud_.aviso("Nova missão: " + e.texto + " (L para ver)", cor::ouro); break;
+        case EventoJogo::Tipo::MissaoConcluida:
+            hud_.aviso("Missão cumprida: " + e.texto + "!", cor::bom);
+            if (!e.recurso.empty()) hud_.aviso("Recebeu: " + ctx_.dados.equipamentos.at(e.recurso).nome, cor::ouro);
+            flash_ = 0.6f;
+            ke::log::info("missão concluída: {}", e.alvo);
+            break;
+        case EventoJogo::Tipo::Comeu:
+            textoFlutuante(e.pos - glm::vec2(0, 26), std::format("+{} vida", e.quantidade), cor::bom);
+            break;
+        case EventoJogo::Tipo::Forjou:
+            hud_.aviso("Forjado: " + e.texto + "!", cor::ouro);
+            cam_.tremor = 1.5f;
             break;
         case EventoJogo::Tipo::ObraIniciada: {
             if (const BuildingData* b = mundo_.reino.construcao(e.alvo)) {
@@ -368,12 +462,17 @@ void WorldScene::atualizar(double dtD) {
 
     // O relógio para em menus, painéis, conversas e no sono
     mundo_.relogio.parado = pausa_ || !painel_.empty() || conversa_.has_value() || transicao_ >= 0.0f || menuObras_ || painelReino_ ||
-                            relatorio_;
+                            relatorio_ || diario_ || forja_;
+    feridoFlash_ = std::max(0.0f, feridoFlash_ - dt);
+    tituloRegiao_ = std::max(0.0f, tituloRegiao_ - dt);
 
     if (transicao_ >= 0.0f) {
         const float antes = transicao_;
         transicao_ += dt * 1.25f;
-        if (antes < 1.0f && transicao_ >= 1.0f) mundo_.dormir(desmaio_);  // tela preta: troca o dia
+        if (antes < 1.0f && transicao_ >= 1.0f) {  // tela preta: troca o dia
+            if (derrota_) mundo_.reviver();
+            else mundo_.dormir(desmaio_);
+        }
         if (transicao_ >= 2.0f) transicao_ = -1.0f;
         mundo_.passo(dt, {});
     } else if (pausa_) entradaPausa();
@@ -385,7 +484,11 @@ void WorldScene::atualizar(double dtD) {
         mundo_.passo(dt, {});
     } else if (conversa_) entradaDialogo(dt);
     else if (!painel_.empty()) entradaPainel();
-    else if (menuObras_) entradaMenuObras();
+    else if (forja_) entradaForja();
+    else if (diario_) {
+        ke::Input& in = ctx_.app.input();
+        if (in.pressionou(SDL_SCANCODE_L) || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E)) diario_ = false;
+    } else if (menuObras_) entradaMenuObras();
     else if (painelReino_) entradaPainelReino();
     else if (!colocando_.empty()) entradaColocacao();
     else entradaJogo();
@@ -409,9 +512,9 @@ void WorldScene::renderizar(float) {
     const ke::BitmapFont& f = ctx_.app.fonte();
 
     // 1) Mapa de luz (só quando escurece)
-    const bool noite = mundo_.relogio.escuridao() > 0.0f || mundo_.relogio.minutos < 7 * 60;
+    const bool noite = mundo_.escuridao() > 0.0f || mundo_.relogio.minutos < 7 * 60;
     if (noite) {
-        luz_.comecar(mundo_.relogio.luzAmbiente());
+        luz_.comecar(mundo_.luzAmbiente());
         r.comecar(cam_.projecao());
         rend_.desenharLuzes(r, mundo_, cam_, tempo_);
         r.terminar();
@@ -428,7 +531,7 @@ void WorldScene::renderizar(float) {
         r.definirMistura(ke::Mistura::Normal);
     }
     if (painel_.empty() && !pausa_ && !conversa_ && transicao_ < 0.0f && colocando_.empty() && !menuObras_ && !painelReino_ &&
-        !relatorio_)
+        !relatorio_ && !diario_ && !forja_)
         rend_.desenharAlvo(r, f, mundo_, tempo_);
     std::string motivoObra;
     bool obraValida = false;
@@ -455,7 +558,15 @@ void WorldScene::renderizar(float) {
     // 3) Interface em coordenadas da tela
     r.comecar(glm::ortho(0.0f, 640.0f, 360.0f, 0.0f, -1.0f, 1.0f));
     if (flash_ > 0.0f) r.retangulo({0, 0}, {640, 360}, {1.0f, 0.95f, 0.85f, flash_ * 0.6f});
+    if (feridoFlash_ > 0.0f) r.retangulo({0, 0}, {640, 360}, {0.7f, 0.05f, 0.05f, feridoFlash_ * 0.45f});
     hud_.desenhar(r, mundo_, tempo_);
+    hud_.combate(r, mundo_, tempo_);
+    if (tituloRegiao_ > 0.0f) {
+        const float a = std::min(1.0f, tituloRegiao_);
+        f.desenharCentralizado(r, nomeRegiao_, {320, 110}, {cor::ouro.r, cor::ouro.g, cor::ouro.b, a}, true, 2);
+    }
+    if (forja_) hud_.lojaForja(r, mundo_, opcoesForja(), selForja_);
+    if (diario_) hud_.diario(r, mundo_);
     if (!painel_.empty()) hud_.painelConstrucao(r, mundo_, painel_, opcoesPainel(), selPainel_, tempo_);
     if (conversa_) hud_.caixaDialogo(r, *conversa_, linhaFala_, static_cast<int>(letras_), tempo_);
     if (menuObras_) hud_.menuObras(r, mundo_, opcoesObras(), selObra_);
@@ -467,7 +578,8 @@ void WorldScene::renderizar(float) {
         const float a = transicao_ < 1.0f ? transicao_ : 2.0f - transicao_;
         r.retangulo({0, 0}, {640, 360}, {0, 0, 0, std::clamp(a * 1.2f, 0.0f, 1.0f)});
         if (transicao_ > 0.7f && transicao_ < 1.3f)
-            f.desenharCentralizado(r, desmaio_ ? "Tudo fica escuro..." : "Zzz...", {320, 180}, cor::apagado);
+            f.desenharCentralizado(r, derrota_ ? "Você caiu em combate..." : desmaio_ ? "Tudo fica escuro..." : "Zzz...", {320, 180},
+                                   cor::apagado);
     }
     r.terminar();
 }

@@ -18,8 +18,15 @@ struct Jogador {
     float tempoAnim = 0.0f;  // avança enquanto anda
     float acao = 0.0f;       // > 0 enquanto o golpe está em curso
     float velocidade = 74.0f;
+    // Combate
+    int vida = 100, vidaMax = 100;
+    float invulneravel = 0.0f;     // depois de levar dano, um instante sem levar outro
+    glm::vec2 empurrao{0.0f};      // recuo ao ser atingido
+    bool atacando = false;         // a ação em curso é golpe de espada (não de ferramenta)
+    int golpeId = 0;
 
     static constexpr float DURACAO_ACAO = 0.32f;
+    static constexpr float DURACAO_ATAQUE = 0.28f;
     ke::AABB caixa() const { return {{pos.x - 5.0f, pos.y - 5.0f}, {pos.x + 5.0f, pos.y + 1.0f}}; }
 };
 

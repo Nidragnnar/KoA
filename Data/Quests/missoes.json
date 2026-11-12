@@ -1,0 +1,29 @@
+{
+  "_como_funciona": "O morador oferece a missão no fim de uma conversa (se o requisito foi cumprido). Objetivos: derrotar (alvo = inimigo), construir (alvo = construção), ter (alvo = recurso), visitar (alvo = região). Ao cumprir, a recompensa vem na hora.",
+  "missoes": [
+    { "id": "limpar_estrada", "nome": "Limpar a Estrada", "npc": "oswin",
+      "descricao": "Derrote 5 sombras na Floresta Amaldiçoada, a leste.",
+      "objetivo": { "tipo": "derrotar", "alvo": "sombra", "quantidade": 5 },
+      "recompensa": { "ouro": 40, "amizade": 100 } },
+    { "id": "martelo_bram", "nome": "O Martelo de Bram", "npc": "bram",
+      "descricao": "Construa uma oficina (forja) para Bram voltar a trabalhar.",
+      "objetivo": { "tipo": "construir", "alvo": "forja", "quantidade": 1 },
+      "recompensa": { "ouro": 20, "amizade": 100, "item": "espada_ferro" } },
+    { "id": "taverna_viva", "nome": "Uma Taverna de Novo", "npc": "edda",
+      "descricao": "Construa uma taverna para o povo voltar a sorrir.",
+      "objetivo": { "tipo": "construir", "alvo": "taverna", "quantidade": 1 },
+      "recompensa": { "ouro": 30, "amizade": 100, "comida": 20 } },
+    { "id": "pao_para_todos", "nome": "Pão para Todos", "npc": "tilda",
+      "descricao": "Junte 60 de comida no celeiro do reino.",
+      "objetivo": { "tipo": "ter", "alvo": "comida", "quantidade": 60 },
+      "recompensa": { "ouro": 30, "amizade": 100, "item": "gibao" } },
+    { "id": "floresta_sussurra", "nome": "A Floresta Sussurra", "npc": "maelis",
+      "descricao": "Encontre a entrada da cripta na Floresta Amaldiçoada.",
+      "objetivo": { "tipo": "visitar", "alvo": "cripta", "quantidade": 1 },
+      "recompensa": { "ouro": 25, "amizade": 100 } },
+    { "id": "cavaleiro_caido", "nome": "O Cavaleiro Caído", "npc": "maelis", "requer": "floresta_sussurra",
+      "descricao": "Derrote o Cavaleiro Caído que guarda o fundo da cripta.",
+      "objetivo": { "tipo": "derrotar", "alvo": "cavaleiro_caido", "quantidade": 1 },
+      "recompensa": { "ouro": 150, "amizade": 200, "item": "espada_linhagem" } }
+  ]
+}

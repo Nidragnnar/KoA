@@ -38,12 +38,17 @@ public:
     glm::ivec2 tileFantasma() const;
     bool painelReinoAberto() const { return painelReino_; }
     bool relatorioAberto() const { return relatorio_; }
+    // Fase 6
+    bool diarioAberto() const { return diario_; }
+    bool forjaAberta() const { return forja_; }
+    std::vector<std::string> opcoesForja() const;
 
 private:
     std::vector<std::string> opcoesObras() const;
     void entradaMenuObras();
     void entradaColocacao();
     void entradaPainelReino();
+    void entradaForja();
     std::vector<std::string> opcoesPainel() const;
     void entradaJogo();
     void entradaPainel();
@@ -77,6 +82,13 @@ private:
     std::string colocando_;  // definição sendo posicionada ("" = nenhuma)
     bool painelReino_ = false;
     bool relatorio_ = false;
+    bool diario_ = false;
+    bool forja_ = false;
+    int selForja_ = 0;
+    bool derrota_ = false;       // a transição em curso é de derrota em combate
+    float feridoFlash_ = 0.0f;   // tela avermelhada ao levar dano
+    float tituloRegiao_ = 0.0f;  // nome da região aparece grande ao entrar
+    std::string nomeRegiao_;
     float transicao_ = -1.0f;  // -1 = nenhuma; 0..2 = escurece, troca o dia (em 1), clareia
     bool desmaio_ = false;
     bool mostrarColisoes_ = false;

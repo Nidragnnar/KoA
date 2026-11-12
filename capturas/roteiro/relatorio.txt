@@ -65,6 +65,21 @@ captura: 19_relatorio_manha
 [OK] a população cresceu: 8 -> 13
 [OK] 8 aldeões andando pelo vilarejo
 captura: 20_vilarejo_crescendo
+[OK] Oswin entrega a missão Limpar a Estrada
+captura: 21_missao_aceita
+[OK] andar até a borda leste leva à Floresta Amaldiçoada
+captura: 22_floresta
+captura: 23_combate
+[OK] 5 sombras derrotadas: missão cumprida
+[OK] o lobo fere o herói (vida 89)
+captura: 24_ferido
+[OK] H come e recupera vida (89 -> 100)
+[OK] a escada leva à cripta
+captura: 25_cripta
+captura: 26_chefe
+[OK] o Cavaleiro Caído foi derrotado
+[OK] derrotado, acorda em casa no dia seguinte com a vida cheia
+captura: 27_derrota_relatorio
 captura: 14_era_1
 captura: 14_era_2
 captura: 14_era_3

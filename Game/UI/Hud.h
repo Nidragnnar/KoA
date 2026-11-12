@@ -31,6 +31,10 @@ public:
     void dicaColocacao(ke::Renderer2D& r, const std::string& nome, bool valido, const std::string& motivo);
     void painelReino(ke::Renderer2D& r, const World& w);
     void relatorioManha(ke::Renderer2D& r, const World& w);
+    // Fase 6
+    void combate(ke::Renderer2D& r, const World& w, float tempo);  // vida, chefe e missões ativas
+    void lojaForja(ke::Renderer2D& r, const World& w, const std::vector<std::string>& itens, int sel);
+    void diario(ke::Renderer2D& r, const World& w);
 
 private:
     void custoEmLinha(ke::Renderer2D& r, const Custo& c, const Inventory& inv, glm::vec2 pos);

@@ -24,7 +24,11 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
     }
 
     json meta = {{"versao_formato", VERSAO_SAVE}, {"versao_jogo", d.versaoJogo}, {"data_hora", d.dataHora}, {"tempo_jogado", d.tempoJogado}};
-    json player = {{"x", d.posJogador.x}, {"y", d.posJogador.y}, {"direcao", d.direcao}};
+    json player = {{"x", d.posJogador.x}, {"y", d.posJogador.y}, {"direcao", d.direcao}, {"regiao", d.regiao}, {"vida", d.vida},
+                   {"arma", d.arma}, {"armadura", d.armadura}, {"equipamentos", d.equipamentos}};
+    json jMissoes = json::object();
+    for (const auto& [id, m] : d.missoes) jMissoes[id] = {{"concluida", m.first}, {"base", m.second}};
+    json quests = {{"missoes", jMissoes}, {"abates", d.abates}, {"visitadas", d.visitadas}, {"marcos", d.marcos}};
     json inv = d.inventario;
     json obras = json::array();
     for (const auto& c : d.construcoes) {
@@ -48,7 +52,7 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
 
     const std::pair<const char*, const json*> arquivos[] = {
         {"player.json", &player}, {"inventory.json", &inv}, {"kingdom.json", &reino}, {"world.json", &mundo},
-        {"npcs.json", &jNpcs}, {"relationships.json", &jRel},
+        {"npcs.json", &jNpcs}, {"relationships.json", &jRel}, {"quests.json", &quests},
         {"metadata.json", &meta}};  // metadata por último: só existe save "válido" quando tudo foi gravado
     for (const auto& [nome, conteudo] : arquivos) {
         if (!ke::fs::gravarTextoSeguro(dir / nome, conteudo->dump(2))) {
@@ -77,6 +81,12 @@ json SaveSystem::migrar(json tudo, int deVersao) {
         tudo["kingdom"]["construcoes"] = lista;
         deVersao = 3;
     }
+    if (deVersao < 4) {
+        // v3 não tinha regiões, combate nem missões: começa no vilarejo, sem missões
+        tudo["quests"] = {{"missoes", json::object()}, {"abates", json::object()}, {"visitadas", json::array({"vilarejo"})},
+                          {"marcos", json::array()}};
+        deVersao = 4;
+    }
     tudo["metadata"]["versao_formato"] = deVersao;
     return tudo;
 }
@@ -103,7 +113,8 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
         }
         // Arquivos que só existem a partir da v2
         if (versao >= 2) {
-            for (const char* nome : {"npcs", "relationships"}) {
+            for (const char* nome : {"npcs", "relationships", "quests"}) {
+                if (std::string(nome) == "quests" && versao < 4) continue;
                 const auto texto = ke::fs::lerTexto(dir / (std::string(nome) + ".json"));
                 tudo[nome] = texto ? json::parse(*texto, nullptr, false) : json();
                 if (tudo[nome].is_discarded() || !tudo[nome].is_object()) {
@@ -123,6 +134,18 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
         const json& p = tudo["player"];
         d.posJogador = {p.value("x", 0.0f), p.value("y", 0.0f)};
         d.direcao = std::clamp(p.value("direcao", 0), 0, 3);
+        d.regiao = p.value("regiao", std::string("vilarejo"));
+        d.vida = p.value("vida", 100);
+        d.arma = p.value("arma", d.arma);
+        d.armadura = p.value("armadura", d.armadura);
+        if (p.contains("equipamentos")) d.equipamentos = p["equipamentos"].get<std::vector<std::string>>();
+        const json& jq = tudo["quests"];
+        const json qMissoes = jq.value("missoes", json::object());  // variável: .items() de temporário quebra
+        for (const auto& [id, jmi] : qMissoes.items()) d.missoes[id] = {jmi.value("concluida", false), jmi.value("base", 0)};
+        if (jq.contains("abates"))
+            for (const auto& [id, n] : jq["abates"].items()) d.abates[id] = std::max(0, n.get<int>());
+        d.visitadas = jq.value("visitadas", std::vector<std::string>{"vilarejo"});
+        d.marcos = jq.value("marcos", std::vector<std::string>{});
         for (const auto& [id, q] : tudo["inventory"].items())
             if (q.is_number_integer()) d.inventario[id] = std::max(0, q.get<int>());
         const json& r = tudo["kingdom"];

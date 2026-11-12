@@ -1,0 +1,21 @@
+{
+  "_campos": "tipo arma (dano) ou armadura (defesa). forja = nível mínimo da forja para fabricar (0 = não se fabrica). custo para fabricar.",
+  "equipamentos": [
+    { "id": "espada_enferrujada", "nome": "Espada Enferrujada", "tipo": "arma", "dano": 3, "forja": 0,
+      "descricao": "Herança do exílio. Corta mais pela teimosia do que pelo fio." },
+    { "id": "espada_ferro", "nome": "Espada de Ferro", "tipo": "arma", "dano": 5, "forja": 1, "custo": { "ouro": 40, "pedra": 15 },
+      "descricao": "Lâmina honesta, forjada por Bram." },
+    { "id": "espada_aco", "nome": "Espada de Aço", "tipo": "arma", "dano": 8, "forja": 2, "custo": { "ouro": 120, "pedra": 40 },
+      "descricao": "Equilibrada e afiada. Os esqueletos sentem a diferença." },
+    { "id": "espada_linhagem", "nome": "Espada da Linhagem", "tipo": "arma", "dano": 12, "forja": 0,
+      "descricao": "A lâmina dos antigos reis, recuperada da cripta." },
+    { "id": "roupa_exilio", "nome": "Roupas do Exílio", "tipo": "armadura", "defesa": 0, "forja": 0,
+      "descricao": "Capa gasta e muita coragem." },
+    { "id": "gibao", "nome": "Gibão de Couro", "tipo": "armadura", "defesa": 2, "forja": 1, "custo": { "ouro": 30, "madeira": 10 },
+      "descricao": "Couro grosso costurado em camadas." },
+    { "id": "cota_malha", "nome": "Cota de Malha", "tipo": "armadura", "defesa": 5, "forja": 2, "custo": { "ouro": 100, "pedra": 30 },
+      "descricao": "Milhares de elos de ferro." },
+    { "id": "armadura_cavaleiro", "nome": "Armadura do Cavaleiro", "tipo": "armadura", "defesa": 8, "forja": 3,
+      "custo": { "ouro": 250, "pedra": 80 }, "descricao": "Placas polidas, digna da Academia." }
+  ]
+}

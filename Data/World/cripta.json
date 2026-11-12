@@ -1,0 +1,10 @@
+{
+  "nome": "Cripta do Cavaleiro",
+  "mapa": "cripta.txt",
+  "escuridao_min": 0.8,
+  "ambiente": [0.3, 0.28, 0.38],
+  "hostil": true,
+  "saidas": [
+    { "tile": [12, 17], "tam": [3, 2], "destino": "floresta", "chegada": [46, 7], "dir": "baixo" }
+  ]
+}

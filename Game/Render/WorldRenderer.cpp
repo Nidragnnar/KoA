@@ -5,6 +5,7 @@
 #include <format>
 
 #include "Game/Exploration/Components.h"
+#include "Game/Combat/Combate.h"
 #include "Game/NPC/Npc.h"
 
 namespace koa {
@@ -87,6 +88,7 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
         lista.push_back({p.v.y, &s, glm::floor(pos), false, v.piscar});
     }
     for (const auto& b : w.reino.construcoes) {
+        if (!w.noVilarejo()) break;  // as construções do reino ficam no vilarejo
         const ke::SpriteRegion& s = spriteConstrucao(w, b);
         const ke::AABB c = w.caixaConstrucao(b);
         lista.push_back({c.max.y, &s, {std::floor((c.min.x + c.max.x) * 0.5f - s.tamanho.x / 2), c.max.y - s.tamanho.y}});
@@ -107,14 +109,27 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
         r.sprite(sombra, {std::floor(p.v.x) - 8, std::floor(p.v.y) - 3});
         lista.push_back({p.v.y, &s, glm::floor(p.v - glm::vec2(8, 22)), mv.dir == Direcao::Esquerda});
     }
+    // Inimigos: sprite de 2 quadros, virado para o lado em que andam; piscam ao levar golpe
+    std::vector<std::pair<glm::vec2, float>> barras;  // vida dos feridos (desenhada por cima)
+    for (auto [e, p, i] : w.reg.view<const Posicao, const Inimigo>().each()) {
+        if (!visivel(p.v)) continue;
+        const ke::SpriteRegion& s = rec_.regiao(std::format("inimigo_{}_{}", i.tipo, static_cast<int>(i.tempoAnim * 6.0f + p.v.x) % 2));
+        const float largura = static_cast<float>(s.tamanho.x);
+        r.sprite(sombra, {std::floor(p.v.x) - 8, std::floor(p.v.y) - 3});
+        lista.push_back({p.v.y, &s, glm::floor(p.v - glm::vec2(largura / 2, s.tamanho.y - 2.0f)), i.dir == Direcao::Esquerda, i.piscar});
+        if (i.vida < i.vidaMax) barras.push_back({p.v - glm::vec2(0, s.tamanho.y + 3.0f), static_cast<float>(i.vida) / i.vidaMax});
+    }
     {
         const Jogador& j = w.jogador;
         const char* dir = j.dir == Direcao::Baixo ? "baixo" : j.dir == Direcao::Cima ? "cima" : "lado";
         std::string nome;
-        if (j.acao > 0.0f) nome = std::format("heroi_{}_golpe_{}", dir, j.acao > Jogador::DURACAO_ACAO * 0.5f ? 0 : 1);
+        if (j.acao > 0.0f && j.atacando) nome = std::format("heroi_{}_espada_{}", dir, j.acao > Jogador::DURACAO_ATAQUE * 0.5f ? 0 : 1);
+        else if (j.acao > 0.0f) nome = std::format("heroi_{}_golpe_{}", dir, j.acao > Jogador::DURACAO_ACAO * 0.5f ? 0 : 1);
         else nome = std::format("heroi_{}_{}", dir, j.andando ? static_cast<int>(j.tempoAnim * 8.0f) % 4 : 0);
         const ke::SpriteRegion& s = rec_.regiao(nome);
-        lista.push_back({j.pos.y, &s, glm::floor(j.pos - glm::vec2(8, 22)), j.dir == Direcao::Esquerda});
+        // Invulnerável depois de um golpe: pisca
+        const bool some = j.invulneravel > 0.0f && static_cast<int>(tempo * 20.0f) % 2 == 0;
+        if (!some) lista.push_back({j.pos.y, &s, glm::floor(j.pos - glm::vec2(8, 22)), j.dir == Direcao::Esquerda});
     }
     std::ranges::stable_sort(lista, {}, &Desenhavel::y);
     for (const auto& d : lista) {
@@ -124,6 +139,10 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
             r.sprite(*d.sprite, d.pos, {1, 1, 1, 0.7f}, d.espelhar);
             r.definirMistura(ke::Mistura::Normal);
         }
+    }
+    for (const auto& [p, fr] : barras) {
+        r.retangulo(glm::floor(p - glm::vec2(8, 0)), {16, 3}, {0.1f, 0.05f, 0.05f, 0.9f});
+        r.retangulo(glm::floor(p - glm::vec2(7, -1)), {14 * fr, 1}, {0.85f, 0.2f, 0.2f, 1});
     }
 
     // 4) Partículas (poeira, lascas, cinzas)
@@ -146,7 +165,7 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     }
     // Vidro das janelas acesas à noite (o mapa de luz ilumina em volta; isto faz o vidro brilhar)
     const float escuro = w.relogio.escuridao();
-    if (escuro > 0.0f) {
+    if (escuro > 0.0f && w.noVilarejo()) {
         for (const auto& b : w.reino.construcoes) {
             if (b.level < 2) continue;
             const ke::AABB c = w.caixaConstrucao(b);
@@ -199,17 +218,26 @@ void WorldRenderer::desenharLuzes(ke::Renderer2D& r, const World& w, const ke::C
         r.sprite(luz, p.v + l.desloc - raio, glm::vec4(l.cor * 1.2f, 1.0f), false, raio * 2.0f / 64.0f);
         r.sprite(luz, p.v + l.desloc - raio * 0.5f, glm::vec4(1.0f, 0.9f, 0.7f, 0.9f), false, raio / 64.0f);
     }
+    // Criaturas: olhos das sombras e a aura do chefe (para não sumirem no breu)
+    for (auto [e, p, i] : w.reg.view<const Posicao, const Inimigo>().each()) {
+        if (i.tipo == "sombra") r.sprite(luz, p.v - glm::vec2(0, 8) - 14.0f, {0.6f, 0.3f, 0.8f, 0.8f}, false, 28.0f / 64.0f);
+        else if (i.tipo == "cavaleiro_caido") {
+            const float pulso = 0.8f + 0.2f * std::sin(tempo * 3.0f);
+            r.sprite(luz, p.v - glm::vec2(0, 20) - 48.0f * pulso, {0.9f, 0.2f, 0.15f, 0.9f}, false, 96.0f * pulso / 64.0f);
+        }
+    }
     // Janelas acesas das casas reconstruídas
     for (const auto& b : w.reino.construcoes) {
-        if (b.level < 2) continue;
+        if (b.level < 2 || !b.constructed || !w.noVilarejo()) continue;
         const ke::AABB c = w.caixaConstrucao(b);
         for (const float x : {0.25f, 0.75f}) {
             const glm::vec2 jan{c.min.x + (c.max.x - c.min.x) * x, c.max.y - 22.0f};
             r.sprite(luz, jan - 26.0f, {1.0f, 0.75f, 0.4f, 0.9f}, false, 52.0f / 64.0f);
         }
     }
-    // O herói carrega uma luz fraquinha (para não andar no breu total)
-    r.sprite(luz, w.jogador.pos - glm::vec2(0, 10) - 40.0f, {0.55f, 0.55f, 0.65f, 0.6f}, false, 80.0f / 64.0f);
+    // O herói carrega uma luz fraquinha (para não andar no breu total); mais forte nas regiões escuras
+    const float raioHeroi = w.infoAtual().escuridaoMin > 0.7f ? 84.0f : w.infoAtual().escuridaoMin > 0.3f ? 60.0f : 40.0f;
+    r.sprite(luz, w.jogador.pos - glm::vec2(0, 10) - raioHeroi, {0.6f, 0.58f, 0.66f, 0.7f}, false, raioHeroi * 2.0f / 64.0f);
     r.definirMistura(ke::Mistura::Normal);
 }
 

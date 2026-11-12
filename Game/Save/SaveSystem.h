@@ -10,7 +10,8 @@
 
 namespace koa {
 
-constexpr int VERSAO_SAVE = 3;  // sobe quando o formato muda (com migração). v2: relógio e moradores; v3: obras e povo
+// Sobe quando o formato muda (com migração). v2: relógio e moradores; v3: obras e povo; v4: regiões, combate e missões
+constexpr int VERSAO_SAVE = 4;
 
 struct EstadoConstrucao {
     std::string id, def;
@@ -60,6 +61,16 @@ struct DadosSave {
     std::vector<EstadoObjeto> objetos;
     // npcs.json (conheceu, memória) + relationships.json (afinidade)
     std::vector<EstadoMorador> moradores;
+    // player.json (v4): região, vida e equipamento
+    std::string regiao = "vilarejo";
+    int vida = 100;
+    std::string arma = "espada_enferrujada", armadura = "roupa_exilio";
+    std::vector<std::string> equipamentos{"espada_enferrujada", "roupa_exilio"};
+    // quests.json (v4)
+    std::map<std::string, std::pair<bool, int>> missoes;  // id → (concluída, base)
+    std::map<std::string, int> abates;
+    std::vector<std::string> visitadas{"vilarejo"};
+    std::vector<std::string> marcos;
 };
 
 // Saves em pastas (Saves/Save_001/*.json) com backup antes de sobrescrever

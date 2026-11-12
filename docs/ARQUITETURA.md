@@ -47,6 +47,15 @@ Ainda não feito nesta fase: necessidades dos moradores, presentes (os gostos e 
 - **Eras**: desenvolvimento = soma dos níveis das construções prontas − 1. Limiares 8, 20 e 35.
 - **Save v3**: `kingdom.json` guarda a lista de construções (com o tile das que o jogador colocou) e o estado do povo. Os saves v1 e v2 são migrados.
 
+## Fase 6 — RPG e exploração
+
+- **Regiões** (`Data/World/<id>.json` + `.txt`): vilarejo, Floresta Amaldiçoada e Cripta do Cavaleiro. Só a região ativa vive em `World::mapa` e `World::reg`; as outras ficam guardadas e são trocadas com `std::swap` (barato). As saídas são retângulos de tiles com destino e ponto de chegada. Cada região tem escuridão mínima e cor de penumbra próprias, que alimentam o mapa de luz. Os ids dos objetos fora do vilarejo levam o prefixo `regiao:`, para o save não confundir.
+- **Inimigos** (`Data/Enemies/inimigos.json`, letra no mapa): componente `Inimigo` com vagar, perseguir (visão), recuo ao levar golpe, dano por contato com pausa, e a arrancada periódica do chefe. Renascem a cada manhã; o chefe derrotado não volta (marco `chefe_<id>`).
+- **Combate**: J golpeia uma área na frente do herói, e cada golpe acerta cada inimigo uma vez só. Dano = ataque − defesa (mínimo 1). O herói tem 100 de vida, pisca invulnerável por 0,9 s depois de ser atingido e recua. H come 3 de comida e recupera 25 de vida. Derrotado, acorda em casa no dia seguinte (`World::reviver`).
+- **Equipamento** (`Data/Items/equipamentos.json`): armas e armaduras com nível mínimo de forja e custo. É feito na porta da forja e equipado se for melhor que o atual.
+- **Missões** (`Data/Quests/missoes.json`): o morador oferece a missão no fim da conversa (com requisito opcional). Objetivos de derrotar, construir, ter ou visitar, e recompensa na hora (recursos, item, amizade). Diário em L.
+- **Save v4**: `player.json` ganha região, vida e equipamento; arquivo novo `quests.json` (missões, criaturas derrotadas, regiões visitadas, marcos). Os objetos de todas as regiões são salvos. Saves v1 a v3 são migrados.
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

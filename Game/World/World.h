@@ -8,6 +8,7 @@
 
 #include "Engine/World/TileMap.h"
 #include <random>
+#include <set>
 
 #include "Game/Data/GameData.h"
 #include "Game/Economy/Economia.h"
@@ -31,6 +32,7 @@ struct Conversa {
     std::vector<std::string> falas;
     int coracoes = 0;
     bool ganhouAmizade = false;
+    std::string missao;  // missão oferecida nesta conversa ("" = nenhuma)
 };
 
 struct AlvoInteracao {
@@ -42,7 +44,11 @@ struct AlvoInteracao {
 
 // O que aconteceu neste passo, para a apresentação (partículas, textos, sons)
 struct EventoJogo {
-    enum class Tipo { Golpe, Esgotou, Ganhou, AbrirConstrucao, Construiu, Aviso, AbrirConversa, Desmaiou, NovoDia, ObraIniciada };
+    enum class Tipo {
+        Golpe, Esgotou, Ganhou, AbrirConstrucao, Construiu, Aviso, AbrirConversa, Desmaiou, NovoDia, ObraIniciada,
+        // Fase 6
+        Ataque, AcertouInimigo, InimigoDerrotado, HeroiFerido, HeroiDerrotado, MudouRegiao, MissaoNova, MissaoConcluida, Comeu, Forjou
+    };
     Tipo tipo;
     glm::vec2 pos{0.0f};
     std::string alvo;     // tipo do objeto ou id da construção
@@ -55,6 +61,25 @@ struct EntradaMundo {
     glm::vec2 mover{0.0f};
     bool interagir = false;            // toque em E
     bool interagirSegurando = false;   // E segurado: continua golpeando
+    bool atacar = false;               // J: golpe de espada
+    bool comer = false;                // H: comer para recuperar vida
+};
+
+// Saída de uma região para outra (pisar no retângulo leva ao destino)
+struct Saida {
+    glm::ivec2 tile{0}, tam{1};
+    std::string destino;
+    glm::ivec2 chegada{0};
+    Direcao dir = Direcao::Baixo;
+};
+
+struct InfoRegiao {
+    std::string id, nome;
+    float escuridaoMin = 0.0f;      // a floresta é sempre meio escura; a cripta, quase breu
+    glm::vec3 ambiente{1.0f};       // cor da penumbra da região
+    bool hostil = false;
+    std::vector<Saida> saidas;
+    std::vector<std::pair<std::string, glm::ivec2>> spawns;  // inimigos (renascem a cada manhã)
 };
 
 // A partida em si: mapa, objetos (ECS), reino, herói e inventário. Sem janela nem OpenGL.
@@ -87,6 +112,25 @@ public:
     ResumoReino resumo() const { return calcularResumo(reino, *dados_, estado); }
     void sincronizarAldeoes();  // tantos aldeões quanto a população pede
 
+    // Regiões (vilarejo, floresta, cripta): só a ativa vive em `mapa`/`reg`
+    bool noVilarejo() const { return regiaoAtual == "vilarejo"; }
+    const InfoRegiao& infoAtual() const { return regioes.at(regiaoAtual); }
+    void entrarRegiao(const std::string& id, glm::ivec2 chegada, Direcao dir);
+    float escuridao() const;      // relógio + escuridão mínima da região
+    glm::vec3 luzAmbiente() const;
+
+    // Combate e equipamento
+    int danoArma() const;
+    int defesaArmadura() const;
+    int nivelForja() const;       // maior nível de forja pronta (0 = nenhuma)
+    bool forjar(const std::string& equip);
+    void reviver();               // depois de derrotado: acorda em casa no dia seguinte
+    void renascerInimigos();      // de manhã as criaturas voltam (o chefe não, se já caiu)
+
+    // Missões
+    std::vector<const MissaoDef*> missoesAtivas() const;
+    int progressoMissao(const MissaoDef& m) const;
+
     std::vector<ke::AABB> obstaculos() const;
     ke::AABB caixaConstrucao(const BuildingData& b) const;
     glm::vec2 pontoPorta(const BuildingData& b) const;
@@ -104,8 +148,26 @@ public:
     std::map<std::string, glm::ivec2> locais;  // pontos das rotinas, em tiles
     EstadoReino estado;
     RelatorioDia ultimoRelatorio;  // da última noite
+    // Fase 6
+    std::string regiaoAtual = "vilarejo";
+    std::map<std::string, InfoRegiao> regioes;
+    Equipamento equip;
+    std::map<std::string, EstadoMissao> missoes;  // começadas (ativas ou concluídas)
+    std::map<std::string, int> abates;            // inimigos derrotados por tipo (desde sempre)
+    std::set<std::string> visitadas;              // regiões já visitadas
+    std::set<std::string> marcos;                 // acontecimentos únicos ("chefe_cavaleiro_caido")
 
 private:
+    bool lerMapa(const std::string& texto, InfoRegiao& info, std::string* erro);
+    bool adicionarRegiao(const std::string& id, const std::string& texto, const nlohmann::json& j, std::string* erro);
+    static InfoRegiao lerInfoRegiao(const std::string& id, const nlohmann::json& j);
+    void criarInimigo(const std::string& tipo, glm::ivec2 tile);
+    void atualizarInimigos(float dt, const std::vector<ke::AABB>& obst);
+    void golpearComEspada();
+    void ferirHeroi(int dano, glm::vec2 de);
+    void verificarSaidas();
+    void atualizarMissoes();
+    void iniciarMissao(const MissaoDef& m);
     void criarObjeto(char c, int x, int y);
     void criarMoradores();
     void atualizarMoradores(float dt);
@@ -126,6 +188,13 @@ private:
     bool desmaioPendente_ = false;
     std::vector<uint8_t> bloqueio_;  // grade do A* (tile sólido ou com obstáculo); vazia = refazer
     std::mt19937 rng_{2026};        // determinístico: os testes repetem igual
+    struct RegiaoGuardada {
+        ke::TileMap mapa;
+        entt::registry reg;
+    };
+    std::map<std::string, RegiaoGuardada> guardadas_;  // regiões fora de cena
+    std::string prefixoIds_;        // "floresta:" ao carregar outra região (ids únicos no save)
+    bool derrotaPendente_ = false;
 };
 
 uint32_t hashTile(int x, int y);

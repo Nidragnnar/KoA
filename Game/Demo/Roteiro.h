@@ -45,6 +45,8 @@ private:
     float xInicial_ = 0.0f, yInicial_ = 0.0f;
     glm::ivec2 alvoObra_{0};
     int comidaAntes_ = 0, popAntes_ = 0;
+    int abatesAntes_ = 0, vidaAntes_ = 0, diaAntes_ = 0;
+    bool trocouRegiao_ = false;
     std::map<std::string, int> inventarioSalvo_;
     int esgotadosSalvos_ = 0;
 };

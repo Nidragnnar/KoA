@@ -96,7 +96,7 @@ void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
     // Dica de controles nos primeiros segundos
     if (tempoDica_ > 0.0f) {
         const float a = std::min(1.0f, tempoDica_);
-        const std::string dica = "WASD: andar   E: interagir   B: obras   K: reino   Esc: menu";
+        const std::string dica = "WASD andar  E interagir  J atacar  B obras  K reino  L diário";
         f_.desenharCentralizado(r, dica, {320, 348}, {0.85f, 0.82f, 0.75f, a});
     }
     (void)tempo;
@@ -266,6 +266,104 @@ void Hud::painelReino(ke::Renderer2D& r, const World& w) {
     float yl = y;
     for (const auto& l : quebrarLinhas(f_, lista, static_cast<int>(s.x) - 150 - 14)) f_.desenhar(r, l, {xV, yl}, cor::texto), yl += 10;
     f_.desenharCentralizado(r, "A/D mudar impostos   K ou Esc fechar", {320, p.y + s.y - 12}, cor::apagado);
+}
+
+void Hud::combate(ke::Renderer2D& r, const World& w, float tempo) {
+    const Jogador& j = w.jogador;
+    // Vida do herói: aparece em região hostil ou quando ferido
+    if (w.infoAtual().hostil || j.vida < j.vidaMax) {
+        desenharPainel(r, {6, 82}, {116, 22});
+        f_.desenhar(r, "Vida", {12, 89}, cor::apagado);
+        const float fr = static_cast<float>(j.vida) / j.vidaMax;
+        const glm::vec4 c = fr > 0.5f ? cor::bom : fr > 0.25f ? cor::ouro : cor::ruim;
+        const float pulso = fr <= 0.25f ? 0.75f + 0.25f * std::sin(tempo * 10.0f) : 1.0f;
+        barra(r, {46, 90}, 70, fr, c * glm::vec4(pulso, pulso, pulso, 1));
+        if (w.inventario.quantidade("comida") >= 3 && j.vida < j.vidaMax) f_.desenhar(r, "H: comer", {128, 89}, cor::apagado);
+    }
+    // Chefe: barra grande no alto enquanto ele persegue
+    for (auto [e, i] : w.reg.view<const Inimigo>().each()) {
+        const InimigoDef& d = dados_.inimigos.at(i.tipo);
+        if (!d.chefe || !i.perseguindo) continue;
+        desenharPainel(r, {170, 312}, {300, 26});  // embaixo, longe dos avisos
+        f_.desenharCentralizado(r, d.nome, {320, 320}, cor::ruim);
+        barra(r, {180, 327}, 280, static_cast<float>(i.vida) / i.vidaMax, {0.75f, 0.15f, 0.2f, 1});
+    }
+    // Missões ativas (até 3), na coluna da esquerda
+    const auto ativas = w.missoesAtivas();
+    float y = 124;
+    for (size_t k = 0; k < ativas.size() && k < 3; ++k) {
+        const MissaoDef& m = *ativas[k];
+        const std::string prog = std::format("{}/{}", std::min(w.progressoMissao(m), m.objetivo.quantidade), m.objetivo.quantidade);
+        const float l = static_cast<float>(f_.largura(m.nome + "  " + prog)) + 10;
+        r.retangulo({6, y - 2}, {l, 11}, {0.05f, 0.04f, 0.04f, 0.6f});
+        f_.desenhar(r, m.nome, {11, y}, cor::texto);
+        f_.desenhar(r, prog, {1.0f + l - f_.largura(prog), y}, cor::ouro);
+        y += 12;
+    }
+}
+
+void Hud::lojaForja(ke::Renderer2D& r, const World& w, const std::vector<std::string>& itens, int sel) {
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.45f});
+    const float alt = 70.0f + itens.size() * 26.0f;
+    const glm::vec2 p{100, std::floor(180 - alt / 2)}, s{440, alt};
+    desenharPainel(r, p, s);
+    f_.desenharCentralizado(r, std::format("Forja de Bram (nível {})", w.nivelForja()), {320, p.y + 12}, cor::ouro);
+    f_.desenharCentralizado(r, std::format("Espada: {} de dano   Armadura: {} de defesa", w.danoArma(), w.defesaArmadura()), {320, p.y + 24},
+                            cor::apagado);
+    for (size_t i = 0; i < itens.size(); ++i) {
+        const EquipDef& d = dados_.equipamentos.at(itens[i]);
+        const float y = p.y + 40 + i * 26.0f;
+        const bool s1 = static_cast<int>(i) == sel;
+        const bool tem = w.equip.possuidos.contains(d.id);
+        const bool bloqueado = w.nivelForja() < d.forja;
+        if (s1) r.retangulo({p.x + 8, y - 3}, {s.x - 16, 25}, {0.45f, 0.36f, 0.22f, 0.45f});
+        const std::string atributo = d.tipo == "arma" ? std::format("dano {}", d.dano) : std::format("defesa {}", d.defesa);
+        f_.desenhar(r, d.nome, {p.x + 14, y}, tem || bloqueado ? cor::apagado : s1 ? cor::ouro : cor::texto);
+        f_.desenhar(r, atributo, {p.x + 200, y}, cor::texto);
+        const std::string estado = tem ? "você já tem" : bloqueado ? std::format("forja nível {}", d.forja) : "";
+        f_.desenhar(r, estado, {p.x + s.x - 14 - f_.largura(estado), y}, cor::apagado);
+        if (!tem && !bloqueado) custoEmLinha(r, d.custo, w.inventario, {p.x + 24, y + 11});
+    }
+    const std::string desc = dados_.equipamentos.at(itens[sel]).descricao;
+    f_.desenharCentralizado(r, desc, {320, p.y + s.y - 14}, cor::apagado);
+    f_.desenharCentralizado(r, "W/S escolher   E forjar   Esc fechar", {320, p.y + s.y + 10}, cor::texto);
+}
+
+void Hud::diario(ke::Renderer2D& r, const World& w) {
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.5f});
+    const glm::vec2 p{90, 40}, s{460, 280};
+    desenharPainel(r, p, s);
+    f_.desenharCentralizado(r, "Diário do Herdeiro", {320, p.y + 12}, cor::ouro);
+    float y = p.y + 30;
+    f_.desenhar(r, "Missões", {p.x + 14, y}, cor::ouro);
+    y += 13;
+    const auto ativas = w.missoesAtivas();
+    if (ativas.empty()) f_.desenhar(r, "Nenhuma missão ativa. Converse com os moradores.", {p.x + 20, y}, cor::apagado), y += 12;
+    for (const MissaoDef* m : ativas) {
+        const int pr = std::min(w.progressoMissao(*m), m->objetivo.quantidade);
+        f_.desenhar(r, std::format("{} ({}/{})", m->nome, pr, m->objetivo.quantidade), {p.x + 20, y}, cor::texto);
+        y += 11;
+        for (const auto& l : quebrarLinhas(f_, m->descricao, static_cast<int>(s.x) - 50)) f_.desenhar(r, l, {p.x + 30, y}, cor::apagado), y += 10;
+        y += 3;
+    }
+    int concluidas = 0;
+    for (const auto& [id, e] : w.missoes) concluidas += e.concluida;
+    f_.desenhar(r, std::format("Cumpridas: {}", concluidas), {p.x + 20, y}, cor::bom);
+    y += 18;
+    f_.desenhar(r, "Equipamento", {p.x + 14, y}, cor::ouro);
+    y += 13;
+    const EquipDef& arma = dados_.equipamentos.at(w.equip.arma);
+    const EquipDef& armadura = dados_.equipamentos.at(w.equip.armadura);
+    f_.desenhar(r, std::format("{} (dano {})", arma.nome, arma.dano), {p.x + 20, y}, cor::texto);
+    y += 11;
+    f_.desenhar(r, std::format("{} (defesa {})", armadura.nome, armadura.defesa), {p.x + 20, y}, cor::texto);
+    y += 18;
+    f_.desenhar(r, "Criaturas derrotadas", {p.x + 14, y}, cor::ouro);
+    y += 13;
+    std::string abates;
+    for (const auto& [tipo, n] : w.abates) abates += (abates.empty() ? "" : ",  ") + dados_.inimigos.at(tipo).nome + " " + std::to_string(n);
+    f_.desenhar(r, abates.empty() ? "Nenhuma ainda." : abates, {p.x + 20, y}, abates.empty() ? cor::apagado : cor::texto);
+    f_.desenharCentralizado(r, "J atacar   H comer   L ou Esc fechar", {320, p.y + s.y - 12}, cor::apagado);
 }
 
 void Hud::relatorioManha(ke::Renderer2D& r, const World& w) {

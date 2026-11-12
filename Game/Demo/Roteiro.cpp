@@ -25,6 +25,14 @@ glm::ivec2 lugarLivre(const World& w, const std::string& def, glm::ivec2 perto) 
     return {-1, -1};
 }
 
+entt::entity inimigoMaisPerto(World& w, const std::string& tipo) {
+    entt::entity melhor = entt::null;
+    float d = 1e9f;
+    for (auto [e, p, i] : w.reg.view<Posicao, Inimigo>().each())
+        if (i.tipo == tipo && glm::distance(p.v, w.jogador.pos) < d) d = glm::distance(p.v, w.jogador.pos), melhor = e;
+    return melhor;
+}
+
 int contarEsgotados(World& w) {
     int n = 0;
     for (auto [e, c] : w.reg.view<Coletavel>().each()) n += c.esgotado;
@@ -303,8 +311,135 @@ void Roteiro::noMundo(WorldScene& cena) {
             }
             return;
         }
-        case 9: case 10: case 11: {  // prévia das eras (só a cor da tela muda por enquanto)
-            const int era = etapa_ - 8;
+        case 9: {  // fase 6: Oswin oferece a missão
+            const entt::entity oswin = w.morador("oswin");
+            if (quadro_ == 1) {
+                w.relogio.minutos = 9 * 60;
+                w.posicionarMoradores();
+                w.reg.get<Agenda>(oswin).dormindo = false;
+                w.reg.get<Movimento>(oswin).caminho.clear();
+                w.jogador.pos = w.reg.get<Posicao>(oswin).v + glm::vec2(0, 14);
+                w.jogador.dir = Direcao::Cima;
+            }
+            if (quadro_ == 8) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ > 20 && cena.conversa() && quadro_ % 10 == 0) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ > 30 && !cena.conversa()) {
+                verificar(w.missoes.contains("limpar_estrada"), "Oswin entrega a missão Limpar a Estrada");
+                capturar("21_missao_aceita");
+                proxima();
+            }
+            if (quadro_ > 800) verificar(false, "conversa com Oswin terminou"), terminar();
+            return;
+        }
+        case 10:  // andar até a saída leste e entrar na floresta
+            if (quadro_ == 1) {
+                w.jogador.pos = {60 * 16 + 8, 19 * 16 + 12};
+                w.jogador.dir = Direcao::Direita;
+                in.simularSegurar(SDL_SCANCODE_D, true);
+            }
+            if (w.regiaoAtual == "floresta" && !trocouRegiao_) {
+                trocouRegiao_ = true;
+                in.limparSimulacao();
+                quadro_ = 1000;  // marca: chegou
+            }
+            if (quadro_ == 1030) {
+                verificar(true, "andar até a borda leste leva à Floresta Amaldiçoada");
+                capturar("22_floresta");
+                proxima();
+            }
+            if (quadro_ == 300) verificar(false, "chegou à floresta"), terminar();
+            return;
+        case 11: {  // combate de verdade: J até cinco sombras caírem
+            if (quadro_ == 1) abatesAntes_ = w.abates["sombra"], alvo_ = entt::null;
+            if (!w.reg.valid(alvo_)) {
+                if (w.abates["sombra"] - abatesAntes_ >= 5) {
+                    verificar(w.missoes.at("limpar_estrada").concluida, "5 sombras derrotadas: missão cumprida");
+                    proxima();
+                    return;
+                }
+                alvo_ = inimigoMaisPerto(w, "sombra");
+                if (alvo_ == entt::null) verificar(false, "ainda havia sombras"), terminar();
+                return;
+            }
+            if (quadro_ % 18 == 0) {
+                w.jogador.pos = w.reg.get<Posicao>(alvo_).v + glm::vec2(0, 12);
+                w.jogador.dir = Direcao::Cima;
+                w.jogador.vida = w.jogador.vidaMax;
+                in.simularToque(SDL_SCANCODE_J);
+            }
+            if (quadro_ == 26) capturar("23_combate");
+            if (quadro_ > 3000) verificar(false, "combate terminou a tempo"), terminar();
+            return;
+        }
+        case 12: {  // levar dano e comer
+            if (quadro_ == 1) {
+                const entt::entity lobo = inimigoMaisPerto(w, "lobo");
+                w.jogador.vida = w.jogador.vidaMax;
+                w.jogador.pos = w.reg.get<Posicao>(lobo).v + glm::vec2(6, 0);
+            }
+            if (quadro_ == 20) {
+                verificar(w.jogador.vida < w.jogador.vidaMax, std::format("o lobo fere o herói (vida {})", w.jogador.vida));
+                w.jogador.pos = {3 * 16 + 8, 17 * 16 + 12};  // foge para a entrada
+                capturar("24_ferido");
+            }
+            if (quadro_ == 30) {
+                vidaAntes_ = w.jogador.vida;
+                in.simularToque(SDL_SCANCODE_H);
+            }
+            if (quadro_ == 40) {
+                verificar(w.jogador.vida > vidaAntes_, std::format("H come e recupera vida ({} -> {})", vidaAntes_, w.jogador.vida));
+                proxima();
+            }
+            return;
+        }
+        case 13: {  // a cripta e o Cavaleiro Caído
+            if (quadro_ == 1) {
+                w.jogador.pos = {46 * 16 + 8, 5 * 16 + 12};  // em cima da escada
+            }
+            if (quadro_ == 10) {
+                verificar(w.regiaoAtual == "cripta", "a escada leva à cripta");
+                // Recompensa que se ganharia com mais horas de jogo
+                w.equip.possuidos.insert("espada_linhagem");
+                w.equip.arma = "espada_linhagem";
+                alvo_ = inimigoMaisPerto(w, "cavaleiro_caido");
+            }
+            if (quadro_ == 40) capturar("25_cripta");
+            if (quadro_ > 40) {
+                if (w.reg.valid(alvo_)) {
+                    if (quadro_ % 18 == 0) {
+                        w.jogador.pos = w.reg.get<Posicao>(alvo_).v + glm::vec2(0, 16);
+                        w.jogador.dir = Direcao::Cima;
+                        w.jogador.vida = w.jogador.vidaMax;
+                        in.simularToque(SDL_SCANCODE_J);
+                    }
+                    if (quadro_ == 80) capturar("26_chefe");
+                } else {
+                    verificar(w.marcos.contains("chefe_cavaleiro_caido"), "o Cavaleiro Caído foi derrotado");
+                    proxima();
+                }
+            }
+            if (quadro_ > 4000) verificar(false, "luta com o chefe terminou"), terminar();
+            return;
+        }
+        case 14: {  // cair em combate: acorda em casa no dia seguinte
+            if (quadro_ == 1) {
+                diaAntes_ = w.relogio.dia;
+                const entt::entity e = inimigoMaisPerto(w, "esqueleto");
+                w.jogador.vida = 1;
+                w.jogador.invulneravel = 0.0f;
+                w.jogador.pos = w.reg.get<Posicao>(e).v + glm::vec2(5, 0);
+            }
+            if (quadro_ == 200) {
+                verificar(w.noVilarejo() && w.jogador.vida == w.jogador.vidaMax && w.relogio.dia == diaAntes_ + 1,
+                          "derrotado, acorda em casa no dia seguinte com a vida cheia");
+                capturar("27_derrota_relatorio");
+            }
+            if (quadro_ == 205) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 215) proxima();
+            return;
+        }
+        case 15: case 16: case 17: {  // prévia das eras (só a cor da tela muda por enquanto)
+            const int era = etapa_ - 14;
             if (quadro_ == 1) {
                 w.reino.eraForcada = era;
                 w.reino.eraVisual = static_cast<float>(era);
@@ -315,7 +450,7 @@ void Roteiro::noMundo(WorldScene& cena) {
             }
             return;
         }
-        case 12:
+        case 18:
             w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();
