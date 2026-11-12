@@ -5,6 +5,8 @@ param([string]$Versao = "")
 $ErrorActionPreference = "Stop"
 if ($Versao -and $Versao -notmatch '^\d+(\.\d+)+$') { "versão inválida: $Versao (use números, ex.: 0.1)"; exit 1 }
 Set-Location (Split-Path $PSScriptRoot)
+# Áudio de mentira nos testes: todo o caminho do som roda, mas nada sai nos alto-falantes
+$env:SDL_AUDIODRIVER = "dummy"
 $nome = "KingdomOfAshes"
 
 & .\ferramentas\compilar.ps1 release | Out-Host

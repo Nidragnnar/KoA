@@ -24,7 +24,24 @@
     { "sprite": "barraco", "tile": [56, 16], "base": [3, 2] },
     { "sprite": "barraco", "tile": [40, 6], "base": [3, 2] }
   ],
-  "_locais": "Tiles onde os moradores ficam (rotinas em Data/NPCs/npcs.json). O que estiver em cima é limpo ao carregar.",
+  "_enfeites": "Aparecem quando a transformação da era chega ao tile deles. luz = [r, g, b, raio].",
+  "enfeites": [
+    { "sprite": "lampiao", "tile": [24, 18], "era": 1, "luz": [1.0, 0.8, 0.45, 50] },
+    { "sprite": "lampiao", "tile": [40, 18], "era": 1, "luz": [1.0, 0.8, 0.45, 50] },
+    { "sprite": "lampiao", "tile": [30, 26], "era": 1, "luz": [1.0, 0.8, 0.45, 50] },
+    { "sprite": "lampiao", "tile": [50, 18], "era": 1, "luz": [1.0, 0.8, 0.45, 50] },
+    { "sprite": "lampiao", "tile": [16, 18], "era": 1, "luz": [1.0, 0.8, 0.45, 50] },
+    { "sprite": "estandarte_0", "tile": [29, 8], "era": 2 },
+    { "sprite": "estandarte_0", "tile": [34, 8], "era": 2 },
+    { "sprite": "estandarte_1", "tile": [28, 17], "era": 2 },
+    { "sprite": "estandarte_2", "tile": [35, 17], "era": 2 },
+    { "sprite": "cristal", "tile": [25, 17], "era": 3, "luz": [0.45, 0.75, 1.0, 64] },
+    { "sprite": "cristal", "tile": [38, 17], "era": 3, "luz": [0.45, 0.75, 1.0, 64] },
+    { "sprite": "cristal", "tile": [30, 12], "era": 3, "luz": [0.45, 0.75, 1.0, 64] },
+    { "sprite": "cristal", "tile": [20, 23], "era": 3, "luz": [0.45, 0.75, 1.0, 64] },
+    { "sprite": "cristal", "tile": [44, 21], "era": 3, "luz": [0.45, 0.75, 1.0, 64] }
+  ],
+  "_locais":"Tiles onde os moradores ficam (rotinas em Data/NPCs/npcs.json). O que estiver em cima é limpo ao carregar.",
   "locais": {
     "casa_bram": [39, 12], "casa_edda": [12, 16], "casa_tilda": [9, 31], "casa_oswin": [57, 18], "casa_maelis": [41, 8],
     "forja_ruina": [35, 9], "poco": [28, 20], "praca": [30, 22], "praca_fogueira": [33, 23], "taverna_ruina": [26, 21],

@@ -14,6 +14,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <stb_image_write.h>
 
+#include "Eras.h"
 #include "Sprites.h"
 
 namespace fs = std::filesystem;
@@ -61,13 +62,17 @@ int main(int argc, char** argv) {
     const fs::path pastaArte = fs::absolute(saida).parent_path() / "Arte";
     int importados = 0;
     for (auto& [nome, img] : sprites) importados += importar(pastaArte, nome, img) ? 1 : 0;
+    // Versões de cada era, derivadas da arte já importada (o estilo do NidraIA acompanha a evolução)
+    auto eras = gen::gerarEras(sprites);
+    const size_t qtdEras = eras.size();
+    for (auto& e : eras) sprites.push_back(std::move(e));
 
     // Empacotamento em prateleiras, dos mais altos aos mais baixos (1 px de folga entre eles)
     std::vector<size_t> ordem(sprites.size());
     for (size_t i = 0; i < ordem.size(); ++i) ordem[i] = i;
     std::ranges::stable_sort(ordem, [&](size_t a, size_t b) { return sprites[a].second.h > sprites[b].second.h; });
 
-    const int L = 512;
+    const int L = 1024;
     int x = 0, y = 0, alturaPrateleira = 0;
     nlohmann::json j = nlohmann::json::object();
     std::vector<std::tuple<size_t, int, int>> posicoes;
@@ -94,6 +99,6 @@ int main(int argc, char** argv) {
         return 1;
     }
     std::ofstream(saida / "atlas.json") << j.dump(1);
-    std::printf("%zu sprites (%d da arte importada) -> %s (%dx%d)\n", sprites.size(), importados, png.c_str(), L, A);
+    std::printf("%zu sprites (%d da arte importada, %zu de eras) -> %s (%dx%d)\n", sprites.size(), importados, qtdEras, png.c_str(), L, A);
     return 0;
 }

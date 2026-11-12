@@ -27,6 +27,7 @@ struct CondicoesFala {
     std::optional<Estacao> estacao;
     int casaNivelMin = 0;
     int afinidadeMin = 0;
+    int eraMin = 0;  // 1 Despertar, 2 Renascido, 3 Alta Fantasia
 };
 
 struct EntradaFala {
@@ -92,6 +93,7 @@ struct ContextoFala {
     Periodo periodo = Periodo::Manha;
     Estacao estacao = Estacao::Primavera;
     int nivelCasa = 1;
+    int era = 0;
 };
 
 // Primeira entrada cujas condições batem (ou nenhuma)

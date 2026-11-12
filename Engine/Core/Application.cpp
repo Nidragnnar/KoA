@@ -18,7 +18,7 @@ Application::~Application() {
 }
 
 bool Application::iniciar() {
-    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS)) {
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_AUDIO)) {
         log::erro("SDL_Init: {}", SDL_GetError());
         return false;
     }
@@ -30,6 +30,7 @@ bool Application::iniciar() {
     if (!tela_.criar(cfg_.baseL, cfg_.baseA, shaders)) return false;
     fonte_.definirTextura(recursos_.textura("Assets/UI/fonte.png"));
     if (!debug_.iniciar(janela_.sdl(), janela_.contexto())) log::aviso("ImGui não iniciou (ferramentas de depuração indisponíveis)");
+    audio_.abrir();  // sem som não é erro: o jogo segue mudo
     rodando_ = true;
     return true;
 }
@@ -56,6 +57,7 @@ void Application::executar() {
             debug_.processar(e);
             if (e.type == SDL_EVENT_KEY_DOWN && e.key.scancode == SDL_SCANCODE_F1 && !e.key.repeat) debug_.visivel = !debug_.visivel;
             if (e.type == SDL_EVENT_KEY_DOWN && e.key.scancode == SDL_SCANCODE_F11 && !e.key.repeat) janela_.alternarTelaCheia();
+            if (e.type == SDL_EVENT_KEY_DOWN && e.key.scancode == SDL_SCANCODE_M && !e.key.repeat) audio_.alternarMudo();
             if (debug_.querTeclado() && (e.type == SDL_EVENT_KEY_DOWN || e.type == SDL_EVENT_KEY_UP)) continue;
             input_.processar(e);
         }

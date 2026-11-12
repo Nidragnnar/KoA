@@ -63,6 +63,17 @@ struct Decoracao {
     glm::ivec2 base{1};
 };
 
+// Enfeite que só aparece quando a era chega ao lugar dele (estandartes, lampiões, cristais)
+struct Enfeite {
+    int eraMin = 1;
+};
+
+// Objeto que vira outro a partir de uma era (o poço vira fonte)
+struct TrocaPorEra {
+    int era = 2;
+    std::string sprite;
+};
+
 // Fonte de luz (tochas)
 struct Luz {
     glm::vec3 cor{1.0f, 0.6f, 0.3f};

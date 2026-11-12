@@ -42,6 +42,9 @@ public:
     bool diarioAberto() const { return diario_; }
     bool forjaAberta() const { return forja_; }
     std::vector<std::string> opcoesForja() const;
+    // Fase 7
+    void chamarDragao() { proximoDragao_ = 0.0f; }
+    bool dragaoVoando() const { return dragaoAtivo_; }
 
 private:
     std::vector<std::string> opcoesObras() const;
@@ -89,6 +92,12 @@ private:
     float feridoFlash_ = 0.0f;   // tela avermelhada ao levar dano
     float tituloRegiao_ = 0.0f;  // nome da região aparece grande ao entrar
     std::string nomeRegiao_;
+    // Fase 7
+    float tituloEra_ = 0.0f;     // anúncio da nova era
+    std::string nomeEra_;
+    float tempoAtmosfera_ = 0.0f;
+    bool dragaoAtivo_ = false;  // sobrevoo na Alta Fantasia
+    float dragaoX_ = 0.0f, dragaoY_ = 0.0f, proximoDragao_ = 20.0f;
     float transicao_ = -1.0f;  // -1 = nenhuma; 0..2 = escurece, troca o dia (em 1), clareia
     bool desmaio_ = false;
     bool mostrarColisoes_ = false;

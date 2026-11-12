@@ -23,8 +23,8 @@ ke::ColorGrade gradeDaEra(float e) {
     static const ke::ColorGrade eras[4] = {
         {0.68f, 1.10f, -0.07f, {0.84f, 0.92f, 1.00f}, 0.62f},
         {0.97f, 1.05f, -0.01f, {0.98f, 0.98f, 0.98f}, 0.35f},
-        {1.05f, 1.02f, 0.02f, {1.05f, 1.00f, 0.92f}, 0.22f},
-        {1.28f, 1.05f, 0.04f, {1.06f, 1.02f, 0.97f}, 0.15f},
+        {1.00f, 1.02f, 0.02f, {1.04f, 1.00f, 0.94f}, 0.22f},  // as cores da era já vêm dos sprites
+        {1.10f, 1.04f, 0.04f, {1.05f, 1.02f, 0.98f}, 0.14f},
     };
     e = std::clamp(e, 0.0f, 3.0f);
     const int a = std::min(2, static_cast<int>(e));

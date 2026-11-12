@@ -281,7 +281,26 @@ void WorldScene::poeira(glm::vec2 c, glm::vec2 meia, int n, glm::vec4 corBase) {
 }
 
 void WorldScene::tratarEventos() {
+    ke::AudioDevice& som = ctx_.app.audio();
     for (const EventoJogo& e : mundo_.tirarEventos()) {
+        // Som de cada acontecimento
+        switch (e.tipo) {
+        case EventoJogo::Tipo::Golpe:
+        case EventoJogo::Tipo::Ataque: som.tocar(ke::Som::Golpe); break;
+        case EventoJogo::Tipo::AcertouInimigo: som.tocar(ke::Som::Acerto); break;
+        case EventoJogo::Tipo::Ganhou:
+        case EventoJogo::Tipo::InimigoDerrotado: som.tocar(e.recurso == "ouro" ? ke::Som::Moeda : ke::Som::Coleta); break;
+        case EventoJogo::Tipo::Construiu:
+        case EventoJogo::Tipo::ObraIniciada:
+        case EventoJogo::Tipo::Forjou: som.tocar(ke::Som::Construir); break;
+        case EventoJogo::Tipo::HeroiFerido: som.tocar(ke::Som::Dano); break;
+        case EventoJogo::Tipo::EraMudou:
+        case EventoJogo::Tipo::MissaoConcluida: som.tocar(ke::Som::Magia); break;
+        case EventoJogo::Tipo::AbrirConversa:
+        case EventoJogo::Tipo::AbrirConstrucao:
+        case EventoJogo::Tipo::MissaoNova: som.tocar(ke::Som::Menu); break;
+        default: break;
+        }
         switch (e.tipo) {
         case EventoJogo::Tipo::Golpe: {
             const bool arvore = e.alvo == "arvore";
@@ -390,6 +409,13 @@ void WorldScene::tratarEventos() {
         case EventoJogo::Tipo::Comeu:
             textoFlutuante(e.pos - glm::vec2(0, 26), std::format("+{} vida", e.quantidade), cor::bom);
             break;
+        case EventoJogo::Tipo::EraMudou:
+            nomeEra_ = e.texto;
+            tituloEra_ = 5.0f;
+            flash_ = 1.0f;
+            cam_.tremor = 2.0f;
+            ke::log::info("o reino entrou em uma nova era: {}", e.texto);
+            break;
         case EventoJogo::Tipo::Forjou:
             hud_.aviso("Forjado: " + e.texto + "!", cor::ouro);
             cam_.tremor = 1.5f;
@@ -442,6 +468,57 @@ void WorldScene::efeitosAmbiente(float dt) {
             part_.emitir(p);
         }
     }
+    // Vida de cada era (só no vilarejo; fora dele a terra segue amaldiçoada)
+    const float era = mundo_.noVilarejo() ? mundo_.reino.eraVisual : 0.0f;
+    const bool noite = mundo_.relogio.escuridao() > 0.5f;
+    tempoAtmosfera_ += dt;
+    if (era >= 0.6f && tempoAtmosfera_ > 0.12f) {
+        tempoAtmosfera_ = 0.0f;
+        const glm::vec2 c = cam_.canto();
+        ke::Particula p;
+        p.pos = c + glm::vec2(u(rng_) * 640.0f, u(rng_) * 360.0f);
+        if (noite) {  // vagalumes
+            p.vel = {u(rng_) * 16.0f - 8.0f, u(rng_) * 10.0f - 6.0f};
+            p.cor = {0.8f, 1.0f, 0.4f, 0.9f};
+            p.vida = p.vidaMax = 2.0f + u(rng_) * 2.0f;
+            p.aditiva = true;
+            part_.emitir(p);
+        } else if (era >= 1.6f) {  // pétalas e borboletas
+            const bool petala = u(rng_) < 0.6f;
+            p.pos.y = c.y - 4.0f;
+            p.vel = petala ? glm::vec2(10.0f + u(rng_) * 10.0f, 14.0f + u(rng_) * 8.0f) : glm::vec2(u(rng_) * 30.0f - 15.0f, u(rng_) * 10.0f);
+            static const glm::vec4 cores[] = {{0.95f, 0.7f, 0.8f, 0.9f}, {1.0f, 0.95f, 0.6f, 1}, {0.6f, 0.8f, 1.0f, 1}};
+            p.cor = cores[petala ? 0 : 1 + static_cast<int>(u(rng_) * 2)];
+            if (!petala) p.pos.y = c.y + u(rng_) * 360.0f;
+            p.vida = p.vidaMax = 10.0f;
+            p.tamanho = petala ? 1.0f : 2.0f;
+            part_.emitir(p);
+        }
+        if (era >= 2.6f) {  // poeira mágica subindo
+            ke::Particula m;
+            m.pos = c + glm::vec2(u(rng_) * 640.0f, 360.0f * (0.3f + 0.7f * u(rng_)));
+            m.vel = {u(rng_) * 6.0f - 3.0f, -10.0f - u(rng_) * 10.0f};
+            m.cor = u(rng_) < 0.5f ? glm::vec4(0.6f, 0.85f, 1.0f, 0.8f) : glm::vec4(1.0f, 0.85f, 0.45f, 0.8f);
+            m.vida = m.vidaMax = 3.0f;
+            m.aditiva = true;
+            part_.emitir(m);
+        }
+    }
+    // O dragão da Alta Fantasia cruza o céu de vez em quando
+    if (era >= 2.9f) {
+        if (!dragaoAtivo_) {
+            proximoDragao_ -= dt;
+            if (proximoDragao_ <= 0.0f) {
+                dragaoAtivo_ = true;
+                dragaoX_ = cam_.canto().x - 100.0f;
+                dragaoY_ = cam_.canto().y + 80.0f + u(rng_) * 120.0f;
+            }
+        } else {
+            dragaoX_ += 95.0f * dt;
+            dragaoY_ -= 8.0f * dt;
+            if (dragaoX_ > cam_.canto().x + 760.0f) dragaoAtivo_ = false, proximoDragao_ = 35.0f + u(rng_) * 30.0f;
+        }
+    }
     // Faíscas das tochas e da fogueira
     for (auto [e, pos, l] : mundo_.reg.view<const Posicao, const Luz>().each()) {
         if (u(rng_) > (l.raio > 60.0f ? 0.15f : 0.04f)) continue;
@@ -465,6 +542,10 @@ void WorldScene::atualizar(double dtD) {
                             relatorio_ || diario_ || forja_;
     feridoFlash_ = std::max(0.0f, feridoFlash_ - dt);
     tituloRegiao_ = std::max(0.0f, tituloRegiao_ - dt);
+    tituloEra_ = std::max(0.0f, tituloEra_ - dt);
+    // Música: a era do reino no vilarejo; trilha de perigo na floresta e na cripta
+    ctx_.app.audio().definir(mundo_.noVilarejo() ? mundo_.reino.eraVisual : 0.0f, mundo_.relogio.escuridao(),
+                             mundo_.infoAtual().hostil ? 1.0f : 0.0f);
 
     if (transicao_ >= 0.0f) {
         const float antes = transicao_;
@@ -503,6 +584,11 @@ void WorldScene::atualizar(double dtD) {
     }
     std::erase_if(flutuantes_, [](const Flutuante& f) { return f.vida <= 0.0f; });
     flash_ = std::max(0.0f, flash_ - dt * 1.5f);
+    // Sempre o tamanho do mapa atual (acordar em casa depois de cair na cripta também troca de mapa)
+    if (cam_.limite != mundo_.tamanhoPixels()) {
+        cam_.limite = mundo_.tamanhoPixels();
+        cam_.posicionar(mundo_.jogador.pos - glm::vec2(0, 10));
+    }
     cam_.seguir(mundo_.jogador.pos - glm::vec2(0, 10), dt, 8.0f);
     cam_.atualizarTremor(dt);
 }
@@ -553,6 +639,12 @@ void WorldScene::renderizar(float) {
         c.a = std::min(1.0f, t.vida * 1.5f);
         f.desenharCentralizado(r, t.texto, t.pos, c);
     }
+    if (dragaoAtivo_) {
+        // Sombra no chão bem abaixo e o dragão no alto, batendo as asas
+        r.sprite(ctx_.app.recursos().regiao("sombra"), {dragaoX_ - 10.0f, dragaoY_ + 110.0f}, {1, 1, 1, 0.6f}, false, 3.0f);
+        const ke::SpriteRegion& d = ctx_.app.recursos().regiao(std::format("dragao_{}", static_cast<int>(tempo_ * 4.0f) % 2));
+        r.sprite(d, glm::floor(glm::vec2(dragaoX_, dragaoY_)));
+    }
     r.terminar();
 
     // 3) Interface em coordenadas da tela
@@ -561,6 +653,12 @@ void WorldScene::renderizar(float) {
     if (feridoFlash_ > 0.0f) r.retangulo({0, 0}, {640, 360}, {0.7f, 0.05f, 0.05f, feridoFlash_ * 0.45f});
     hud_.desenhar(r, mundo_, tempo_);
     hud_.combate(r, mundo_, tempo_);
+    if (tituloEra_ > 0.0f) {
+        const float a = std::min(1.0f, std::min(tituloEra_, 5.0f - tituloEra_) * 1.5f);
+        r.retangulo({0, 130}, {640, 60}, {0.02f, 0.02f, 0.03f, 0.55f * a});
+        f.desenharCentralizado(r, "Uma nova era começa", {320, 146}, {cor::texto.r, cor::texto.g, cor::texto.b, a});
+        f.desenharCentralizado(r, nomeEra_, {320, 168}, {cor::ouro.r, cor::ouro.g, cor::ouro.b, a}, true, 2);
+    }
     if (tituloRegiao_ > 0.0f) {
         const float a = std::min(1.0f, tituloRegiao_);
         f.desenharCentralizado(r, nomeRegiao_, {320, 110}, {cor::ouro.r, cor::ouro.g, cor::ouro.b, a}, true, 2);
@@ -619,6 +717,9 @@ void WorldScene::interfaceDepuracao() {
         ImGui::Text("Desenvolvimento %d | era-alvo: %s", mundo_.reino.desenvolvimento(), nomeEra(mundo_.reino.eraAlvo()));
         ImGui::SliderInt("Forçar era (-1 = auto)", &mundo_.reino.eraForcada, -1, 3);
         ImGui::SliderFloat("Era visual", &mundo_.reino.eraVisual, 0.0f, 3.0f);
+        if (ImGui::Button("Chamar o dragão (era 3)")) chamarDragao();
+        ImGui::SameLine();
+        if (ImGui::Button(ctx_.app.audio().mudo() ? "Som: mudo (M)" : "Som: ligado (M)")) ctx_.app.audio().alternarMudo();
         for (auto& b : mundo_.reino.construcoes) {
             const BuildingDef* d = mundo_.def(b);
             if (d && ImGui::SliderInt(b.id.c_str(), &b.level, 1, d->nivelMax()))

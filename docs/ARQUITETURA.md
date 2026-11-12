@@ -56,6 +56,15 @@ Ainda não feito nesta fase: necessidades dos moradores, presentes (os gostos e 
 - **Missões** (`Data/Quests/missoes.json`): o morador oferece a missão no fim da conversa (com requisito opcional). Objetivos de derrotar, construir, ter ou visitar, e recompensa na hora (recursos, item, amizade). Diário em L.
 - **Save v4**: `player.json` ganha região, vida e equipamento; arquivo novo `quests.json` (missões, criaturas derrotadas, regiões visitadas, marcos). Os objetos de todas as regiões são salvos. Saves v1 a v3 são migrados.
 
+## Fase 7 — progressão visual
+
+- **Arte por era derivada da arte da era 1** (`Tools/AssetGen/Eras.cpp`): depois de importar a arte do NidraIA, cada sprite de terreno, vegetação, pedra, tocha e construção ganha versões `_e1`, `_e2` e `_e3`, recoloridas em HSV. Verdes mais vivos; nas construções o musgo some, os tons frios esquentam e as paredes clareiam; pedra embranquece; tochas viram chama azul na era 3; a grama ganha flores e as árvores florescem e brilham. Assim o estilo da arte importada acompanha a evolução. A forma das construções continua vindo do **nível** delas.
+- **Transformação em onda** (`World::eraNoTile`): cada tile tem um atraso proporcional à distância da casa do herdeiro (com um pouco de acaso). Durante os ~8 s de transição de era, a mudança se espalha a partir da casa. Fora do vilarejo a terra segue amaldiçoada; a floresta só clareia (`cura_com_era`).
+- **Troca de terreno e de objetos por era**: no Renascido, a lama vira calçamento; o poço vira fonte (`TrocaPorEra`); enfeites de `vilarejo.json` (`Enfeite`) aparecem quando a onda chega a eles: lampiões (era 2), estandartes (3), cristais de luz azul (4).
+- **Atmosfera**: cinzas na era 1; vagalumes à noite a partir do Despertar; pétalas e borboletas no Renascido; poeira mágica e o dragão na Alta Fantasia.
+- **Anúncio de era** (`EventoJogo::EraMudou`) uma vez por virada; os moradores ganham falas por era (`era_min` nos diálogos).
+- **Áudio** (`Engine/Audio`): `Sintetizador` puro (testado sem placa de som) gera música generativa e efeitos, sem arquivos. Uma escala, andamento e instrumentação por era, mais uma trilha de perigo na floresta e na cripta. `AudioDevice` liga ao SDL3 (sem dispositivo, o jogo segue mudo). M liga e desliga o som. Os scripts de teste usam `SDL_AUDIODRIVER=dummy`.
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

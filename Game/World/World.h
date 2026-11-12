@@ -47,7 +47,9 @@ struct EventoJogo {
     enum class Tipo {
         Golpe, Esgotou, Ganhou, AbrirConstrucao, Construiu, Aviso, AbrirConversa, Desmaiou, NovoDia, ObraIniciada,
         // Fase 6
-        Ataque, AcertouInimigo, InimigoDerrotado, HeroiFerido, HeroiDerrotado, MudouRegiao, MissaoNova, MissaoConcluida, Comeu, Forjou
+        Ataque, AcertouInimigo, InimigoDerrotado, HeroiFerido, HeroiDerrotado, MudouRegiao, MissaoNova, MissaoConcluida, Comeu, Forjou,
+        // Fase 7
+        EraMudou
     };
     Tipo tipo;
     glm::vec2 pos{0.0f};
@@ -80,6 +82,7 @@ struct InfoRegiao {
     bool hostil = false;
     std::vector<Saida> saidas;
     std::vector<std::pair<std::string, glm::ivec2>> spawns;  // inimigos (renascem a cada manhã)
+    bool curaComEra = false;        // a floresta clareia conforme o reino prospera
 };
 
 // A partida em si: mapa, objetos (ECS), reino, herói e inventário. Sem janela nem OpenGL.
@@ -126,6 +129,10 @@ public:
     bool forjar(const std::string& equip);
     void reviver();               // depois de derrotado: acorda em casa no dia seguinte
     void renascerInimigos();      // de manhã as criaturas voltam (o chefe não, se já caiu)
+
+    // Eras: a transformação se espalha em onda a partir da casa do herdeiro (nunca tudo de uma vez)
+    int eraNoTile(glm::ivec2 t) const;
+    int eraEm(glm::vec2 px) const { return eraNoTile({static_cast<int>(px.x) / 16, static_cast<int>(px.y - 1) / 16}); }
 
     // Missões
     std::vector<const MissaoDef*> missoesAtivas() const;
@@ -195,6 +202,8 @@ private:
     std::map<std::string, RegiaoGuardada> guardadas_;  // regiões fora de cena
     std::string prefixoIds_;        // "floresta:" ao carregar outra região (ids únicos no save)
     bool derrotaPendente_ = false;
+    glm::ivec2 centroReino_{32, 16};  // de onde a onda das eras parte
+    int eraAnunciada_ = 0;          // última era anunciada (para avisar só na virada)
 };
 
 uint32_t hashTile(int x, int y);

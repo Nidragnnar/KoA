@@ -1208,6 +1208,93 @@ void fase6(Lista& l) {
     l.emplace_back("escada_sobe", escada(false));
 }
 
+// ---------- Fase 7: enfeites das eras e o dragão ----------
+
+Img fonte() {
+    Img t(32, 28);
+    t.elipse(16, 22, 15, 5, hex("#000000", 80));
+    t.elipse(16, 19, 14, 6, hex("#b8b0a0"));        // bacia de pedra clara
+    t.elipse(16, 18, 11, 4, hex("#3a7ab0"));        // água
+    t.elipse(14, 17, 4, 1, hex("#9ad0f0"));
+    t.rect(14, 6, 4, 12, hex("#c8c0b0"));           // coluna
+    t.elipse(16, 6, 5, 2, hex("#d8d0c0"));          // prato de cima
+    for (int i = 0; i < 4; ++i) t.px(11 + i * 3, 8 + i % 2, hex("#9ad0f0"));  // jorros
+    t.rect(15, 2, 2, 4, hex("#9ad0f0"));
+    t.contornar(CONTORNO);
+    return t;
+}
+
+Img estandarte(int variante) {
+    static const char* cores[] = {"#8a2a2a", "#2a4a8a", "#6a2a7a"};
+    Img t(12, 34);
+    t.rect(1, 2, 1, 32, hex("#4a3a2a"));
+    t.px(1, 1, hex("#d8b048"));
+    const Cor c = hex(cores[variante % 3]);
+    t.rect(2, 4, 9, 18, c);
+    t.rect(2, 4, 9, 2, clarear(c, 0.2f));
+    for (int x = 2; x < 11; x += 2) t.px(x, 22, c);  // franja
+    t.rect(4, 10, 5, 5, hex("#d8b048"));  // brasão dourado
+    t.px(6, 12, c);
+    t.contornar(CONTORNO);
+    return t;
+}
+
+Img cristal() {
+    Img t(12, 22);
+    t.elipse(6, 20, 5, 1, hex("#000000", 70));
+    for (int y = 0; y < 18; ++y) {
+        const int meia = y < 6 ? y / 2 + 1 : (18 - y) / 3 + 1;
+        t.rect(6 - meia, 1 + y, meia * 2, 1, y % 3 ? hex("#6ac8f0") : hex("#8ad8ff"));
+    }
+    t.rect(5, 3, 1, 10, hex("#e0f8ff"));
+    t.contornar(hex("#1a3a5a"));
+    return t;
+}
+
+Img lampiao() {
+    Img t(10, 26);
+    t.rect(4, 8, 2, 18, hex("#3a3a42"));
+    t.rect(2, 2, 6, 7, hex("#2a2a32"));
+    t.rect(3, 3, 4, 5, hex("#f0d080"));
+    t.px(4, 4, hex("#fff8e0"));
+    t.rect(1, 1, 8, 1, hex("#3a3a42"));
+    t.rect(3, 24, 4, 2, hex("#3a3a42"));
+    t.contornar(CONTORNO);
+    return t;
+}
+
+Img dragao(int q) {
+    Img t(72, 44);
+    const Cor escama = hex("#c84a2a"), escura = hex("#8a2a1a"), ventre = hex("#f0b048");
+    // Corpo e pescoço
+    t.elipse(36, 24, 14, 6, escama);
+    t.elipse(36, 26, 10, 3, ventre);
+    t.elipse(54, 18, 5, 3, escama);
+    t.elipse(60, 16, 5, 3, escama);  // cabeça
+    t.px(62, 15, hex("#f0f060"));
+    t.linha(63, 13, 66, 10, escura);  // chifre
+    // Cauda
+    t.linha(22, 24, 6, 28, escama);
+    t.linha(22, 25, 6, 29, escura);
+    t.rect(2, 27, 4, 3, escura);
+    // Asas (sobem e descem)
+    const int a = q == 0 ? -16 : -4;
+    for (int i = 0; i < 14; ++i) {
+        t.linha(30 + i, 20, 22 + i * 2, 20 + a + std::abs(i - 7), i % 3 ? escama : escura);
+        t.linha(40 - i, 20, 50 - i * 2 + 8, 20 + a + std::abs(i - 7) + 2, i % 3 ? escura : escama);
+    }
+    t.contornar(CONTORNO);
+    return t;
+}
+
+void fase7(Lista& l) {
+    l.emplace_back("fonte", fonte());
+    for (int v = 0; v < 3; ++v) l.emplace_back(std::format("estandarte_{}", v), estandarte(v));
+    l.emplace_back("cristal", cristal());
+    l.emplace_back("lampiao", lampiao());
+    for (int q = 0; q < 2; ++q) l.emplace_back(std::format("dragao_{}", q), dragao(q));
+}
+
 // ---------- Interface e efeitos ----------
 
 Img icone(int tipo) {
@@ -1284,6 +1371,7 @@ std::vector<std::pair<std::string, Img>> gerarTodos() {
     moradores(l);
     construcoesFase5(l);
     fase6(l);
+    fase7(l);
     return l;
 }
 

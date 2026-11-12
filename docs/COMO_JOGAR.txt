@@ -26,6 +26,7 @@ CONTROLES
   J .................. atacar com a espada
   H .................. comer (3 de comida = +25 de vida)
   L .................. diário (missões, equipamento, criaturas derrotadas)
+  M .................. ligar/desligar o som
   Esc ................ menu (continuar, salvar, título, sair)
   F5 ................. salvar
   F11 ................ tela cheia
@@ -69,6 +70,16 @@ RECONSTRUIR O REINO
   e menos felicidade; baixos, o contrário (mude no painel K).
   Cada manhã aparece o relatório do que aconteceu durante a noite.
   Construindo e melhorando, o reino avança de era.
+
+AS ERAS DO REINO
+---------------
+  Construindo e melhorando, o reino passa por quatro eras:
+    Reino das Cinzas -> O Despertar da Coroa -> Reino Renascido -> Reino da Alta Fantasia
+  A mudança se espalha aos poucos a partir da sua casa: a grama fica verde,
+  as estradas viram calçadas, o poço vira fonte, surgem lampiões,
+  estandartes e cristais de luz, as tochas viram chama mágica, a música
+  muda... e na Alta Fantasia um dragão cruza o céu. A floresta também
+  clareia, mas segue perigosa.
 
 ALÉM DO VILAREJO
 ----------------

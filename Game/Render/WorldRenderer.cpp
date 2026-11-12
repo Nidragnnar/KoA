@@ -12,17 +12,34 @@ namespace koa {
 
 WorldRenderer::WorldRenderer(ke::ResourceManager& rec) : rec_(rec) {
     for (int t = 0; t < T_QTD; ++t)
-        for (int v = 0; v < 4; ++v) tiles_[t][v] = &rec_.regiao(std::format("terreno_{}_{}", t, v));
+        for (int v = 0; v < 4; ++v)
+            for (int e = 0; e < 4; ++e) tiles_[t][v][e] = &comEra(std::format("terreno_{}_{}", t, v), e);
+}
+
+const ke::SpriteRegion& WorldRenderer::comEra(const std::string& nome, int era) {
+    // "nome_eN" quando existe; senão, o da era anterior mais próxima (cache por nome)
+    auto it = cacheEra_.find(nome);
+    if (it == cacheEra_.end()) {
+        std::array<const ke::SpriteRegion*, 4> v{};
+        v[0] = &rec_.regiao(nome);
+        for (int e = 1; e < 4; ++e) {
+            const std::string n = std::format("{}_e{}", nome, e);
+            v[e] = rec_.temRegiao(n) ? &rec_.regiao(n) : v[e - 1];
+        }
+        it = cacheEra_.emplace(nome, v).first;
+    }
+    return *it->second[std::clamp(era, 0, 3)];
 }
 
 const ke::SpriteRegion& WorldRenderer::spriteConstrucao(const World& w, const BuildingData& b) {
     const BuildingDef* d = w.def(b);
     if (!d) return rec_.regiao("?");
     if (!b.constructed) return rec_.regiao(std::format("obra_{}x{}", d->tamanho.x, d->tamanho.y));  // canteiro com andaimes
-    // Do mais específico (nível + era) ao genérico (só nível)
-    for (const auto& nome : spritesAparencia(*d, b.level, w.reino.eraAtual()))
-        if (rec_.temRegiao(nome)) return rec_.regiao(nome);
-    return rec_.regiao(spritesAparencia(*d, b.level, w.reino.eraAtual()).back());
+    // Era no lugar da construção (a onda de transformação chega a ela no seu tempo)
+    const int era = w.eraEm(w.pontoPorta(b) - glm::vec2(0, 8));
+    const auto nomes = spritesAparencia(*d, b.level, static_cast<KingdomEra>(era));
+    if (rec_.temRegiao(nomes.front())) return rec_.regiao(nomes.front());
+    return comEra(nomes.back(), era);
 }
 
 bool WorldRenderer::chamine(const World& w, const BuildingData& b, glm::vec2& saida) {
@@ -61,8 +78,17 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
         for (int x = x0; x <= x1; ++x) {
             const ke::Tile& t = w.mapa.em(x, y);
             const int v = t.terreno == T_AGUA ? (t.variante + quadroAgua) % 4 : t.variante;
-            r.sprite(*tiles_[std::min<int>(t.terreno, T_QTD - 1)][v], {x * lado, y * lado});
+            const int era = w.eraNoTile({x, y});
+            int terreno = std::min<int>(t.terreno, T_QTD - 1);
+            if (era >= 2 && terreno == T_LAMA) terreno = T_CALCADA;  // no Reino Renascido as estradas são calçadas
+            r.sprite(*tiles_[terreno][v][era], {x * lado, y * lado});
         }
+
+    // Enfeites só aparecem quando a era chega ao lugar deles
+    auto escondido = [&](entt::entity e, glm::vec2 p) {
+        const auto* en = w.reg.try_get<Enfeite>(e);
+        return en && w.eraEm(p) < en->eraMin;
+    };
 
     // 2) Sombras no chão
     const ke::SpriteRegion& sombra = rec_.regiao("sombra");
@@ -77,11 +103,13 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     const glm::vec2 margemMin = canto - glm::vec2(96, 32), margemMax = canto + cam.vista + glm::vec2(96, 140);
     auto visivel = [&](glm::vec2 p) { return p.x > margemMin.x && p.x < margemMax.x && p.y > margemMin.y && p.y < margemMax.y; };
     for (auto [e, p, v] : w.reg.view<const Posicao, const Visual>().each()) {
-        if (v.sprite.empty() || !visivel(p.v)) continue;
+        if (v.sprite.empty() || !visivel(p.v) || escondido(e, p.v)) continue;
+        const int era = w.eraEm(p.v);
         std::string nome = v.sprite;
         if (const auto* a = w.reg.try_get<Animado>(e))
             nome = std::format("{}_{}", a->base, static_cast<int>(tempo * a->fps + p.v.x) % a->quadros);
-        const ke::SpriteRegion& s = rec_.regiao(nome);
+        if (const auto* tr = w.reg.try_get<TrocaPorEra>(e); tr && era >= tr->era) nome = tr->sprite;
+        const ke::SpriteRegion& s = comEra(nome, era);
         const bool grande = w.reg.all_of<Decoracao>(e);
         glm::vec2 pos{p.v.x - s.tamanho.x / 2, p.v.y - s.tamanho.y + (grande ? 0 : 2)};
         if (v.tremor > 0.0f) pos.x += std::round(std::sin(tempo * 70.0f) * 1.5f);
@@ -213,9 +241,13 @@ void WorldRenderer::desenharLuzes(ke::Renderer2D& r, const World& w, const ke::C
     for (auto [e, p, l] : w.reg.view<const Posicao, const Luz>().each()) {
         if (p.v.x < canto.x - 200 || p.v.x > canto.x + cam.vista.x + 200 || p.v.y < canto.y - 200 || p.v.y > canto.y + cam.vista.y + 200)
             continue;
+        if (const auto* en = w.reg.try_get<Enfeite>(e); en && w.eraEm(p.v) < en->eraMin) continue;
         const float cint = 0.9f + 0.1f * std::sin(tempo * 8.0f + p.v.x) * std::sin(tempo * 4.7f + p.v.y);
         const float raio = l.raio * 1.8f * cint;
-        r.sprite(luz, p.v + l.desloc - raio, glm::vec4(l.cor * 1.2f, 1.0f), false, raio * 2.0f / 64.0f);
+        // Na Alta Fantasia as tochas viram chama mágica azul
+        const bool magica = w.reg.all_of<Animado>(e) && w.reg.get<Animado>(e).base == "tocha" && w.eraEm(p.v) >= 3;
+        const glm::vec3 corLuz = magica ? glm::vec3(0.45f, 0.7f, 1.0f) : l.cor;
+        r.sprite(luz, p.v + l.desloc - raio, glm::vec4(corLuz * 1.2f, 1.0f), false, raio * 2.0f / 64.0f);
         r.sprite(luz, p.v + l.desloc - raio * 0.5f, glm::vec4(1.0f, 0.9f, 0.7f, 0.9f), false, raio / 64.0f);
     }
     // Criaturas: olhos das sombras e a aura do chefe (para não sumirem no breu)

@@ -85,6 +85,7 @@ InfoRegiao World::lerInfoRegiao(const std::string& id, const nlohmann::json& j) 
     info.escuridaoMin = j.value("escuridao_min", 0.0f);
     if (j.contains("ambiente")) info.ambiente = {j["ambiente"][0].get<float>(), j["ambiente"][1].get<float>(), j["ambiente"][2].get<float>()};
     info.hostil = j.value("hostil", false);
+    info.curaComEra = j.value("cura_com_era", false);
     for (const auto& s : j.value("saidas", nlohmann::json::array())) {
         Saida x;
         x.tile = {s.at("tile")[0].get<int>(), s.at("tile")[1].get<int>()};
@@ -252,11 +253,30 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
             reg.emplace<Colisor>(e, glm::vec2{base.x * LADO * 0.5f, base.y * LADO * 0.5f}, glm::vec2{0.0f, -base.y * LADO * 0.5f});
             reg.emplace<Decoracao>(e, base);
         }
+        // Enfeites das eras: aparecem quando a transformação chega até eles
+        for (const auto& en : j.value("enfeites", nlohmann::json::array())) {
+            const glm::ivec2 t{en.at("tile")[0].get<int>(), en.at("tile")[1].get<int>()};
+            limpar(t, {1, 1});
+            const auto e = reg.create();
+            reg.emplace<Posicao>(e, baseTile(t.x, t.y));
+            reg.emplace<Visual>(e, en.at("sprite").get<std::string>());
+            reg.emplace<Enfeite>(e, en.value("era", 1));
+            if (en.contains("luz")) {
+                const auto& l = en["luz"];
+                reg.emplace<Luz>(e, glm::vec3{l[0].get<float>(), l[1].get<float>(), l[2].get<float>()}, l[3].get<float>(),
+                                 glm::vec2{0.0f, -12.0f});
+            }
+        }
     } catch (const std::exception& ex) {
         if (erro) *erro = std::string("vilarejo.json: ") + ex.what();
         return false;
     }
     jogador.pos = spawn;
+    if (const BuildingData* casa = reino.construcao("casa_herdeiro")) {
+        const glm::vec2 porta = pontoPorta(*casa);
+        centroReino_ = {static_cast<int>(porta.x) / LADO, static_cast<int>(porta.y) / LADO};
+    }
+    eraAnunciada_ = 0;
     for (const auto& [id, def] : dados.npcs)
         for (const auto& r : def.rotina)
             if (!locais.contains(r.local)) {
@@ -441,10 +461,11 @@ void World::criarObjeto(char c, int x, int y) {
         reg.emplace<Visual>(e, std::format("arbusto_{}", h % 2));
         break;
     }
-    case 'W': {  // poço em ruínas
+    case 'W': {  // poço em ruínas (vira fonte no Reino Renascido)
         const auto e = novo("poco");
         reg.emplace<Visual>(e, "poco");
         reg.emplace<Colisor>(e, glm::vec2{8, 5}, glm::vec2{0, -5});
+        reg.emplace<TrocaPorEra>(e, 2, "fonte");
         break;
     }
     case 'F': {  // fogueira da praça
@@ -632,6 +653,12 @@ void World::passo(float dt, const EntradaMundo& in) {
     atualizarInimigos(dt, obst);
     if (jogador.vida > 0) verificarSaidas();
     reino.atualizarEra(dt);
+    // Virada de era: anuncia uma vez (o visual muda devagar, em onda)
+    const int alvoEra = static_cast<int>(reino.eraAlvo());
+    if (alvoEra > eraAnunciada_) {
+        eraAnunciada_ = alvoEra;
+        eventos_.push_back({EventoJogo::Tipo::EraMudou, jogador.pos, "", "", alvoEra, nomeEra(reino.eraAlvo())});
+    }
     tempoJogado += dt;
 }
 
@@ -676,7 +703,22 @@ void World::verificarSaidas() {
     }
 }
 
-float World::escuridao() const { return std::max(relogio.escuridao(), infoAtual().escuridaoMin); }
+float World::escuridao() const {
+    float minimo = infoAtual().escuridaoMin;
+    if (infoAtual().curaComEra) minimo *= 1.0f - 0.2f * reino.eraVisual;  // a floresta clareia com o reino
+    return std::max(relogio.escuridao(), minimo);
+}
+
+int World::eraNoTile(glm::ivec2 t) const {
+    if (!noVilarejo()) return 0;  // as terras fora do vilarejo seguem amaldiçoadas
+    const float s = reino.eraVisual;
+    if (s <= 0.0f) return 0;
+    // Atraso de cada tile: mais longe da casa do herdeiro = muda depois (com um pouco de acaso nas bordas)
+    const float dist = glm::length(glm::vec2(t - centroReino_)) / 42.0f;
+    const float atraso = std::min(0.98f, 0.8f * std::min(dist, 1.0f) + 0.18f * (hashTile(t.x, t.y) % 100) / 100.0f);
+    const int teto = std::min(3, static_cast<int>(std::ceil(s)));
+    return std::clamp(static_cast<int>(std::floor(s + 1.0f - atraso)), 0, teto);
+}
 
 glm::vec3 World::luzAmbiente() const {
     const InfoRegiao& i = infoAtual();
@@ -1088,7 +1130,7 @@ Conversa World::conversar(const std::string& id) {
     if (e == entt::null) return c;
     const NpcDef& def = dados().npcs.at(id);
     auto& rel = reg.get<Relacionamento>(e);
-    ContextoFala ctx{relogio.periodo(), relogio.estacao(), 1};
+    ContextoFala ctx{relogio.periodo(), relogio.estacao(), 1, static_cast<int>(reino.eraAtual())};
     if (const BuildingData* casa = reino.construcao("casa_herdeiro")) ctx.nivelCasa = casa->level;
     const EntradaFala* fala = escolherFala(def, rel, ctx);
     c.npc = id;
@@ -1254,6 +1296,7 @@ void World::aplicar(const DadosSave& d) {
         estado.imposto = static_cast<Imposto>(std::clamp(d.imposto, 0, 2));
     }
     reino.eraVisual = d.eraVisual;
+    eraAnunciada_ = static_cast<int>(reino.eraAlvo());  // ao carregar, não anuncia de novo a era em que já está
     std::unordered_map<std::string, const EstadoObjeto*> porId;
     for (const auto& o : d.objetos) porId[o.id] = &o;
     auto restaurar = [&](entt::registry& r) {

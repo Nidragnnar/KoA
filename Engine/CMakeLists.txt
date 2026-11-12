@@ -7,13 +7,15 @@ add_library(KingdomEngineCore STATIC
     World/Pathfinding.cpp
     Physics/Collision.cpp
     Renderer/Animation.cpp
-    Renderer/ParticleSystem.cpp)
+    Renderer/ParticleSystem.cpp
+    Audio/Sintetizador.cpp)
 target_link_libraries(KingdomEngineCore PUBLIC glm::glm nlohmann_json::nlohmann_json EnTT::EnTT)
 configurar_alvo(KingdomEngineCore)
 
 # Camada de plataforma e renderização (SDL3 + OpenGL 3.3)
 add_library(KingdomEngine STATIC
     Core/Application.cpp
+    Audio/AudioDevice.cpp
     Core/SceneManager.cpp
     Platform/Window.cpp
     Platform/Input.cpp

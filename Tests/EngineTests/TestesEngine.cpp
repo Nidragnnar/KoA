@@ -1,5 +1,9 @@
 #include <gtest/gtest.h>
 
+#include <cmath>
+#include <vector>
+
+#include "Engine/Audio/Sintetizador.h"
 #include "Engine/Core/Time.h"
 #include "Engine/Physics/Collision.h"
 #include "Engine/Renderer/Animation.h"
@@ -79,6 +83,52 @@ TEST(Animacao, RepeteOuParaNoUltimoQuadro) {
     EXPECT_EQ(c.quadro(0.35f), "a");
     c.repetir = false;
     EXPECT_EQ(c.quadro(5.0f), "c");
+}
+
+namespace {
+// Energia média de um trecho de áudio
+double energia(ke::Sintetizador& s, int quadros) {
+    std::vector<float> buf(static_cast<size_t>(quadros) * 2);
+    s.gerar(buf.data(), quadros);
+    double e = 0.0;
+    for (float x : buf) {
+        EXPECT_TRUE(std::isfinite(x));
+        EXPECT_LE(std::abs(x), 1.0f);
+        e += x * x;
+    }
+    return e / buf.size();
+}
+}
+
+TEST(Audio, MusicaSaiLimpaEmTodasAsEras) {
+    for (float era : {0.0f, 1.0f, 2.0f, 3.0f}) {
+        ke::Sintetizador s(48000, 3);
+        s.definirEra(era);
+        EXPECT_GT(energia(s, 48000 * 8), 1e-6) << "era " << era << " precisa tocar algo em 8 s";
+        EXPECT_LT(s.vozesAtivas(), 50u) << "as vozes terminam (não acumulam)";
+    }
+}
+
+TEST(Audio, EfeitoSomaEnergiaETermina) {
+    ke::Sintetizador s(48000, 3);
+    s.definirVolumes(0.0f, 1.0f);  // só efeitos
+    const double antes = energia(s, 4800);
+    s.tocar(ke::Som::Golpe);
+    s.tocar(ke::Som::Magia);
+    EXPECT_GT(energia(s, 4800), antes + 1e-5);
+    energia(s, 48000 * 3);
+    EXPECT_LT(energia(s, 4800), 1e-9) << "efeitos curtos acabam sozinhos (a música está muda neste teste)";
+}
+
+TEST(Audio, TensaoTrocaATrilha) {
+    ke::Sintetizador a(48000, 5), b(48000, 5);
+    a.definirEra(3.0f);
+    b.definirEra(3.0f);
+    b.definirTensao(1.0f);
+    std::vector<float> x(48000 * 2), y(48000 * 2);
+    a.gerar(x.data(), 48000);
+    b.gerar(y.data(), 48000);
+    EXPECT_NE(x, y);
 }
 
 TEST(Particulas, MorremNoFimDaVida) {

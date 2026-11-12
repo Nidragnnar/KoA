@@ -80,7 +80,15 @@ captura: 26_chefe
 [OK] o Cavaleiro Caído foi derrotado
 [OK] derrotado, acorda em casa no dia seguinte com a vida cheia
 captura: 27_derrota_relatorio
-captura: 14_era_1
-captura: 14_era_2
-captura: 14_era_3
+captura: 28_anuncio_era
+[OK] o vilarejo inteiro chegou à era 1
+captura: 29_era_1
+[OK] o vilarejo inteiro chegou à era 2
+captura: 29_era_2
+[OK] o vilarejo inteiro chegou à era 3
+captura: 29_era_3
+[OK] o dragão sobrevoa o reino na Alta Fantasia
+captura: 30_era_3_noite_dragao
+[OK] a transformação avança em onda a partir da casa
+captura: 31_onda_de_transformacao
 RESULTADO: 0 falha(s)

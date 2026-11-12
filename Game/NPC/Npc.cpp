@@ -74,6 +74,7 @@ bool lerNpcs(const nlohmann::json& jn, const nlohmann::json& jd, std::map<std::s
                 if (se.contains("estacao")) f.se.estacao = estacaoDe(se["estacao"].get<std::string>());
                 f.se.casaNivelMin = se.value("casa_nivel_min", 0);
                 f.se.afinidadeMin = se.value("afinidade_min", 0);
+                f.se.eraMin = se.value("era_min", 0);
                 f.falas = e.at("falas").get<std::vector<std::string>>();
                 if (f.falas.empty()) throw std::runtime_error("entrada sem falas em " + id);
                 d.dialogos.push_back(std::move(f));
@@ -96,6 +97,7 @@ const EntradaFala* escolherFala(const NpcDef& def, const Relacionamento& rel, co
         if (c.estacao && *c.estacao != ctx.estacao) continue;
         if (ctx.nivelCasa < c.casaNivelMin) continue;
         if (rel.afinidade < c.afinidadeMin) continue;
+        if (ctx.era < c.eraMin) continue;
         return &e;
     }
     return nullptr;

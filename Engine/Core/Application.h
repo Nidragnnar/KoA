@@ -3,6 +3,7 @@
 #include <functional>
 #include <string>
 
+#include "Engine/Audio/AudioDevice.h"
 #include "Engine/Core/SceneManager.h"
 #include "Engine/Core/Time.h"
 #include "Engine/Debug/DebugUI.h"
@@ -41,6 +42,7 @@ public:
     SceneManager& cenas() { return cenas_; }
     DebugUI& depuracao() { return debug_; }
     BitmapFont& fonte() { return fonte_; }
+    AudioDevice& audio() { return audio_; }
     const AppConfig& config() const { return cfg_; }
     double tempo() const { return tempo_; }
     double fps() const { return fps_; }
@@ -63,6 +65,7 @@ private:
     SceneManager cenas_;
     DebugUI debug_;
     BitmapFont fonte_;
+    AudioDevice audio_;
     FixedTimestep passo_;
     bool rodando_ = false;
     double tempo_ = 0.0, fps_ = 0.0;

@@ -438,19 +438,50 @@ void Roteiro::noMundo(WorldScene& cena) {
             if (quadro_ == 215) proxima();
             return;
         }
-        case 15: case 16: case 17: {  // prévia das eras (só a cor da tela muda por enquanto)
+        case 15: case 16: case 17: {  // fase 7: as eras (mesma vista da praça, de dia)
             const int era = etapa_ - 14;
             if (quadro_ == 1) {
                 w.reino.eraForcada = era;
                 w.reino.eraVisual = static_cast<float>(era);
+                w.relogio.minutos = 10 * 60;
+                w.posicionarMoradores();
+                w.jogador.pos = {31 * 16 + 8, 24 * 16 + 12};
+                w.jogador.dir = Direcao::Baixo;
             }
-            if (quadro_ == 20) {
-                capturar(std::format("14_era_{}", era));
+            if (quadro_ == 60 && era == 1) capturar("28_anuncio_era");
+            if (quadro_ == 330) {
+                verificar(w.eraNoTile({31, 20}) == era && w.eraNoTile({5, 35}) == era, std::format("o vilarejo inteiro chegou à era {}", era));
+                capturar(std::format("29_era_{}", era));
                 proxima();
             }
             return;
         }
-        case 18:
+        case 18:  // Alta Fantasia à noite, com o dragão
+            if (quadro_ == 1) {
+                w.relogio.minutos = 21 * 60 + 30;
+                cena.chamarDragao();
+            }
+            if (quadro_ == 120) {
+                verificar(cena.dragaoVoando(), "o dragão sobrevoa o reino na Alta Fantasia");
+                capturar("30_era_3_noite_dragao");
+                proxima();
+            }
+            return;
+        case 19:  // meio da transição: a onda de mudança, vista de perto
+            if (quadro_ == 1) {
+                w.reino.eraForcada = 2;
+                w.reino.eraVisual = 1.5f;
+                w.relogio.minutos = 11 * 60;
+                w.jogador.pos = {40 * 16 + 8, 22 * 16 + 12};
+            }
+            if (quadro_ == 5) w.reino.eraVisual = 1.5f;  // segura no meio do caminho para a captura
+            if (quadro_ == 8) {
+                verificar(w.eraNoTile({22, 17}) == 2 && w.eraNoTile({60, 34}) == 1, "a transformação avança em onda a partir da casa");
+                capturar("31_onda_de_transformacao");
+                proxima();
+            }
+            return;
+        case 20:
             w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();
