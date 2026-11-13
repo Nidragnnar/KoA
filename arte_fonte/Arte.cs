@@ -108,7 +108,7 @@ public static class Arte {
     // mascara: "ia" (silhueta da IA) ou "procedural" (recorta pela silhueta do procedural)
     // Vários quadros dividem a mesma paleta (herói: quadros consistentes entre si)
     public static void ConverterObjetos(string bruta, string[] procs, string[] saidas, int[] posicoes, int fundo,
-                                        string mascara, int cores, double saturacao, double ajusteBrilho, int contorno, bool caixa) {
+                                        string mascara, int cores, double saturacao, double ajusteBrilho, int contorno, bool caixa, bool moda) {
         int bw, bh;
         var b = Ler(bruta, out bw, out bh);
         int escala = posicoes[0];
@@ -131,7 +131,9 @@ public static class Arte {
                 }
             }
             var o = new int[w * h];
-            // Redução por área: cada pixel do sprite é a média do seu bloco na bruta (só o que não é fundo)
+            var cont = new int[512]; var mr = new double[512]; var mg = new double[512]; var mb = new double[512];
+            // Redução por área: cada pixel do sprite é a média do seu bloco na bruta (só o que não é fundo).
+            // moda: média só da cor que domina o bloco (o miolo pesa mais); não mistura faixa e cabelo, olho e pele
             for (int y = 0; y < h; y++)
                 for (int x = 0; x < w; x++) {
                     double sr = 0, sg = 0, sb = 0; int n = 0, total = 0;
@@ -144,7 +146,19 @@ public static class Arte {
                             int c = b[by * bw + bx];
                             if (EhFundo(c, fundo, 90)) continue;
                             sr += R(c); sg += G(c); sb += B(c); n++;
+                            if (moda) {
+                                int k = ((R(c) >> 5) << 6) | ((G(c) >> 5) << 3) | (B(c) >> 5);
+                                bool miolo = (bx - xa) * 5 >= xb - xa && (bx - xa) * 5 < (xb - xa) * 4 && (by - ya) * 5 >= yb - ya && (by - ya) * 5 < (yb - ya) * 4;
+                                int peso = miolo ? 2 : 1;
+                                cont[k] += peso; mr[k] += R(c) * peso; mg[k] += G(c) * peso; mb[k] += B(c) * peso;
+                            }
                         }
+                    if (moda && n > 0) {
+                        int km = 0;
+                        for (int k = 1; k < 512; k++) if (cont[k] > cont[km]) km = k;
+                        sr = mr[km] * n / cont[km]; sg = mg[km] * n / cont[km]; sb = mb[km] * n / cont[km];
+                        Array.Clear(cont, 0, 512); Array.Clear(mr, 0, 512); Array.Clear(mg, 0, 512); Array.Clear(mb, 0, 512);
+                    }
                     bool opaco = mascara == "procedural" ? A(p[y * w + x]) == 255 && n > 0 : n > 0 && n * 2 >= total;
                     o[y * w + x] = opaco ? Cor(sr / n, sg / n, sb / n) : 0;
                 }
@@ -165,6 +179,114 @@ public static class Arte {
                 if (A(o[i]) == 0 && A(p[i]) > 0 && A(p[i]) < 255) o[i] = p[i];
             Gravar(saidas[q], o, ws[q], hs[q]);
         }
+    }
+
+    // ---------- Personagens: um quadro do NidraIA, os outros derivados por código ----------
+    // Os quadros procedurais de uma direção são o quadro 0 com partes deslocadas (corpo sobe, pernas
+    // e braços mudam, ferramenta aparece). Cada pixel do quadro alvo procura de onde veio no quadro 0
+    // procedural (mesma cor, vizinhança parecida) e copia a arte do NidraIA dessa posição. Assim todos
+    // os quadros mostram o mesmo personagem. O que não existe no quadro 0 (machado, espada, asas em outra
+    // posição) pega a cor da arte que mais aparece sobre aquela cor procedural, ou fica a procedural.
+    public static void DerivarQuadros(string arte0, string proc0, string[] procs, string[] saidas, int alcance) {
+        int w, h, w2, h2;
+        var a0 = Ler(arte0, out w, out h);
+        var p0 = Ler(proc0, out w2, out h2);
+        if (w != w2 || h != h2) throw new Exception(arte0 + ": tamanho diferente do procedural");
+        // Cor procedural -> cor da arte mais comum sobre ela (reserva para o que não acha origem)
+        var votos = new Dictionary<int, Dictionary<int, int>>();
+        for (int i = 0; i < p0.Length; i++) {
+            if (A(p0[i]) != 255 || A(a0[i]) != 255) continue;
+            Dictionary<int, int> v;
+            if (!votos.TryGetValue(p0[i], out v)) { v = new Dictionary<int, int>(); votos[p0[i]] = v; }
+            int n; v.TryGetValue(a0[i], out n); v[a0[i]] = n + 1;
+        }
+        var mapa = new Dictionary<int, int>();
+        foreach (var kv in votos) {
+            int melhor = 0, nMelhor = -1;
+            foreach (var c in kv.Value) if (c.Value > nMelhor) { nMelhor = c.Value; melhor = c.Key; }
+            mapa[kv.Key] = melhor;
+        }
+        Func<int[], int, int, int> em = (img, x, y) => x < 0 || y < 0 || x >= w || y >= h ? 0 : img[y * w + x];
+        for (int q = 0; q < procs.Length; q++) {
+            var pq = Ler(procs[q], out w2, out h2);
+            if (w2 != w || h2 != h) throw new Exception(procs[q] + ": tamanho diferente");
+            // Deslocamento do corpo: o que mais acerta pixels opacos
+            int gdx = 0, gdy = 0, gMelhor = -1;
+            for (int dy = -alcance; dy <= alcance; dy++)
+                for (int dx = -alcance; dx <= alcance; dx++) {
+                    int n = 0;
+                    for (int y = 0; y < h; y++)
+                        for (int x = 0; x < w; x++)
+                            if (A(pq[y * w + x]) == 255 && pq[y * w + x] == em(p0, x + dx, y + dy)) n++;
+                    int bonus = (dx == 0 && dy == 0) ? 1 : 0;  // empate: fica parado
+                    if (n + bonus > gMelhor) { gMelhor = n + bonus; gdx = dx; gdy = dy; }
+                }
+            var o = new int[w * h];
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++) {
+                    int c = pq[y * w + x];
+                    if (A(c) == 0) continue;
+                    if (A(c) < 255) { o[y * w + x] = c; continue; }  // sombra no chão
+                    // Acompanha o corpo, a não ser que o procedural diga que esse pixel mudou
+                    int bdx = gdx, bdy = gdy;
+                    if (em(p0, x + gdx, y + gdy) != c) {
+                        int custoMelhor = int.MaxValue; bdx = int.MinValue;
+                        for (int dy = -alcance; dy <= alcance; dy++)
+                            for (int dx = -alcance; dx <= alcance; dx++) {
+                                if (em(p0, x + dx, y + dy) != c) continue;
+                                int custo = 0;
+                                for (int ky = -2; ky <= 2; ky++)
+                                    for (int kx = -2; kx <= 2; kx++)
+                                        if (em(pq, x + kx, y + ky) != em(p0, x + dx + kx, y + dy + ky)) custo += 4;
+                                custo += Math.Abs(dx - gdx) + Math.Abs(dy - gdy);
+                                if (custo < custoMelhor) { custoMelhor = custo; bdx = dx; bdy = dy; }
+                            }
+                    }
+                    int origem = bdx == int.MinValue ? 0 : em(a0, x + bdx, y + bdy);
+                    if (A(origem) == 255) o[y * w + x] = origem;
+                    else { int m; o[y * w + x] = mapa.TryGetValue(c, out m) ? m : c; }
+                }
+            Gravar(saidas[q], o, w, h);
+        }
+    }
+
+    // Pele lisa: onde o procedural tem estas cores, a arte fica com a cor que mais aparece ali
+    // (os olhos grandes da IA viram uma faixa escura em 16×24; o rosto volta limpo e os olhos vêm do procedural)
+    public static void UniformizarCores(string proc, string arte, int[] cores) {
+        int w, h, w2, h2;
+        var p = Ler(proc, out w, out h);
+        var a = Ler(arte, out w2, out h2);
+        foreach (int c0 in cores) {
+            int c = c0 | unchecked((int)0xFF000000);
+            var votos = new Dictionary<int, int>();
+            for (int i = 0; i < p.Length; i++)
+                if (p[i] == c && A(a[i]) == 255) { int n; votos.TryGetValue(a[i], out n); votos[a[i]] = n + 1; }
+            if (votos.Count == 0) continue;
+            // a mais comum entre as claras (a pele é mais clara que olho, sobrancelha e contorno)
+            double lumMedia = 0; int total = 0;
+            foreach (var v in votos) { lumMedia += Lum(R(v.Key), G(v.Key), B(v.Key)) * v.Value; total += v.Value; }
+            lumMedia /= total;
+            int melhor = 0, nMelhor = -1;
+            foreach (var v in votos)
+                if (Lum(R(v.Key), G(v.Key), B(v.Key)) >= lumMedia * 0.9 && v.Value > nMelhor) { nMelhor = v.Value; melhor = v.Key; }
+            if (nMelhor < 0) continue;
+            // Pele que fugiu da cor (verde, azul, cinza, amarelo-pálido): fica a do procedural
+            int er = R(melhor) - R(c), eg = G(melhor) - G(c), eb = B(melhor) - B(c);
+            if (er * er + eg * eg + eb * eb > 70 * 70 || R(melhor) - G(melhor) < 15 || B(melhor) > G(melhor)) melhor = c;
+            for (int i = 0; i < p.Length; i++) if (p[i] == c && A(a[i]) == 255) a[i] = melhor;
+        }
+        Gravar(arte, a, w, h);
+    }
+
+    // Repõe pixels do procedural com estas cores (olhos, joias): somem na redução da arte
+    public static void ManterCores(string proc, string arte, int[] cores) {
+        int w, h, w2, h2;
+        var p = Ler(proc, out w, out h);
+        var a = Ler(arte, out w2, out h2);
+        var conjunto = new HashSet<int>();
+        foreach (int c in cores) conjunto.Add(c | unchecked((int)0xFF000000));
+        for (int i = 0; i < p.Length; i++) if (conjunto.Contains(p[i]) && A(a[i]) == 255) a[i] = p[i];
+        Gravar(arte, a, w, h);
     }
 
     // Tira pedaços soltos (sujeira do recorte): fica só o que é grande perto da maior peça

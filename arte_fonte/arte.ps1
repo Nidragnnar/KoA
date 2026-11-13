@@ -61,7 +61,8 @@ foreach ($s in $cfg.sprites) {
     if ($s.desativado) { "$($s.nome): desativado ($($s.desativado))"; continue }
     $bruta = "$pastaBrutas\$($s.nome).png"
     $contorno = if ((Valor $s "contorno")) { [Convert]::ToInt32((Valor $s "contorno").TrimStart('#'), 16) } else { 0 }
-    $comum = if ($s.comum) { $s.comum } else { @{ base = $cfg.comum; textura = $cfg.comumTextura; prancha = $cfg.comumPrancha }[$s.modo] }
+    # "comum" pode ser o texto ou o nome de um texto do topo do prompts.json (ex.: "comumVistas")
+    $comum = if ($s.comum -and $cfg.($s.comum)) { $cfg.($s.comum) } elseif ($s.comum) { $s.comum } else { @{ base = $cfg.comum; textura = $cfg.comumTextura; prancha = $cfg.comumPrancha }[$s.modo] }
     $prompt = "$($s.prompt), $comum"
     # Era 1 (começo do jogo): clima sombrio; níveis da casa de eras seguintes usam "era": ""
     if ((Valor $s "era") -eq "sombria") { $prompt += ", $($cfg.eraSombria)" }
@@ -76,10 +77,30 @@ foreach ($s in $cfg.sprites) {
     $alvos = if ($s.alvos) { @($s.alvos) } else { @($s.nome) }
     $procs = [string[]]($alvos | ForEach-Object { "$pastaProc\$_.png" })
     $base = "$pastaBases\$($s.nome).png"
-    if ($s.modo -eq "prancha") { $pos = [Arte]::MontarPrancha($procs, 6, (Valor $s "largura"), (Valor $s "altura"), $fundo, $base) }
+    if ($s.modo -eq "prancha") { $pos = [Arte]::MontarPrancha($procs, $(if ($s.colunas) { $s.colunas } else { 6 }), (Valor $s "largura"), (Valor $s "altura"), $fundo, $base) }
     else { $pos = [Arte]::MontarBase($procs[0], (Valor $s "largura"), (Valor $s "altura"), $fundo, $base) }
     if (-not $SoConverter -and ($Refazer -or -not (Test-Path $bruta))) { Gerar $s $prompt $base }
     [Arte]::ConverterObjetos($bruta, $procs, [string[]]($alvos | ForEach-Object { "$pastaArte\$_.png" }), $pos, $fundo,
-        (Valor $s "mascara"), (Valor $s "cores"), (Valor $s "saturacao"), (Valor $s "ajusteBrilho"), $contorno, [bool]$s.caixa)
+        (Valor $s "mascara"), (Valor $s "cores"), (Valor $s "saturacao"), (Valor $s "ajusteBrilho"), $contorno, [bool]$s.caixa, [bool]$s.moda)
+    # Pele lisa (cor dominante da arte) e, depois, olhos, joias etc.: cores do procedural que voltam por cima
+    if ($s.uniformizar) {
+        $cores = [int[]]($s.uniformizar | ForEach-Object { [Convert]::ToInt32($_.TrimStart('#'), 16) })
+        foreach ($a in $alvos) { [Arte]::UniformizarCores("$pastaProc\$a.png", "$pastaArte\$a.png", $cores) }
+    }
+    if ($s.manter) {
+        $cores = [int[]]($s.manter | ForEach-Object { [Convert]::ToInt32($_.TrimStart('#'), 16) })
+        foreach ($a in $alvos) { [Arte]::ManterCores("$pastaProc\$a.png", "$pastaArte\$a.png", $cores) }
+    }
+    # Quadros de animação: cada alvo "<prefixo>_0" gera os irmãos "<prefixo>_*" a partir da arte dele
+    if ($s.derivar) {
+        foreach ($a in $alvos) {
+            $prefixo = $a -replace '0$', ''
+            $irmaos = @(Get-ChildItem $pastaProc -Filter "$prefixo*.png" | ForEach-Object { $_.BaseName } | Where-Object { $_ -ne $a })
+            if ($irmaos.Count -eq 0) { continue }
+            [Arte]::DerivarQuadros("$pastaArte\$a.png", "$pastaProc\$a.png", [string[]]($irmaos | ForEach-Object { "$pastaProc\$_.png" }),
+                [string[]]($irmaos | ForEach-Object { "$pastaArte\$_.png" }), $(if ($s.alcance) { $s.alcance } else { 3 }))
+            "  $a -> $($irmaos -join ', ')"
+        }
+    }
     "$($s.nome): convertido"
 }
