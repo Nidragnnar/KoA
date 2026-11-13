@@ -29,11 +29,31 @@ o que não tem arte importada continua procedural.
   Com `"caixa": true` o objeto desenhado é recortado pela própria caixa e encaixado no sprite (objetos pequenos).
 - `textura`: gera uma textura, reduz 16×, recorta 4 variantes e funde as bordas para emendar sem costura.
   A água usa a mesma variante deslocada em cada quadro, então a animação também emenda.
-- `prancha`: vários quadros numa imagem só (tentado no herói; desativado, veja o `prompts.json`).
+- `prancha`: vários quadros numa imagem só (`colunas` define a grade). Com muitos quadros pequenos cada um vira
+  outro personagem (herói e aldeões em 12–18 quadros; desativados, veja o `prompts.json`). Com 3 quadros grandes
+  (`"comum": "comumVistas"`: frente, costas e lado do mesmo personagem) o NidraIA mantém o personagem.
+
+## Personagens e criaturas
+
+O NidraIA desenha só o quadro parado de cada direção (`heroi_baixo_0`, `heroi_cima_0`, `heroi_lado_0`) numa prancha
+de 3 vistas; os outros quadros saem por código:
+
+- `"derivar": true`: cada alvo `<prefixo>_0` gera os irmãos `<prefixo>_*` (andar, golpe, espada; quadro 1 das criaturas).
+  O `DerivarQuadros` (em `Arte.cs`) acha, para cada pixel do quadro procedural, de onde ele veio no quadro 0 procedural
+  (corpo que sobe, perna e braço que mudam) e copia a arte do NidraIA dessa posição. O que não existe no quadro 0
+  (machado, espada) fica com as cores do procedural. Assim o personagem é o mesmo em todos os quadros.
+- `"mascara": "procedural"`: a silhueta é a do procedural (tamanho, pés embaixo no centro, contorno iguais).
+- `"moda": true`: na redução cada pixel pega a cor que domina o bloco, sem misturar cabelo, faixa e pele.
+- `"uniformizar"`: cores do procedural (a pele) que viram uma cor lisa da arte: em 16×24 os olhos grandes da IA
+  viravam uma faixa escura. `"manter"`: cores do procedural que voltam por cima (olhos, joia do diadema).
+- Mudou a animação no `Sprites.cpp`? Rode `.\arte_fonte\arte.ps1 -SoConverter` para derivar os quadros de novo.
 
 ## O que veio do NidraIA
 
 - Fase 1–4: casas (n1–n4), castelo, árvores, rochas, baús, túmulos, poço e terreno.
 - Fase 5: moradia, taverna, mercado, capela, forja, posto, torre e campo (n1–n3), canteiros `obra_*` e `barraco`.
-- Ficam procedurais: herói, NPCs e aldeões (nas pranchas os quadros saem diferentes entre si e os rostos somem),
-  fogueira (a prancha de 4 quadros saiu sem chama), ícones, tocha, cerca, arbusto, toco, luz e sombra.
+- Personagens: herói (andar, golpe e espada), os 5 moradores, os 4 aldeões, sombra, lobo, cavaleiro caído e dragão.
+  Personagens sem a era sombria (`"era": ""`): os verdes de musgo pintavam pele e roupa de verde.
+  Gere as pranchas de 3 vistas em 1536×1024: em 1024×768 sai bem mais rápido (30 s contra 6 min), mas com manchas.
+- Ficam procedurais: esqueleto (o vão entre os ossos sai preto e vira um vulto), fogueira (a prancha de 4 quadros
+  saiu sem chama), ícones, tocha, cerca, arbusto, toco, luz e sombra.
