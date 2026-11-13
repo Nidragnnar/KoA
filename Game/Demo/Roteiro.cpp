@@ -118,12 +118,42 @@ void Roteiro::naTitulo(TitleScene& t) {
         capturar(fase_ == 0 ? "01_titulo" : "09_titulo_continuar");
         return;
     }
+    ke::Input& in = ctx_.app.input();
     if (fase_ == 0) {
-        verificar(!t.temSave(), "pasta de saves de teste começa vazia");
-        t.escolher(0);
+        // Novo Jogo (1ª opção sem save) -> espaços -> o primeiro, vazio
+        switch (quadro_) {
+        case 51:
+            verificar(!t.temSave(), "pasta de saves de teste começa vazia");
+            in.simularToque(SDL_SCANCODE_RETURN);
+            return;
+        case 70: capturar("01b_novo_jogo_espacos"); return;
+        case 72: in.simularToque(SDL_SCANCODE_RETURN); break;
+        default: return;
+        }
     } else {
-        verificar(t.temSave(), "título oferece Continuar depois de salvar");
-        ctx_.app.input().simularToque(SDL_SCANCODE_RETURN);  // a opção já vem em "Continuar"
+        // Passa por Carregar, Opções e Controles e volta para Continuar
+        // (menu: Continuar, Novo Jogo, Carregar, Opções, Controles, Sair)
+        switch (quadro_) {
+        case 51: verificar(t.temSave(), "título oferece Continuar depois de salvar"); [[fallthrough]];
+        case 53:
+        case 78:
+        case 103: in.simularToque(SDL_SCANCODE_S); return;
+        case 55:
+        case 80:
+        case 105: in.simularToque(SDL_SCANCODE_RETURN); return;
+        case 75: capturar("09b_carregar_espacos"); return;
+        case 100: capturar("09c_opcoes"); return;
+        case 125: capturar("09d_controles"); return;
+        case 76:
+        case 101:
+        case 126: in.simularToque(SDL_SCANCODE_ESCAPE); return;
+        case 128:
+        case 130:
+        case 132:
+        case 134: in.simularToque(SDL_SCANCODE_W); return;
+        case 136: in.simularToque(SDL_SCANCODE_RETURN); break;  // "Continuar"
+        default: return;
+        }
     }
     etapa_ = 0;
     quadro_ = 0;
@@ -277,9 +307,9 @@ void Roteiro::noMundo(WorldScene& cena) {
                 bool prontas = true;
                 for (const auto& b : w.reino.construcoes) prontas = prontas && b.constructed;
                 verificar(prontas, "as obras ficaram prontas durante a noite");
-                const int esperado = comidaAntes_ + 6 - popAntes_;
+                const int esperado = comidaAntes_ + 5 - popAntes_;
                 verificar(w.inventario.quantidade("comida") == esperado,
-                          std::format("comida: {} (esperado {} = {} + 6 do campo - {} comidos)", w.inventario.quantidade("comida"), esperado,
+                          std::format("comida: {} (esperado {} = {} + 5 do campo - {} comidos)", w.inventario.quantidade("comida"), esperado,
                                       comidaAntes_, popAntes_));
                 capturar("19_relatorio_manha");
             }
@@ -631,8 +661,8 @@ void Roteiro::noMundo(WorldScene& cena) {
         return;
     case 8:  // menu de pausa → voltar ao título (que também salva)
         if (quadro_ == 5) in.simularToque(SDL_SCANCODE_ESCAPE);
-        if (quadro_ == 10) in.simularToque(SDL_SCANCODE_S);
-        if (quadro_ == 14) in.simularToque(SDL_SCANCODE_S);
+        // "Voltar ao título" é a 5ª opção (Continuar, Salvar, Opções, Controles, Voltar...)
+        if (quadro_ == 10 || quadro_ == 13 || quadro_ == 16 || quadro_ == 19) in.simularToque(SDL_SCANCODE_S);
         if (quadro_ == 25) {
             verificar(cena.pausado(), "Esc abre o menu de pausa");
             capturar("08b_menu_pausa");

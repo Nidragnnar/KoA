@@ -6,6 +6,8 @@
 
 #include <string>
 
+#include <stb_image.h>
+
 #include "Engine/Core/Application.h"
 #include "Engine/Core/Logger.h"
 #include "Game/App/Contexto.h"
@@ -63,6 +65,22 @@ int main(int argc, char* argv[]) {
     koa::Contexto ctx{app};
     ctx.pastaData = cfg.raizRecursos / "Data";
     ctx.saves = std::make_unique<koa::SaveSystem>(pastaSaves);
+    // Preferências ao lado dos saves (num teste, na pasta do teste: nunca mexe nas do jogador)
+    ctx.pastaUsuario = pastaSaves.parent_path();
+    ctx.carregarOpcoes();
+    ctx.aplicarOpcoes();
+    // Ícone da janela (a coroa)
+    {
+        int w = 0, h = 0, canais = 0;
+        const std::string icone = (cfg.raizRecursos / "Assets/UI/icone.png").string();
+        if (unsigned char* px = stbi_load(icone.c_str(), &w, &h, &canais, 4)) {
+            if (SDL_Surface* s = SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_ABGR8888, px, w * 4)) {
+                SDL_SetWindowIcon(app.janela().sdl(), s);
+                SDL_DestroySurface(s);
+            }
+            stbi_image_free(px);
+        }
+    }
     std::string erro;
     if (!ctx.dados.carregar(ctx.pastaData, &erro)) {
         ke::log::erro("dados: {}", erro);

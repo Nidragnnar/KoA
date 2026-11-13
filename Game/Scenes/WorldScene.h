@@ -11,6 +11,7 @@
 #include "Game/App/Contexto.h"
 #include "Game/Render/WorldRenderer.h"
 #include "Game/UI/Hud.h"
+#include "Game/UI/Menus.h"
 #include "Game/World/World.h"
 
 namespace koa {
@@ -67,6 +68,7 @@ private:
     World mundo_;
     WorldRenderer rend_;
     Hud hud_;
+    TelaOpcoes telaOpcoes_;
     ke::Camera2D cam_;
     ke::ParticleSystem part_;
     ke::LightMap luz_;

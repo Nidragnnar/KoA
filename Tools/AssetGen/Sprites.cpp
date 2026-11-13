@@ -1336,6 +1336,31 @@ Img sombra() {
 
 }  // namespace
 
+Img iconeCoroa(int lado) {
+    // Desenhada em 32×32 e ampliada sem borrar (pixel art)
+    Img b(32, 32);
+    b.elipse(16, 16, 15, 15, hex("#1a1214"));
+    b.elipse(16, 16, 14, 14, hex("#3a1a1c"));
+    b.elipse(16, 22, 10, 5, hex("#6a2a1a"));  // brasas embaixo
+    b.elipse(16, 23, 6, 2, hex("#c04a1c"));
+    const Cor ouro = hex("#d8a838"), ouroC = hex("#f0d070"), ouroE = hex("#8a6420");
+    b.rect(7, 17, 18, 5, ouro);  // aro
+    b.rect(7, 17, 18, 1, ouroC);
+    b.rect(7, 21, 18, 1, ouroE);
+    for (const int x : {7, 14, 21}) {  // pontas
+        for (int y = 0; y < 8; ++y) b.rect(x + y / 3, 9 + y, 4 - (y / 3) * 2 + 2, 1, ouro);
+        b.px(x + 2, 8, ouroC);
+    }
+    b.px(16, 19, hex("#c02a3a"));  // joias
+    b.px(10, 19, hex("#3a7ad0"));
+    b.px(22, 19, hex("#3a7ad0"));
+    b.contornar(CONTORNO);
+    Img t(lado, lado);
+    for (int y = 0; y < lado; ++y)
+        for (int x = 0; x < lado; ++x) t.px(x, y, b.em(x * 32 / lado, y * 32 / lado));
+    return t;
+}
+
 std::vector<std::pair<std::string, Img>> gerarTodos() {
     Lista l;
     const char* nomes[] = {"grama", "terra", "lama", "agua", "calcada", "muro"};

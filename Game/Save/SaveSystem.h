@@ -34,6 +34,7 @@ struct EstadoObjeto {
     int hp = 0;
     bool esgotado = false;
     bool aberto = false;
+    int diaEsgotado = 0;  // para renascer na hora certa (saves antigos: 0 = renasce logo)
 };
 
 // Tudo que muda numa partida (os mapas e assets originais não vão para o save)

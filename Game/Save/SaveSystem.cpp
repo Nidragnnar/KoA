@@ -40,7 +40,8 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
                   {"era_visual", d.eraVisual},
                   {"povo", {{"populacao", d.populacao}, {"felicidade", d.felicidade}, {"imposto", d.imposto}}}};
     json objs = json::array();
-    for (const auto& o : d.objetos) objs.push_back({{"id", o.id}, {"hp", o.hp}, {"esgotado", o.esgotado}, {"aberto", o.aberto}});
+    for (const auto& o : d.objetos)
+        objs.push_back({{"id", o.id}, {"hp", o.hp}, {"esgotado", o.esgotado}, {"aberto", o.aberto}, {"dia_esgotado", o.diaEsgotado}});
     json mundo = {{"relogio", {{"dia", d.dia}, {"minutos", d.minutos}}}, {"objetos", objs}};
     json npcs = json::array(), relacoes = json::object();
     for (const auto& m : d.moradores) {
@@ -169,7 +170,7 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
             d.imposto = std::clamp(r["povo"].value("imposto", 1), 0, 2);
         }
         for (const auto& o : tudo["world"].value("objetos", json::array()))
-            d.objetos.push_back({o.value("id", ""), o.value("hp", 0), o.value("esgotado", false), o.value("aberto", false)});
+            d.objetos.push_back({o.value("id", ""), o.value("hp", 0), o.value("esgotado", false), o.value("aberto", false), o.value("dia_esgotado", 0)});
         const json& rel = tudo["world"].value("relogio", json::object());
         d.dia = std::max(1, rel.value("dia", 1));
         d.minutos = std::clamp(rel.value("minutos", 360.0f), 360.0f, 26.0f * 60.0f - 1.0f);

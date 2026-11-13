@@ -13,7 +13,7 @@
 namespace koa {
 
 namespace {
-const std::vector<std::string> OPCOES_PAUSA = {"Continuar", "Salvar", "Voltar ao título", "Sair do jogo"};
+const std::vector<std::string> OPCOES_PAUSA = {"Continuar", "Salvar", "Opções", "Controles", "Voltar ao título", "Sair do jogo"};
 constexpr float LETRAS_POR_SEGUNDO = 45.0f;
 }
 
@@ -47,7 +47,7 @@ bool WorldScene::salvar() {
     d.versaoJogo = VERSAO_JOGO;
     d.dataHora = agoraTexto();
     std::string erro;
-    if (!ctx_.saves->salvar(d, "Save_001", &erro)) {
+    if (!ctx_.saves->salvar(d, ctx_.slot, &erro)) {
         hud_.aviso("Não consegui salvar: " + erro, cor::ruim);
         ke::log::erro("salvar: {}", erro);
         return false;
@@ -64,6 +64,10 @@ std::vector<std::string> WorldScene::opcoesPainel() const {
     if (d && d->nivel(b->level + 1)) o.push_back("Reconstruir");
     if (painel_ == "casa_herdeiro") o.push_back("Dormir até amanhã");
     if (b && b->defId == "forja" && b->constructed) o.push_back("Forjar equipamento");
+    if (b && b->defId == "mercado" && b->constructed) {
+        o.push_back(std::format("Comprar 10 pedra ({} ouro)", mundo_.precoLote("pedra")));
+        o.push_back(std::format("Comprar 10 madeira ({} ouro)", mundo_.precoLote("madeira")));
+    }
     o.push_back("Fechar");
     return o;
 }
@@ -211,6 +215,10 @@ void WorldScene::entradaPainel() {
             painel_.clear();
             forja_ = true;
             selForja_ = 0;
+        } else if (o.starts_with("Comprar 10 pedra")) {
+            mundo_.comprarLote("pedra");  // o painel fica aberto para comprar de novo
+        } else if (o.starts_with("Comprar 10 madeira")) {
+            mundo_.comprarLote("madeira");
         } else {
             painel_.clear();
         }
@@ -219,23 +227,27 @@ void WorldScene::entradaPainel() {
 }
 
 void WorldScene::entradaPausa() {
+    if (telaOpcoes_.aberta()) {
+        telaOpcoes_.entrada(ctx_);
+        return;
+    }
     ke::Input& in = ctx_.app.input();
     const int n = static_cast<int>(OPCOES_PAUSA.size());
     if (in.pressionou(SDL_SCANCODE_ESCAPE)) pausa_ = false;
     if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selPausa_ = (selPausa_ + n - 1) % n;
     if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selPausa_ = (selPausa_ + 1) % n;
     if (in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_SPACE)) {
-        switch (selPausa_) {
-        case 0: pausa_ = false; break;
-        case 1: salvar(); break;
-        case 2:
+        const std::string& o = OPCOES_PAUSA[selPausa_];
+        if (o == "Continuar") pausa_ = false;
+        else if (o == "Salvar") salvar();
+        else if (o == "Opções") telaOpcoes_.abrirOpcoes();
+        else if (o == "Controles") telaOpcoes_.abrirControles();
+        else if (o == "Voltar ao título") {
             salvar();
             ctx_.app.cenas().trocar(std::make_unique<TitleScene>(ctx_));
-            break;
-        case 3:
+        } else {
             salvar();
             ctx_.app.parar();
-            break;
         }
     }
 }
@@ -672,6 +684,7 @@ void WorldScene::renderizar(float) {
     if (painelReino_) hud_.painelReino(r, mundo_);
     if (relatorio_ && transicao_ < 0.0f) hud_.relatorioManha(r, mundo_);
     if (pausa_) hud_.menuPausa(r, OPCOES_PAUSA, selPausa_);
+    if (pausa_ && telaOpcoes_.aberta()) telaOpcoes_.desenhar(r, f, ctx_);
     if (transicao_ >= 0.0f) {
         const float a = transicao_ < 1.0f ? transicao_ : 2.0f - transicao_;
         r.retangulo({0, 0}, {640, 360}, {0, 0, 0, std::clamp(a * 1.2f, 0.0f, 1.0f)});
@@ -730,7 +743,7 @@ void WorldScene::interfaceDepuracao() {
     ImGui::SameLine();
     if (ImGui::Button("Recarregar save")) {
         std::string erro, aviso;
-        if (auto d = ctx_.saves->carregar("Save_001", &erro, &aviso)) ctx_.app.cenas().trocar(std::make_unique<WorldScene>(ctx_, d));
+        if (auto d = ctx_.saves->carregar(ctx_.slot, &erro, &aviso)) ctx_.app.cenas().trocar(std::make_unique<WorldScene>(ctx_, d));
     }
     ImGui::End();
 }

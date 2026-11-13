@@ -1,5 +1,6 @@
 captura: 01_titulo
 [OK] pasta de saves de teste começa vazia
+captura: 01b_novo_jogo_espacos
 [OK] mapa e dados carregados
 captura: 02_vilarejo_inicio
 captura: 03_andando
@@ -30,6 +31,9 @@ captura: 08e_novo_dia
 captura: 08b_menu_pausa
 captura: 09_titulo_continuar
 [OK] título oferece Continuar depois de salvar
+captura: 09b_carregar_espacos
+captura: 09c_opcoes
+captura: 09d_controles
 [OK] inventário igual ao salvo
 [OK] casa continua no nível 2 após carregar
 [OK] 9 árvores/rochas esgotadas restauradas
@@ -59,7 +63,7 @@ captura: 18_painel_reino
 [OK] K fecha o painel
 [OK] de manhã aparece o relatório
 [OK] as obras ficaram prontas durante a noite
-[OK] comida: 118 (esperado 118 = 120 + 6 do campo - 8 comidos)
+[OK] comida: 117 (esperado 117 = 120 + 5 do campo - 8 comidos)
 captura: 19_relatorio_manha
 [OK] E fecha o relatório
 [OK] a população cresceu: 8 -> 13

@@ -298,6 +298,21 @@ entt::entity World::criarEntidadeConstrucao(const BuildingData& b) {
     return e;
 }
 
+std::string World::proximoPasso() const {
+    const BuildingData* casa = reino.construcao("casa_herdeiro");
+    if (casa && casa->level < 2) {
+        if (inventario.quantidade("madeira") < 15) return "Corte árvores (E) até ter 15 de madeira";
+        if (inventario.quantidade("pedra") < 8) return "Quebre rochas (E) até ter 8 de pedra";
+        if (inventario.quantidade("ouro") < 10) return "Abra baús (E) para achar 10 de ouro";
+        return "Reconstrua a cabana: E na porta de casa";
+    }
+    if (!marcos.contains("primeira_conversa") && missoes.empty()) return "Converse com um morador (E)";
+    if (contarConstrucoes("campo") == 0) return "Construa uma horta: aperte B";
+    if (relogio.dia <= 1) return "Durma: E na porta de casa";
+    if (!visitadas.contains("floresta")) return "Vá à floresta pela trilha a leste";
+    return "";
+}
+
 int World::contarConstrucoes(const std::string& d) const {
     return static_cast<int>(std::ranges::count_if(reino.construcoes, [&](const BuildingData& b) { return b.defId == d; }));
 }
@@ -419,14 +434,14 @@ void World::criarObjeto(char c, int x, int y) {
         const auto e = novo("arvore");
         reg.emplace<Visual>(e, std::format("arvore_morta_{}", h % 3));
         reg.emplace<Colisor>(e, glm::vec2{4, 3}, glm::vec2{0, -2});
-        reg.emplace<Coletavel>(e, "arvore", "madeira", 3, 3, 3, false, "toco", glm::vec2{4, 3});
+        reg.emplace<Coletavel>(e, "arvore", "madeira", 3, 3, 3, false, "toco", glm::vec2{4, 3}, reg.get<Visual>(e).sprite);
         break;
     }
     case 'R': {  // rocha
         const auto e = novo("rocha");
         reg.emplace<Visual>(e, std::format("rocha_{}", h % 2));
         reg.emplace<Colisor>(e, glm::vec2{6, 4}, glm::vec2{0, -4});
-        reg.emplace<Coletavel>(e, "rocha", "pedra", 4, 4, 2, false, "", glm::vec2{0});
+        reg.emplace<Coletavel>(e, "rocha", "pedra", 4, 4, 2, false, "", glm::vec2{0}, reg.get<Visual>(e).sprite);
         break;
     }
     case 'C': {  // baú esquecido
@@ -572,6 +587,7 @@ void World::executar(const AlvoInteracao& a) {
         eventos_.push_back({EventoJogo::Tipo::Golpe, a.ponto, c.tipo});
         if (c.hp == 0) {
             c.esgotado = true;
+            c.diaEsgotado = relogio.dia;
             v.sprite = c.spriteEsgotado;
             bloqueio_.clear();  // o caminho dos moradores pode ter mudado
             inventario.adicionar(c.recurso, c.rendimento);
@@ -766,6 +782,33 @@ bool World::forjar(const std::string& id) {
     return true;
 }
 
+int World::nivelMercado() const {
+    int n = 0;
+    for (const auto& b : reino.construcoes)
+        if (b.defId == "mercado" && b.constructed) n = std::max(n, b.level);
+    return n;
+}
+
+int World::precoLote(const std::string& recurso) const {
+    const int n = nivelMercado();
+    if (n == 0) return 0;
+    const int base = recurso == "pedra" ? 30 : recurso == "madeira" ? 20 : 0;
+    static const float desconto[] = {1.0f, 1.0f, 0.85f, 0.7f};
+    return static_cast<int>(base * desconto[std::min(n, 3)]);
+}
+
+bool World::comprarLote(const std::string& recurso) {
+    const int preco = precoLote(recurso);
+    if (preco <= 0) return false;
+    if (!inventario.remover("ouro", preco)) {
+        eventos_.push_back({EventoJogo::Tipo::Aviso, jogador.pos, "", "", 0, std::format("Precisa de {} de ouro.", preco)});
+        return false;
+    }
+    inventario.adicionar(recurso, 10);
+    eventos_.push_back({EventoJogo::Tipo::Ganhou, jogador.pos - glm::vec2(0, 10), "mercado", recurso, 10});
+    return true;
+}
+
 void World::criarInimigo(const std::string& tipo, glm::ivec2 tile) {
     const InimigoDef& d = dados().inimigos.at(tipo);
     const auto e = reg.create();
@@ -831,7 +874,10 @@ void World::golpearComEspada() {
         const int o = ouro(rng_);
         inventario.adicionar("ouro", o);
         ++abates[i.tipo];
-        if (d.chefe) marcos.insert("chefe_" + i.tipo);
+        if (d.chefe) {
+            marcos.insert("chefe_" + i.tipo);
+            reino.magiaLiberta = true;  // com o Cavaleiro Caído derrotado, a magia pode voltar ao reino
+        }
         eventos_.push_back({EventoJogo::Tipo::InimigoDerrotado, p, i.tipo, "ouro", o, d.nome});
         reg.destroy(e);
     }
@@ -1144,6 +1190,7 @@ Conversa World::conversar(const std::string& id) {
     }
     rel.falouHoje = true;
     rel.conheceu = true;
+    marcos.insert("primeira_conversa");
     if (fala && fala->umaVez) rel.memoria.insert(fala->id);
     // Missão: a primeira deste morador que ainda não começou (e cujo requisito já foi cumprido)
     for (const MissaoDef& m : dados().missoes) {
@@ -1185,6 +1232,25 @@ void World::dormir(bool desmaio) {
     jogador.vida = jogador.vidaMax;  // uma noite de sono cura tudo
     jogador.empurrao = {0, 0};
     renascerInimigos();
+    // Tocos voltam a ser árvores e rochas reaparecem depois de alguns dias (em todas as regiões)
+    int renasceram = 0;
+    auto renascer = [&](entt::registry& r, bool vila) {
+        for (auto [e, c, v, p] : r.view<Coletavel, Visual, Posicao>().each()) {
+            if (!c.esgotado || relogio.dia - c.diaEsgotado < c.diasParaRenascer()) continue;
+            // Onde agora há uma construção, a rocha não volta
+            if (vila && std::ranges::any_of(reino.construcoes, [&](const BuildingData& b) {
+                    const ke::AABB cx = caixaConstrucao(b);
+                    return p.v.x >= cx.min.x && p.v.x <= cx.max.x && p.v.y >= cx.min.y && p.v.y <= cx.max.y + 16.0f;
+                }))
+                continue;
+            c.esgotado = false;
+            c.hp = c.hpMax;
+            v.sprite = c.spriteNormal;
+            ++renasceram;
+        }
+    };
+    renascer(reg, true);
+    for (auto& [id, g] : guardadas_) renascer(g.reg, false);
     for (auto [e, r] : reg.view<Relacionamento>().each()) r.falouHoje = false;
     // Obras que começaram ontem ficam prontas durante a noite
     std::vector<std::string> prontas;
@@ -1204,6 +1270,7 @@ void World::dormir(bool desmaio) {
         a.dormindo = false;
         mv.caminho.clear();
     }
+    if (renasceram > 0) ultimoRelatorio.notas.push_back(std::format("{} árvores e rochas voltaram a crescer.", renasceram));
     atualizarMissoes();  // ex.: "junte comida" pode ter se cumprido com a produção da noite
     eventos_.push_back({EventoJogo::Tipo::NovoDia, jogador.pos, desmaio ? "desmaio" : "", "ouro", perda, relogio.textoData()});
 }
@@ -1240,7 +1307,7 @@ DadosSave World::capturar() const {
     auto guardar = [&](const entt::registry& r) {
         for (auto [e, id] : r.view<const IdMundo>().each()) {
             if (const auto* c = r.try_get<Coletavel>(e); c && (c->hp < c->hpMax || c->esgotado))
-                d.objetos.push_back({id.id, c->hp, c->esgotado, false});
+                d.objetos.push_back({id.id, c->hp, c->esgotado, false, c->diaEsgotado});
             if (const auto* s = r.try_get<Saqueavel>(e); s && s->aberto) d.objetos.push_back({id.id, 0, false, true});
         }
         for (auto [e, m, rel] : r.view<const Morador, const Relacionamento>().each())
@@ -1306,6 +1373,7 @@ void World::aplicar(const DadosSave& d) {
             if (auto* c = r.try_get<Coletavel>(e)) {
                 c->hp = std::clamp(it->second->hp, 0, c->hpMax);
                 c->esgotado = it->second->esgotado || c->hp == 0;
+                c->diaEsgotado = it->second->diaEsgotado;
                 if (c->esgotado) {
                     c->hp = 0;
                     r.get<Visual>(e).sprite = c->spriteEsgotado;
@@ -1332,6 +1400,8 @@ void World::aplicar(const DadosSave& d) {
     visitadas = {d.visitadas.begin(), d.visitadas.end()};
     visitadas.insert("vilarejo");
     marcos = {d.marcos.begin(), d.marcos.end()};
+    reino.magiaLiberta = marcos.contains("chefe_cavaleiro_caido");
+    eraAnunciada_ = static_cast<int>(reino.eraAlvo());
     jogador.vida = std::clamp(d.vida, 1, jogador.vidaMax);
     renascerInimigos();  // o chefe derrotado não volta
     bloqueio_.clear();

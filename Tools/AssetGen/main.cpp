@@ -99,6 +99,27 @@ int main(int argc, char** argv) {
         return 1;
     }
     std::ofstream(saida / "atlas.json") << j.dump(1);
+
+    // Ícone: PNG para a janela e .ico (com PNG dentro) para o executável
+    const gen::Img icone = gen::iconeCoroa(64);
+    gravarPng(fs::absolute(saida).parent_path() / "UI" / "icone.png", icone);
+    std::vector<unsigned char> png256;
+    const gen::Img grande = gen::iconeCoroa(256);
+    stbi_write_png_to_func([](void* ctx, void* dados, int n) {
+        auto* v = static_cast<std::vector<unsigned char>*>(ctx);
+        v->insert(v->end(), static_cast<unsigned char*>(dados), static_cast<unsigned char*>(dados) + n);
+    }, &png256, 256, 256, 4, grande.p.data(), 256 * 4);
+    const fs::path ico = fs::absolute(saida).parent_path().parent_path() / "Game" / "icone.ico";
+    if (fs::exists(ico.parent_path())) {
+        std::ofstream f(ico, std::ios::binary);
+        auto u16 = [&](uint16_t v) { f.put(static_cast<char>(v & 255)).put(static_cast<char>(v >> 8)); };
+        auto u32 = [&](uint32_t v) { u16(static_cast<uint16_t>(v & 0xFFFF)); u16(static_cast<uint16_t>(v >> 16)); };
+        u16(0), u16(1), u16(1);              // cabeçalho: ícone com 1 imagem
+        f.put(0).put(0).put(0).put(0);       // 256×256 (0 = 256), sem paleta
+        u16(1), u16(32);                     // planos, bits por pixel
+        u32(static_cast<uint32_t>(png256.size())), u32(22);
+        f.write(reinterpret_cast<const char*>(png256.data()), static_cast<std::streamsize>(png256.size()));
+    }
     std::printf("%zu sprites (%d da arte importada, %zu de eras) -> %s (%dx%d)\n", sprites.size(), importados, qtdEras, png.c_str(), L, A);
     return 0;
 }

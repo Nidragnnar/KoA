@@ -29,33 +29,33 @@
       "id": "campo", "aparencia": "campo", "tamanho": [4, 3], "construivel": true, "limite": 0,
       "niveis": [
         { "nivel": 1, "nome": "Horta Remexida", "descricao": "Terra preta, sementes velhas e esperança.",
-          "custo": { "madeira": 8, "ouro": 5 }, "efeitos": { "comida_dia": 6 } },
+          "custo": { "madeira": 8, "ouro": 5 }, "efeitos": { "comida_dia": 5 } },
         { "nivel": 2, "nome": "Campo Cultivado", "descricao": "Fileiras retas e cerca firme.",
-          "custo": { "madeira": 15, "pedra": 5, "ouro": 15 }, "efeitos": { "comida_dia": 10 } },
+          "custo": { "madeira": 15, "pedra": 5, "ouro": 15 }, "efeitos": { "comida_dia": 8 } },
         { "nivel": 3, "nome": "Plantação Farta", "descricao": "Irrigação e celeiro: comida de sobra.",
-          "custo": { "madeira": 25, "pedra": 20, "ouro": 40 }, "efeitos": { "comida_dia": 16, "felicidade": 2 } }
+          "custo": { "madeira": 25, "pedra": 20, "ouro": 40 }, "efeitos": { "comida_dia": 12, "felicidade": 2 } }
       ]
     },
     {
       "id": "taverna", "aparencia": "taverna", "tamanho": [5, 3], "construivel": true, "limite": 1,
       "niveis": [
         { "nivel": 1, "nome": "Pequena Taverna", "descricao": "Sopa quente e um balcão torto. O povo sorri de novo.",
-          "custo": { "madeira": 25, "pedra": 10, "ouro": 20 }, "efeitos": { "felicidade": 8, "ouro_dia": 2 } },
+          "custo": { "madeira": 25, "pedra": 10, "ouro": 20 }, "efeitos": { "felicidade": 8, "ouro_dia": 1 } },
         { "nivel": 2, "nome": "Taverna Real", "descricao": "Música, cerveja e histórias de viajantes.",
-          "custo": { "madeira": 35, "pedra": 30, "ouro": 60 }, "efeitos": { "felicidade": 14, "ouro_dia": 4 } },
+          "custo": { "madeira": 35, "pedra": 30, "ouro": 60 }, "efeitos": { "felicidade": 14, "ouro_dia": 3 } },
         { "nivel": 3, "nome": "Grande Estalagem", "descricao": "Quartos para viajantes de todos os reinos.",
-          "custo": { "madeira": 50, "pedra": 60, "ouro": 140 }, "efeitos": { "felicidade": 20, "ouro_dia": 8 } }
+          "custo": { "madeira": 50, "pedra": 60, "ouro": 140 }, "efeitos": { "felicidade": 20, "ouro_dia": 5 } }
       ]
     },
     {
       "id": "mercado", "aparencia": "mercado", "tamanho": [5, 3], "construivel": true, "limite": 1,
       "niveis": [
         { "nivel": 1, "nome": "Pequeno Mercado", "descricao": "Duas barracas e muito regateio.",
-          "custo": { "madeira": 20, "pedra": 5, "ouro": 25 }, "efeitos": { "ouro_dia": 5, "felicidade": 2 } },
+          "custo": { "madeira": 20, "pedra": 5, "ouro": 25 }, "efeitos": { "ouro_dia": 4, "felicidade": 2 } },
         { "nivel": 2, "nome": "Mercado Central", "descricao": "Mercadores de vilas vizinhas vêm vender aqui.",
-          "custo": { "madeira": 30, "pedra": 30, "ouro": 70 }, "efeitos": { "ouro_dia": 10, "felicidade": 3 } },
+          "custo": { "madeira": 30, "pedra": 30, "ouro": 70 }, "efeitos": { "ouro_dia": 7, "felicidade": 3 } },
         { "nivel": 3, "nome": "Grande Bazar", "descricao": "Sedas, especiarias e ouro de terras distantes.",
-          "custo": { "madeira": 40, "pedra": 60, "ouro": 160 }, "efeitos": { "ouro_dia": 18, "felicidade": 5 } }
+          "custo": { "madeira": 40, "pedra": 60, "ouro": 160 }, "efeitos": { "ouro_dia": 12, "felicidade": 5 } }
       ]
     },
     {

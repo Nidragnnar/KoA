@@ -1,6 +1,6 @@
 KINGDOM OF ASHES: THE LAST CROWN
-Protótipo 0.1 — "The Forgotten Kingdom"
-=======================================
+Versão 1.0
+==========
 
 Você é o último herdeiro de uma linhagem real. Depois de anos de exílio,
 volta ao Vilarejo de Valdren: casas podres, árvores mortas, cinzas caindo
@@ -15,6 +15,16 @@ COMO ABRIR
    (o jogo é caseiro e não tem assinatura digital).
 Não precisa instalar nada.
 
+TELA DE TÍTULO
+--------------
+  Continuar ..... volta ao jogo salvo mais recente
+  Novo Jogo ..... escolha um dos 3 espaços de save (se já tiver jogo
+                  nele, o jogo pergunta antes de substituir)
+  Carregar ...... escolha qual dos 3 jogos abrir (mostra dia, era e horas)
+  Opções ........ volume da música e dos efeitos (A/D) e tela cheia
+  Controles ..... lista de teclas
+As mesmas Opções e Controles aparecem no menu do Esc durante o jogo.
+
 CONTROLES
 ---------
   W A S D ou setas ... andar
@@ -27,7 +37,7 @@ CONTROLES
   H .................. comer (3 de comida = +25 de vida)
   L .................. diário (missões, equipamento, criaturas derrotadas)
   M .................. ligar/desligar o som
-  Esc ................ menu (continuar, salvar, título, sair)
+  Esc ................ menu (continuar, salvar, opções, controles, título, sair)
   F5 ................. salvar
   F11 ................ tela cheia
 
@@ -38,6 +48,11 @@ O QUE FAZER
   3. Abra baús esquecidos nas ruínas → Ouro
   4. Vá até a porta da Cabana Abandonada e aperte E.
      Com 15 de madeira, 8 de pedra e 10 de ouro, reconstrua a casa!
+  Nos primeiros dias, a linha "Próximo passo" (à esquerda da tela) diz
+  o que fazer em seguida. Ela some depois da primeira ida à floresta.
+
+  Árvores voltam a crescer 3 dias depois de cortadas, e rochas
+  reaparecem em 4 dias (menos onde você construiu por cima).
 
 O VILAREJO
 ----------
@@ -71,6 +86,9 @@ RECONSTRUIR O REINO
   Cada manhã aparece o relatório do que aconteceu durante a noite.
   Construindo e melhorando, o reino avança de era.
 
+  Faltou pedra ou madeira? Na porta do Mercado (E) dá para comprar
+  lotes de 10 com ouro. Quanto maior o mercado, mais barato.
+
 AS ERAS DO REINO
 ---------------
   Construindo e melhorando, o reino passa por quatro eras:
@@ -80,6 +98,9 @@ AS ERAS DO REINO
   estandartes e cristais de luz, as tochas viram chama mágica, a música
   muda... e na Alta Fantasia um dragão cruza o céu. A floresta também
   clareia, mas segue perigosa.
+  Atenção: a última era, a Alta Fantasia, só chega depois que o
+  Cavaleiro Caído for derrotado (ele prende a magia do reino).
+  O painel K mostra quanto falta para a próxima era.
 
 ALÉM DO VILAREJO
 ----------------
@@ -97,6 +118,6 @@ ALÉM DO VILAREJO
 
 O jogo salva sozinho depois de cada obra, a cada manhã e ao sair pelo menu.
 Os saves ficam em:  %APPDATA%\Nidragnnar\KingdomOfAshes\Saves
-(antes de sobrescrever, o jogo guarda uma cópia em Save_001.bak)
-
-Este é um protótipo: só existe a primeira casa. Muito mais vem por aí.
+(um por espaço: Save_001, Save_002 e Save_003; antes de sobrescrever,
+o jogo guarda uma cópia .bak). As opções ficam em config.json, na pasta
+acima dos saves.

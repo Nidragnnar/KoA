@@ -18,6 +18,7 @@ public:
     void tocar(Som s);
     void definir(float era, float noite, float tensao);
     void alternarMudo();
+    void definirVolumes(float musica, float efeitos);
     bool mudo() const { return mudo_; }
     bool aberto() const { return stream_ != nullptr; }
 

@@ -253,9 +253,11 @@ void Hud::painelReino(ke::Renderer2D& r, const World& w) {
     f_.desenhar(r, efeito[static_cast<int>(w.estado.imposto)], {xV, y}, cor::apagado);
     y += 17;
     const int dev = w.reino.desenvolvimento();
-    static const int limites[] = {8, 20, 35};
+    static const int limites[] = {8, 22, 40};
     const int era = static_cast<int>(w.reino.eraAlvo());
-    linha("Desenvolvimento", era < 3 ? std::format("{} (próxima era em {})", dev, limites[era]) : std::to_string(dev));
+    if (era == 2 && dev >= limites[2] && !w.reino.magiaLiberta)
+        linha("Desenvolvimento", std::format("{} (falta derrotar o Cavaleiro Caído)", dev), cor::ouro);
+    else linha("Desenvolvimento", era < 3 ? std::format("{} (próxima era em {})", dev, limites[era]) : std::to_string(dev));
     y += 2;
     f_.desenhar(r, "Construções", {xR, y}, cor::apagado);
     std::string lista;
@@ -287,6 +289,13 @@ void Hud::combate(ke::Renderer2D& r, const World& w, float tempo) {
         desenharPainel(r, {170, 312}, {300, 26});  // embaixo, longe dos avisos
         f_.desenharCentralizado(r, d.nome, {320, 320}, cor::ruim);
         barra(r, {180, 327}, 280, static_cast<float>(i.vida) / i.vidaMax, {0.75f, 0.15f, 0.2f, 1});
+    }
+    // Guia dos primeiros dias, logo acima das missões
+    if (const std::string passo = w.proximoPasso(); !passo.empty()) {
+        const std::string texto = "Próximo passo: " + passo;
+        const float a = 0.8f + 0.2f * std::sin(tempo * 3.0f);
+        r.retangulo({6, 108}, {static_cast<float>(f_.largura(texto)) + 10, 11}, {0.05f, 0.04f, 0.04f, 0.7f});
+        f_.desenhar(r, texto, {11, 110}, cor::ouro * glm::vec4(a, a, a, 1));
     }
     // Missões ativas (até 3), na coluna da esquerda
     const auto ativas = w.missoesAtivas();

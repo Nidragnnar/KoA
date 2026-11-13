@@ -6,6 +6,9 @@
 #include <format>
 
 #include <glm/common.hpp>
+#include <nlohmann/json.hpp>
+
+#include "Engine/Platform/FileSystem.h"
 
 namespace koa {
 
@@ -32,6 +35,26 @@ ke::ColorGrade gradeDaEra(float e) {
     const ke::ColorGrade &x = eras[a], &y = eras[a + 1];
     return {std::lerp(x.saturacao, y.saturacao, t), std::lerp(x.contraste, y.contraste, t), std::lerp(x.brilho, y.brilho, t),
             glm::mix(x.tinta, y.tinta, t), std::lerp(x.vinheta, y.vinheta, t)};
+}
+
+void Contexto::carregarOpcoes() {
+    const auto t = ke::fs::lerTexto(pastaUsuario / "config.json");
+    if (!t) return;
+    const auto j = nlohmann::json::parse(*t, nullptr, false);
+    if (j.is_discarded()) return;
+    opcoes.musica = std::clamp(j.value("musica", 6), 0, 10);
+    opcoes.efeitos = std::clamp(j.value("efeitos", 8), 0, 10);
+    opcoes.telaCheia = j.value("tela_cheia", false);
+}
+
+void Contexto::salvarOpcoes() const {
+    const nlohmann::json j = {{"musica", opcoes.musica}, {"efeitos", opcoes.efeitos}, {"tela_cheia", opcoes.telaCheia}};
+    ke::fs::gravarTextoSeguro(pastaUsuario / "config.json", j.dump(2));
+}
+
+void Contexto::aplicarOpcoes() {
+    app.audio().definirVolumes(opcoes.musica / 10.0f * 0.9f, opcoes.efeitos / 10.0f);
+    app.janela().definirTelaCheia(opcoes.telaCheia);
 }
 
 std::string agoraTexto() {

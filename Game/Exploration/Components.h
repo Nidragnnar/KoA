@@ -31,6 +31,10 @@ struct Coletavel {
     bool esgotado = false;
     std::string spriteEsgotado;  // vazio = some
     glm::vec2 meiaEsgotado{0.0f};  // colisor que sobra (toco); zero = nenhum
+    std::string spriteNormal;      // para voltar quando renasce
+    int diaEsgotado = 0;           // dia em que acabou (renasce alguns dias depois)
+
+    int diasParaRenascer() const { return tipo == "arvore" ? 3 : 4; }
 };
 
 // Baús e restos com ouro

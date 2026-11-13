@@ -44,8 +44,11 @@ void Window::destruir() {
 
 void Window::trocarBuffers() { SDL_GL_SwapWindow(janela_); }
 
-void Window::alternarTelaCheia() {
-    telaCheia_ = !telaCheia_;
+void Window::alternarTelaCheia() { definirTelaCheia(!telaCheia_); }
+
+void Window::definirTelaCheia(bool sim) {
+    if (sim == telaCheia_) return;
+    telaCheia_ = sim;
     SDL_SetWindowFullscreen(janela_, telaCheia_);
 }
 

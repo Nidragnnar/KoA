@@ -6,17 +6,30 @@ era a era, até a **Alta Fantasia**.
 
 Engine própria em **C++20 + SDL3 + OpenGL 3.3** (Kingdom Engine), com EnTT, Dear ImGui, nlohmann/json e GoogleTest.
 
-## Protótipo 0.1 — The Forgotten Kingdom
+## Versão 1.0
 
-Entrar no jogo, explorar o vilarejo em ruínas, coletar madeira, pedra e ouro e reconstruir a primeira casa.
+As 8 fases do plano de arquitetura estão feitas:
+
+1. Engine (janela, render em lotes, câmera, entrada, recursos, depuração)
+2. Mundo (tilemap em chunks, colisão, câmera)
+3. Gameplay básico (coleta, inventário, reconstruir a casa)
+4. Vida (relógio, dias, moradores com rotina, diálogos, amizade)
+5. Reino (obras, economia diária, população, felicidade, impostos)
+6. RPG (floresta, cripta, combate, missões, forja, o Cavaleiro Caído)
+7. Progressão visual (4 eras em onda, enfeites, música por era, o dragão)
+8. Finalização (3 espaços de save, opções, guia dos primeiros dias, balanceamento, recursos que renascem, mercado, ícone)
 
 | Controle | Ação |
 |---|---|
 | W A S D / setas | andar |
 | E / Espaço | interagir (segure para continuar golpeando) |
-| Esc | menu |
+| J | atacar |
+| H | comer |
+| B / K / L | obras / reino / diário |
+| Esc | menu (salvar, opções, controles, título, sair) |
 | F5 | salvar |
 | F11 | tela cheia |
+| M | som |
 | F1 | ferramentas de depuração (ImGui) |
 
 ## Compilar
@@ -25,16 +38,19 @@ Precisa do Visual Studio 2026 com C++. As bibliotecas são baixadas na primeira 
 
 ```powershell
 .\ferramentas\compilar.ps1 debug     # compila, regenera a arte e roda os testes
-.\ferramentas\roteiro.ps1            # joga sozinho o caminho do 0.1 e tira capturas (capturas\roteiro)
-.\ferramentas\empacotar.ps1 0.1      # zip para os amigos, testado depois de extraído
+.\ferramentas\roteiro.ps1            # joga sozinho do título à Alta Fantasia e tira capturas (capturas\roteiro)
+.\ferramentas\balanceamento.ps1      # simula 60 dias em 4 ritmos e grava docs\BALANCEAMENTO.md
+.\ferramentas\empacotar.ps1 1.0      # zip para os amigos, testado depois de extraído
 ```
 
 ## Pastas
 
-- `Engine/`: a Kingdom Engine (núcleo, plataforma, render, mundo, física, recursos, UI, depuração)
+- `Engine/`: a Kingdom Engine (núcleo, plataforma, render, mundo, física, áudio, recursos, UI, depuração)
 - `Game/`: as regras e as cenas do jogo
-- `Data/`: construções, recursos e o mapa do vilarejo (`Data/World/vilarejo.txt`, um caractere por tile, editável no Bloco de Notas)
-- `Assets/`: atlas de sprites, fonte e shaders
-- `Tools/AssetGen`: gera a pixel art provisória
+- `Data/`: construções, recursos, moradores, diálogos, missões, inimigos e mapas (`Data/World/*.txt`, um caractere por tile, editáveis no Bloco de Notas)
+- `Assets/`: atlas de sprites, arte do NidraIA (`Assets/Arte`), fonte, ícone e shaders
+- `Tools/AssetGen`: monta o atlas (arte importada + procedural + versões por era) e o ícone
+- `Tools/Balanceamento`: jogador automático que mede o ritmo da economia
 - `Tests/`: testes da engine e do jogo
 - `docs/ARQUITETURA.md`: como o documento de arquitetura foi seguido e onde houve desvio
+- `docs/BALANCEAMENTO.md`: resultado da simulação de economia

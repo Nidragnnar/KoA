@@ -47,7 +47,7 @@ TEST(Obras, DadosDas8Construcoes) {
     EXPECT_EQ(construiveis, 8);
     EXPECT_EQ(dados().construcoes.at("taverna").nivel(1)->nome, "Pequena Taverna");
     EXPECT_EQ(dados().construcoes.at("taverna").nivel(3)->nome, "Grande Estalagem");
-    EXPECT_FLOAT_EQ(dados().construcoes.at("campo").nivel(1)->efeito("comida_dia"), 6.0f);
+    EXPECT_FLOAT_EQ(dados().construcoes.at("campo").nivel(1)->efeito("comida_dia"), 5.0f);
 }
 
 TEST(Obras, NaoConstroiEmCimaDeArvoreAguaOuCasa) {

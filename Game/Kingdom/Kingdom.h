@@ -17,6 +17,7 @@ struct Kingdom {
     std::vector<BuildingData> construcoes;
     float eraVisual = 0.0f;  // 0..3 contínuo, persegue a era-alvo
     int eraForcada = -1;     // ferramenta de depuração: -1 = automática
+    bool magiaLiberta = false;  // o Cavaleiro Caído foi derrotado: a Alta Fantasia fica possível
 
     int desenvolvimento() const;
     KingdomEra eraAlvo() const;

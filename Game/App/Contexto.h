@@ -14,16 +14,30 @@ namespace koa {
 
 class Roteiro;
 
-constexpr const char* VERSAO_JOGO = "0.1.0";
+constexpr const char* VERSAO_JOGO = "1.0.0";
+constexpr const char* SLOTS[] = {"Save_001", "Save_002", "Save_003"};
+
+// Preferências do jogador (config.json na pasta do usuário)
+struct Opcoes {
+    int musica = 6, efeitos = 8;  // 0..10
+    bool telaCheia = false;
+};
 
 // O que as cenas compartilham
 struct Contexto {
     ke::Application& app;
     GameData dados;
     std::filesystem::path pastaData;
+    std::filesystem::path pastaUsuario;
     std::unique_ptr<SaveSystem> saves;
+    std::string slot = "Save_001";  // espaço de save em uso
+    Opcoes opcoes;
     Roteiro* roteiro = nullptr;  // teste automatizado (--roteiro)
     int codigoSaida = 0;
+
+    void carregarOpcoes();
+    void salvarOpcoes() const;
+    void aplicarOpcoes();  // volume e tela cheia
 };
 
 // Cores da interface

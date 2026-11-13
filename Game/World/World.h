@@ -112,6 +112,8 @@ public:
     bool podeConstruir(const std::string& def, glm::ivec2 tile, std::string* motivo = nullptr) const;
     std::string construir(const std::string& def, glm::ivec2 tile);  // id da obra, ou "" se não deu
     int contarConstrucoes(const std::string& def) const;
+    // Guia dos primeiros dias: o que fazer agora ("" quando o herdeiro já se virou sozinho)
+    std::string proximoPasso() const;
     ResumoReino resumo() const { return calcularResumo(reino, *dados_, estado); }
     void sincronizarAldeoes();  // tantos aldeões quanto a população pede
 
@@ -127,6 +129,10 @@ public:
     int defesaArmadura() const;
     int nivelForja() const;       // maior nível de forja pronta (0 = nenhuma)
     bool forjar(const std::string& equip);
+    // Mercado: troca ouro por um lote de 10 (pedra ou madeira); mais barato quanto maior o mercado
+    int nivelMercado() const;
+    int precoLote(const std::string& recurso) const;  // 0 = não vende
+    bool comprarLote(const std::string& recurso);
     void reviver();               // depois de derrotado: acorda em casa no dia seguinte
     void renascerInimigos();      // de manhã as criaturas voltam (o chefe não, se já caiu)
 

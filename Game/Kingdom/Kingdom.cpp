@@ -15,8 +15,8 @@ const char* nomeEra(KingdomEra e) {
 }
 
 KingdomEra eraPorDesenvolvimento(int d) {
-    if (d >= 35) return KingdomEra::HighFantasy;
-    if (d >= 20) return KingdomEra::Prosperity;
+    if (d >= 40) return KingdomEra::HighFantasy;
+    if (d >= 22) return KingdomEra::Prosperity;
     if (d >= 8) return KingdomEra::Restoration;
     return KingdomEra::DarkAge;
 }
@@ -31,7 +31,10 @@ int Kingdom::desenvolvimento() const {
 
 KingdomEra Kingdom::eraAlvo() const {
     if (eraForcada >= 0) return static_cast<KingdomEra>(std::clamp(eraForcada, 0, 3));
-    return eraPorDesenvolvimento(desenvolvimento());
+    const KingdomEra e = eraPorDesenvolvimento(desenvolvimento());
+    // A magia só volta de vez quando o Cavaleiro Caído é derrotado na cripta
+    if (e == KingdomEra::HighFantasy && !magiaLiberta) return KingdomEra::Prosperity;
+    return e;
 }
 
 void Kingdom::atualizarEra(float dt) {

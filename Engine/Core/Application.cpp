@@ -1,5 +1,7 @@
 #include "Engine/Core/Application.h"
 
+#include <algorithm>
+
 #include <SDL3/SDL.h>
 #include <glad/glad.h>
 
@@ -45,6 +47,9 @@ void Application::executar() {
     const double freq = static_cast<double>(SDL_GetPerformanceFrequency());
     double acumFps = 0.0;
     int quadros = 0;
+    // Desempenho no log a cada 10 s: FPS e tempo de CPU por quadro (sem a espera da sincronia vertical)
+    double acumLog = 0.0, cpuSoma = 0.0, cpuPior = 0.0;
+    int quadrosLog = 0;
 
     while (rodando_) {
         cenas_.aplicarTroca();
@@ -95,6 +100,16 @@ void Application::executar() {
             salvarCaptura(capturaPendente_, tam.x, tam.y);
             capturaPendente_.clear();
             if (auto f = std::move(aposCaptura_)) f();
+        }
+        const double cpu = (SDL_GetPerformanceCounter() - agora) / freq * 1000.0;
+        cpuSoma += cpu;
+        cpuPior = std::max(cpuPior, cpu);
+        ++quadrosLog;
+        acumLog += dt;
+        if (acumLog >= 10.0) {
+            log::info("desempenho: {:.0f} FPS, CPU {:.2f} ms/quadro (pior {:.2f} ms)", quadrosLog / acumLog, cpuSoma / quadrosLog, cpuPior);
+            acumLog = cpuSoma = cpuPior = 0.0;
+            quadrosLog = 0;
         }
         janela_.trocarBuffers();
     }

@@ -65,6 +65,14 @@ Ainda não feito nesta fase: necessidades dos moradores, presentes (os gostos e 
 - **Anúncio de era** (`EventoJogo::EraMudou`) uma vez por virada; os moradores ganham falas por era (`era_min` nos diálogos).
 - **Áudio** (`Engine/Audio`): `Sintetizador` puro (testado sem placa de som) gera música generativa e efeitos, sem arquivos. Uma escala, andamento e instrumentação por era, mais uma trilha de perigo na floresta e na cripta. `AudioDevice` liga ao SDL3 (sem dispositivo, o jogo segue mudo). M liga e desliga o som. Os scripts de teste usam `SDL_AUDIODRIVER=dummy`.
 
+## Fase 8 — finalização (versão 1.0)
+
+- **Salvamento completo**: 3 espaços (`Save_001` a `Save_003`); o título mostra Continuar (o save mais recente pelo `metadata.json`), Novo Jogo e Carregar, com resumo de cada espaço (dia, era, horas jogadas, data) e confirmação antes de substituir. Objetos esgotados guardam o dia (`dia_esgotado`); a versão do save continua 4 (o campo novo é opcional).
+- **Interface**: menu de Opções (volume da música e dos efeitos, tela cheia) gravado em `config.json`, ao lado da pasta Saves; tela de Controles; ambos no título e na pausa. Guia "Próximo passo" no HUD durante os primeiros dias (`World::proximoPasso`), até a primeira ida à floresta. Ícone da janela e do executável gerados pelo AssetGen (`Assets/UI/icone.png`, `Game/icone.ico`).
+- **Balanceamento** (`Tools/Balanceamento`, resultado em `docs/BALANCEAMENTO.md`): um jogador automático joga 60 dias em ritmos diferentes. A simulação mostrou pedra como gargalo e ouro sobrando, então: árvores e rochas renascem (3 e 4 dias), o mercado vende lotes de pedra e madeira (mais barato a cada nível), o ouro diário da taverna e do mercado caiu, a horta rende menos, os limiares de era subiram para 8/22/40 e a Alta Fantasia exige o Cavaleiro Caído derrotado (`Kingdom::magiaLiberta`).
+- **Otimização**: o `Application` registra no log, a cada 10 s, o FPS e o tempo de CPU por quadro (média e pior caso, sem a espera da sincronia vertical).
+- **Testes**: 79 (renascimento, mercado, chefe e Alta Fantasia, guia), mais o roteiro ponta a ponta que agora passa pelo título com espaços de save.
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |
@@ -73,8 +81,8 @@ Ainda não feito nesta fase: necessidades dos moradores, presentes (os gostos e 
 | Box2D | não incluído | o documento diz "quando necessário"; a colisão AABB × tiles basta para o 0.1 |
 | GoogleTest | GoogleTest v1.17.0 | igual |
 | Movimento em 4 direções | sprites em 4 direções, mas com movimento diagonal | igual ao jogo de referência; a direção do sprite segue o eixo dominante. Fácil de travar em 4 se preferir |
-| Era muda tiles, prédios, NPCs... | no 0.1 a era muda **só a cor da tela** (saturação, tinta, vinheta), a névoa e as cinzas | a arte das outras eras é da fase 7 do plano; a infraestrutura (era contínua + sprites por era) já existe |
-| Assets/ com sprites prontos | arte provisória gerada por código (`AssetGen`) num atlas PNG + JSON | ainda não há pixel art feita à mão; qualquer sprite pode ser trocado editando o PNG, sem mexer no código |
+| Era muda tiles, prédios, NPCs... | tiles, prédios, objetos e enfeites mudam por era (fase 7); os moradores ainda não | as versões por era vêm da recoloração da arte; os moradores usam sprites procedurais |
+| Assets/ com sprites prontos | arte do NidraIA para terreno, vegetação e construções (`Assets/Arte`); herói, moradores e criaturas ainda procedurais | qualquer sprite pode ser trocado pondo um PNG do mesmo tamanho em `Assets/Arte`, sem mexer no código |
 
 ## Versões das bibliotecas
 

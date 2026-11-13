@@ -19,6 +19,8 @@ public:
     void destruir();
     void trocarBuffers();
     void alternarTelaCheia();
+    void definirTelaCheia(bool sim);
+    bool telaCheia() const { return telaCheia_; }
 
     glm::ivec2 tamanhoPixels() const;  // área desenhável real (DPI incluso)
     SDL_Window* sdl() const { return janela_; }

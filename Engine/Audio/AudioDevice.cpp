@@ -46,6 +46,11 @@ void AudioDevice::definir(float era, float noite, float tensao) {
     synth_.definirTensao(tensao);
 }
 
+void AudioDevice::definirVolumes(float musica, float efeitos) {
+    std::lock_guard lk(trava_);
+    synth_.definirVolumes(musica, efeitos);
+}
+
 void AudioDevice::alternarMudo() {
     std::lock_guard lk(trava_);
     mudo_ = !mudo_;

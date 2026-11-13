@@ -22,7 +22,9 @@ add_executable(KingdomOfAshes WIN32
     Scenes/WorldScene.cpp
     Render/WorldRenderer.cpp
     UI/Hud.cpp
-    Demo/Roteiro.cpp)
+    UI/Menus.cpp
+    Demo/Roteiro.cpp
+    icone.rc)
 target_link_libraries(KingdomOfAshes PRIVATE KingdomGame KingdomEngine)
 configurar_alvo(KingdomOfAshes)
 add_custom_command(TARGET KingdomOfAshes POST_BUILD
