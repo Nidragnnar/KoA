@@ -1695,6 +1695,100 @@ void fase11(Lista& l) {
     l.emplace_back("icone_cristal", iconeCristal());
 }
 
+// ---------- Fase 13: a Muralha Leste, o portão e os soldados ----------
+
+// Trecho de muralha (um tile de largura): 1 ruínas, 2 paliçada, 3 pedra, 4 fortificada com ameia
+Img muralha(int nivel) {
+    std::mt19937 r(7000 + nivel);
+    if (nivel <= 1) {  // pedras caídas
+        Img t(16, 12);
+        t.elipse(5, 8, 4, 3, hex("#5f5c57"));
+        t.elipse(11, 9, 4, 2, hex("#55524d"));
+        t.elipse(9, 6, 3, 2, hex("#6a665f"));
+        t.salpicar(r, 6, hex("#45423e"));
+        t.contornar(CONTORNO);
+        return t;
+    }
+    const int h = nivel == 2 ? 26 : nivel == 3 ? 28 : 32;
+    Img t(16, h);
+    if (nivel == 2) {  // troncos afiados
+        for (int x = 1; x < 15; x += 5) {
+            t.rect(x, 4, 4, h - 4, hex("#6e5238"));
+            t.rect(x, 4, 1, h - 4, hex("#8a6a48"));
+            t.rect(x + 1, 1, 2, 3, hex("#6e5238"));  // ponta
+            t.px(x + 1, 0, hex("#8a6a48"));
+        }
+        t.rect(0, h - 10, 16, 2, hex("#4a3828"));  // amarra
+    } else {
+        const Cor pedra = nivel == 3 ? hex("#77736c") : hex("#85817a");
+        const int topo = nivel == 4 ? 6 : 2;
+        t.rect(0, topo, 16, h - topo, pedra);
+        for (int y = topo + 3; y < h; y += 5)  // fiadas de pedra
+            for (int x = (y / 5) % 2 * 4; x < 16; x += 8) t.rect(x, y, 1, 4, clarear(pedra, -0.25f)), t.rect(0, y + 4, 16, 1, clarear(pedra, -0.2f));
+        t.rect(0, topo, 16, 1, clarear(pedra, 0.2f));
+        if (nivel == 4) {  // ameias
+            for (const int x : {0, 6, 12}) t.rect(x, 1, 4, 5, pedra), t.rect(x, 1, 4, 1, clarear(pedra, 0.2f));
+        }
+        t.salpicar(r, 14, clarear(pedra, -0.3f), 0, topo, 16, h);
+    }
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Portão no vão da estrada (dois tiles de altura); quebrado, sobram tábuas soltas
+Img portao(int nivel, bool quebrado) {
+    std::mt19937 r(7100 + nivel);
+    Img t(16, 40);
+    const Cor madeira = nivel >= 4 ? hex("#4a4a52") : hex("#6e5238"), escura = nivel >= 4 ? hex("#2e2e36") : hex("#4a3828");
+    if (quebrado) {
+        t.rect(0, 30, 3, 10, escura);  // batentes
+        t.rect(13, 30, 3, 10, escura);
+        t.linha(2, 38, 7, 31, madeira);  // tábuas caídas
+        t.linha(9, 39, 14, 34, madeira);
+        t.salpicar(r, 8, hex("#3a3632"), 0, 30, 16, 40);
+        t.contornar(CONTORNO);
+        return t;
+    }
+    t.rect(0, 6, 16, 34, madeira);
+    for (int x = 3; x < 16; x += 4) t.rect(x, 6, 1, 34, escura);  // tábuas
+    if (nivel >= 3) for (const int y : {12, 24, 34}) t.rect(0, y, 16, 2, hex("#3a3a42"));  // faixas de ferro
+    t.rect(0, 2, 16, 4, nivel == 2 ? hex("#5a4430") : hex("#77736c"));  // verga
+    t.px(11, 22, hex("#c8a848"));  // argola
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Soldado do posto da guarda: elmo, túnica azul e lança (2 quadros andando)
+Img soldado(int q) {
+    Img t(16, 24);
+    const Cor pele = hex("#d0a080"), tunica = hex("#3a5a8a"), ferro = hex("#8a8a96");
+    t.rect(5, 18, 2, 6 - q, hex("#3a2a1a"));  // pernas
+    t.rect(9, 18, 2, 5 + q, hex("#3a2a1a"));
+    t.rect(4, 10, 8, 9, tunica);
+    t.rect(4, 10, 8, 2, clarear(tunica, 0.2f));
+    t.rect(7, 12, 2, 2, hex("#d8b048"));  // brasão
+    t.rect(5, 5, 6, 5, pele);              // rosto
+    t.rect(4, 2, 8, 4, ferro);             // elmo
+    t.rect(4, 2, 8, 1, clarear(ferro, 0.25f));
+    t.px(6, 7, hex("#2a1a14"));
+    t.px(9, 7, hex("#2a1a14"));
+    t.rect(13, 0, 1, 22, hex("#6e5238"));  // lança
+    t.rect(12, 0, 3, 2, ferro);
+    t.rect(12, 12, 2, 2, pele);            // mão
+    t.contornar(CONTORNO);
+    return t;
+}
+
+void fase13(Lista& l) {
+    l.emplace_back("muralha_ruina", muralha(1));
+    for (int n = 2; n <= 4; ++n) {
+        l.emplace_back(std::format("muralha_n{}", n), muralha(n));
+        l.emplace_back(std::format("portao_n{}", n), portao(n, false));
+    }
+    l.emplace_back("portao_quebrado", portao(2, true));
+    for (int q = 0; q < 2; ++q) l.emplace_back(std::format("soldado_{}", q), soldado(q));
+}
+
 std::vector<std::pair<std::string, Img>> gerarTodos() {
     Lista l;
     const char* nomes[] = {"grama", "terra", "lama", "agua", "calcada", "muro"};
@@ -1734,6 +1828,7 @@ std::vector<std::pair<std::string, Img>> gerarTodos() {
     fase9(l);
     fase10(l);
     fase11(l);
+    fase13(l);
     return l;
 }
 

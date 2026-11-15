@@ -70,6 +70,13 @@
     "decisao:lenhadores:patrulha": "Uma patrulha passou a guardar a estrada leste. Os lenhadores voltaram ao trabalho.",
     "decisao:pregadores:tolerar": "O herdeiro deixou que os pregadores das cinzas falassem na praça. Maelis passou a noite em claro.",
 
+    "horda:1": "Na noite do dia {nome}, a primeira horda desde a volta do herdeiro atacou o portão leste. Valdren resistiu.",
+    "horda:*": "Na noite do dia {nome}, uma horda veio da floresta e se quebrou contra o portão leste.",
+    "horda_saqueada:*": "Na noite do dia {nome}, a horda passou pelo portão e saqueou a praça de Valdren.",
+    "muralha_n2": "Uma paliçada de troncos afiados fechou a estrada leste. Valdren voltou a ter um portão.",
+    "muralha_n3": "A Muralha Leste foi erguida em pedra, com um portão de carvalho e ferro.",
+    "muralha_n4": "A Muralha Leste ganhou ameias e tochas. Dizem que dá para vê-la da borda da floresta.",
+
     "misterio:primeiro_ato": "As peças se juntaram: a Queda das Cinzas começou dentro do castelo, pelas mãos do próprio rei. Resta saber para onde foi a Chama."
   }
 }

@@ -64,6 +64,10 @@ std::vector<std::string> WorldScene::opcoesPainel() const {
     if (d && d->nivel(b->level + 1)) o.push_back("Reconstruir");
     if (painel_ == "casa_herdeiro") o.push_back("Dormir até amanhã");
     if (b && b->defId == "forja" && b->constructed) o.push_back("Forjar equipamento");
+    if (b && b->defId == "muralha") {
+        const Custo c = mundo_.custoReparo();
+        if (!c.empty()) o.push_back(std::format("Reparar portão ({} pedra, {} madeira)", c.at("pedra"), c.at("madeira")));
+    }
     if (b && b->defId == "mercado" && b->constructed) {
         o.push_back(std::format("Comprar 10 pedra ({} ouro)", mundo_.precoLote("pedra")));
         o.push_back(std::format("Comprar 10 madeira ({} ouro)", mundo_.precoLote("madeira")));
@@ -389,6 +393,8 @@ void WorldScene::entradaPainel() {
             painel_.clear();
             forja_ = true;
             selForja_ = 0;
+        } else if (o.starts_with("Reparar portão")) {
+            mundo_.repararPortao();  // o painel fica aberto (mostra a vida nova)
         } else if (o.starts_with("Comprar 10 pedra")) {
             mundo_.comprarLote("pedra");  // o painel fica aberto para comprar de novo
         } else if (o.starts_with("Comprar 10 madeira")) {
@@ -678,6 +684,62 @@ void WorldScene::tratarEventos() {
             som.tocar(ke::Som::Magia);
             ke::log::info("conselho: {} no cargo {}", e.recurso, e.alvo);
             break;
+        // ---------- Fase 13: a batalha no portão ----------
+        case EventoJogo::Tipo::HordaChegou:
+            nomeRegiao_ = "A horda chegou!";
+            tituloRegiao_ = 3.0f;
+            hud_.aviso(e.texto, cor::ruim);
+            cam_.tremor = std::max(cam_.tremor, 3.0f);
+            som.tocar(ke::Som::Dano);
+            ke::log::info("horda: {} criaturas no portão (dia {})", e.quantidade, mundo_.relogio.dia);
+            break;
+        case EventoJogo::Tipo::Flecha: {
+            // Rastro da flecha: pontinhos claros da torre até a criatura
+            const glm::vec2 d = e.ate - e.pos;
+            for (int i = 0; i < 10; ++i) {
+                ke::Particula p;
+                p.pos = e.pos + d * (i / 10.0f);
+                p.vel = glm::normalize(d + glm::vec2(0.001f)) * 30.0f;
+                p.cor = {1.0f, 0.9f, 0.6f, 0.9f};
+                p.vida = p.vidaMax = 0.08f + i * 0.02f;
+                p.aditiva = true;
+                part_.emitir(p);
+            }
+            break;
+        }
+        case EventoJogo::Tipo::PortaoGolpeado:
+            poeira(e.pos, {3, 6}, 6, {0.45f, 0.36f, 0.26f, 1});
+            if (std::abs(e.pos.x - mundo_.jogador.pos.x) < 200.0f) {
+                cam_.tremor = std::max(cam_.tremor, 0.8f);
+                som.tocar(ke::Som::Golpe);
+            }
+            break;
+        case EventoJogo::Tipo::PortaoCaiu:
+            poeira(e.pos, {8, 16}, 60, {0.4f, 0.32f, 0.24f, 1});
+            cam_.tremor = 4.0f;
+            flash_ = std::max(flash_, 0.4f);
+            hud_.aviso(e.texto, cor::ruim);
+            som.tocar(ke::Som::Dano);
+            break;
+        case EventoJogo::Tipo::Saque:
+            textoFlutuante(e.pos - glm::vec2(0, 20), "Saque!", cor::ruim);
+            hud_.aviso(e.texto, cor::ruim);
+            hud_.pulsar("comida");
+            hud_.pulsar("ouro");
+            break;
+        case EventoJogo::Tipo::SoldadoCaiu:
+            hud_.aviso(e.texto, cor::ruim);
+            poeira(e.pos, {5, 6}, 14, {0.3f, 0.35f, 0.5f, 1});
+            break;
+        case EventoJogo::Tipo::BatalhaFim:
+            hud_.aviso(e.alvo == "vitoria" ? "A horda foi vencida!" : "A horda foi vencida, mas a praça foi saqueada.",
+                       e.alvo == "vitoria" ? cor::ouro : cor::ruim);
+            if (e.quantidade > 0) textoFlutuante(mundo_.jogador.pos - glm::vec2(0, 30), std::format("+{} Ouro", e.quantidade), cor::ouro);
+            flash_ = std::max(flash_, 0.8f);
+            som.tocar(ke::Som::Magia);
+            ke::log::info("fim da batalha: {}", e.texto);
+            salvar();
+            break;
         case EventoJogo::Tipo::Transformou:
             nomeRegiao_ = e.texto;
             tituloRegiao_ = 3.5f;
@@ -864,7 +926,7 @@ void WorldScene::atualizar(double dtD) {
     if (tituloEra_ <= 0.0f) tituloNovo_ = std::max(0.0f, tituloNovo_ - dt);  // o título espera a era terminar de ser anunciada
     // Música: a era do reino no vilarejo; trilha de perigo na floresta e na cripta
     ctx_.app.audio().definir(mundo_.noVilarejo() ? mundo_.reino.eraVisual : static_cast<float>(mundo_.eraEm(mundo_.jogador.pos)),
-                             mundo_.relogio.escuridao(), mundo_.regiaoHostil() ? 1.0f : 0.0f);
+                             mundo_.relogio.escuridao(), mundo_.regiaoHostil() || mundo_.emBatalha() ? 1.0f : 0.0f);
 
     if (transicao_ >= 0.0f) {
         const float antes = transicao_;

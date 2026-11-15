@@ -6,7 +6,7 @@ era a era, até a **Alta Fantasia**.
 
 Engine própria em **C++20 + SDL3 + OpenGL 3.3** (Kingdom Engine), com EnTT, Dear ImGui, nlohmann/json e GoogleTest.
 
-## Versão 1.4
+## Versão 1.5
 
 A 2.0 está em andamento (identidade e plano em `docs/VISAO_2.0.md`). A fase 9 trouxe as Crônicas do Reino
 (tecla C), os títulos do herdeiro, o mercador viajante, três monumentos e o começo do mistério da Queda das Cinzas.
@@ -18,6 +18,9 @@ com cristal e o Golem de Cinzas, um chefe que se rende e deixa o herdeiro escolh
 A fase 12 trouxe o Conselho Real (tecla G): quatro cargos ocupados pelos moradores, cada um com jeito e lealdade
 próprios, e casos políticos a cada poucos dias. Cada conselheiro diz o que apoia, e algumas escolhas viram leis.
 O jogo também passou a aceitar o mouse: clique para atacar e para escolher nos menus.
+A fase 13 trouxe a defesa do reino: hordas avisadas com dias de antecedência atacam o portão leste às 20:00.
+A Muralha Leste (reconstruída em 3 níveis) segura as criaturas, as torres atiram flechas, os postos da guarda mandam
+soldados, e o herdeiro luta no portão. Sem ele, as defesas lutam sozinhas; o que passar saqueia a praça.
 
 As 8 fases do plano de arquitetura da 1.0 estão feitas:
 

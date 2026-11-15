@@ -84,22 +84,36 @@
       "id": "posto_guarda", "aparencia": "posto", "tamanho": [3, 3], "construivel": true, "limite": 2,
       "niveis": [
         { "nivel": 1, "nome": "Posto de Guarda", "descricao": "Uma paliçada e uma tocha que nunca apaga.",
-          "custo": { "madeira": 20, "pedra": 5, "ouro": 10 }, "efeitos": { "seguranca": 10 } },
+          "custo": { "madeira": 20, "pedra": 5, "ouro": 10 }, "efeitos": { "seguranca": 10, "soldados": 2 } },
         { "nivel": 2, "nome": "Quartel", "descricao": "Recrutas treinam ao amanhecer.",
-          "custo": { "madeira": 25, "pedra": 35, "ouro": 50 }, "efeitos": { "seguranca": 20 } },
+          "custo": { "madeira": 25, "pedra": 35, "ouro": 50 }, "efeitos": { "seguranca": 20, "soldados": 3 } },
         { "nivel": 3, "nome": "Academia dos Cavaleiros", "descricao": "Onde nascem os novos juramentos.",
-          "custo": { "madeira": 30, "pedra": 70, "ouro": 150 }, "efeitos": { "seguranca": 35, "felicidade": 3 } }
+          "custo": { "madeira": 30, "pedra": 70, "ouro": 150 }, "efeitos": { "seguranca": 35, "felicidade": 3, "soldados": 4 } }
       ]
     },
     {
-      "id": "torre", "aparencia": "torre", "tamanho": [2, 2], "construivel": true, "limite": 1,
+      "_defesa": "Fase 13: na noite da horda cada torre atira flechas (dano_torre) e cada posto manda soldados ao portão.",
+      "id": "torre", "aparencia": "torre", "tamanho": [2, 2], "construivel": true, "limite": 3,
       "niveis": [
         { "nivel": 1, "nome": "Torre de Madeira", "descricao": "Daqui se vê a borda da floresta.",
-          "custo": { "madeira": 25, "ouro": 10 }, "efeitos": { "seguranca": 5 } },
+          "custo": { "madeira": 25, "ouro": 10 }, "efeitos": { "seguranca": 5, "dano_torre": 6 } },
         { "nivel": 2, "nome": "Torre de Pedra", "descricao": "Sólida contra vento e criaturas.",
-          "custo": { "madeira": 10, "pedra": 40, "ouro": 40 }, "efeitos": { "seguranca": 8, "felicidade": 1 } },
+          "custo": { "madeira": 10, "pedra": 40, "ouro": 40 }, "efeitos": { "seguranca": 8, "felicidade": 1, "dano_torre": 10 } },
         { "nivel": 3, "nome": "Torre Arcana", "descricao": "Os primeiros sinais de magia retornando ao mundo.",
-          "custo": { "pedra": 60, "ouro": 150 }, "efeitos": { "seguranca": 12, "felicidade": 4 } }
+          "custo": { "pedra": 60, "ouro": 150 }, "efeitos": { "seguranca": 12, "felicidade": 4, "dano_torre": 16 } }
+      ]
+    },
+    {
+      "_muralha": "Fase 13: a Muralha Leste fica na entrada da estrada (fixa no mapa, como a casa). Nível 1 são só ruínas; do 2 em diante ela bloqueia e o portão segura as criaturas até a vida dele (vida_portao) acabar.",
+      "id": "muralha", "aparencia": "muralha", "tamanho": [1, 7], "construivel": false, "limite": 1,
+      "niveis": [
+        { "nivel": 1, "nome": "Muralha em Ruínas", "descricao": "Pedras caídas onde um dia houve um portão. Nada segura as criaturas aqui." },
+        { "nivel": 2, "nome": "Paliçada", "descricao": "Troncos afiados e um portão de tábuas.",
+          "custo": { "madeira": 40, "ouro": 10 }, "efeitos": { "seguranca": 4, "vida_portao": 150 } },
+        { "nivel": 3, "nome": "Muralha de Pedra", "descricao": "Pedra sobre pedra, e um portão de carvalho com ferro.",
+          "custo": { "madeira": 20, "pedra": 70, "ouro": 30 }, "efeitos": { "seguranca": 8, "vida_portao": 300 } },
+        { "nivel": 4, "nome": "Muralha Fortificada", "descricao": "Ameias, tochas e um portão que já viu muita noite ruim.",
+          "custo": { "pedra": 120, "ouro": 90 }, "efeitos": { "seguranca": 12, "felicidade": 2, "vida_portao": 500 } }
       ]
     },
     {

@@ -114,6 +114,14 @@ O plano da 2.0 está em `docs/VISAO_2.0.md`.
 - **Save v7**: arquivo novo `council.json` (cargos, lealdade, leis, caso pendente, dia do último caso). Saves v1 a v6 começam sem conselho; ele se forma na manhã seguinte se o reino já tiver as obras.
 - **Testes**: 131 (11 novos da fase 12 e 1 do mouse) e o roteiro com as etapas 36 a 38 (mouse na pausa e no ataque, nomear pelo G, o caso que abre depois do relatório e vira lei).
 
+## Fase 13 — Defesa do reino (versão 1.5)
+
+- **Regras** (`Game/Kingdom/Defesa.h`): `forcaHorda`, `composicaoHorda` (rodízio da criatura mais cara para a mais barata enquanto a força der) e `resolverSemHeroi` são puras e testadas sem mundo.
+- **Muralha Leste**: uma construção fixa do mapa (`muralha`, 1×7 tiles) que o `World` trata à parte: não conta como obra nem como desenvolvimento no nível 1 (ruínas); de pé, `obstaculos()` tem só os trechos de muro, e o vão do portão (`caixaPortao`) é barreira apenas para a horda. O `WorldRenderer` desenha um trecho por fileira e o portão (inteiro ou quebrado).
+- **Batalha**: começa em `World::passo` na hora marcada (`iniciarBatalha`). As criaturas da horda (`Inimigo::horda`) têm o seu próprio comportamento em `atualizarInimigos`: alvo vivo mais perto (herói ou `Soldado`), senão o portão ou a praça; só esbarram na muralha e no portão. Torres e soldados ficam em `atualizarDefesa`/`atualizarSoldados`. A derrota de uma criatura passou para `derrotarInimigo`, usado pela espada, pelas flechas e pelas lanças. O fim (`terminarBatalha`) dá o ouro, grava a página e marca a próxima horda; `resolverHordaSemHeroi` cobre o herdeiro longe, dormindo ou saindo no meio.
+- **Save v8**: arquivo novo `defense.json` (dia da horda, número, próxima, vida do portão, notas para a manhã). A batalha em si não se salva: carregada depois das 20:00 do dia marcado, ela recomeça do portão.
+- **Testes**: 143 (12 novos da fase 13) e o roteiro com as etapas 39 a 41 (reconstruir a paliçada pelo painel, o aviso dos batedores e a batalha com torre, soldados e o herdeiro).
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

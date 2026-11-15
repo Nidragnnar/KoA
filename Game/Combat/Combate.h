@@ -67,6 +67,17 @@ struct Inimigo {
     bool perseguindo = false;
     bool andando = false;
     bool rendido = false;         // chefe de joelhos, esperando a decisão do herdeiro
+    bool horda = false;           // fase 13: marcha para o portão e a praça, em vez de vagar
+};
+
+// Fase 13: soldado dos postos da guarda, que vai ao portão na noite da horda
+struct Soldado {
+    int vida = 40, vidaMax = 40;
+    float recarga = 0.0f;
+    glm::vec2 posto{0.0f};        // onde ele volta quando não há criatura por perto
+    Direcao dir = Direcao::Baixo;
+    bool andando = false;
+    float tempoAnim = 0.0f, piscar = 0.0f;
 };
 
 // ---------- Estado do herói e das missões ----------

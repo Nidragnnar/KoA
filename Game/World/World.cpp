@@ -215,6 +215,11 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
     leis.clear();
     decisaoPendente.clear();
     ultimaDecisao = 0;
+    hordaDia = hordaNumero = proximaHorda = portaoVida = 0;
+    notasDefesa.clear();
+    batalha_ = false;
+    vencidasNaBatalha_ = saquesNaBatalha_ = 0;
+    recargaTorre_.clear();
 
     InfoRegiao info;
     try {
@@ -287,6 +292,8 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
                                  glm::vec2{0.0f, -12.0f});
             }
         }
+        // Fase 13: a faixa da Muralha Leste (e o chão logo atrás dela) fica sem árvores nem pedras
+        if (const BuildingData* m = muralha()) limpar(m->tile - glm::ivec2(1, 0), {2, 7});
     } catch (const std::exception& ex) {
         if (erro) *erro = std::string("vilarejo.json: ") + ex.what();
         return false;
@@ -360,6 +367,7 @@ bool World::podeConstruir(const std::string& defId, glm::ivec2 tile, std::string
     const ke::AABB area{glm::vec2(tile * LADO) + 1.0f, glm::vec2((tile + d.tamanho + glm::ivec2(0, 1)) * LADO) - 1.0f};
     for (const ke::AABB& o : obstaculos())
         if (area.intersecta(o)) return falha("Há árvores, pedras ou construções no caminho.");
+    if (const BuildingData* m = muralha(); m && area.intersecta(caixaConstrucao(*m))) return falha("A muralha leste fica aí.");
     if (area.intersecta(jogador.caixa())) return falha("Saia de cima do terreno.");
     // Os pontos das rotinas (praça, poço, fogueira, casas) ficam livres: é onde o povo vive
     for (const auto& [nome, t] : locais)
@@ -578,6 +586,8 @@ ke::AABB World::caixaConstrucao(const BuildingData& b) const {
 
 glm::vec2 World::pontoPorta(const BuildingData& b) const {
     const ke::AABB c = caixaConstrucao(b);
+    // A Muralha Leste se usa por dentro, ao lado do portão
+    if (b.defId == "muralha") return {c.min.x - 10.0f, c.min.y + 5 * LADO + 2.0f};
     return {(c.min.x + c.max.x) * 0.5f, c.max.y + 4.0f};
 }
 
@@ -591,7 +601,18 @@ std::vector<ke::AABB> World::obstaculos() const {
         v.push_back({centro - meia, centro + meia});
     }
     if (noVilarejo())  // as construções do reino só existem no vilarejo
-        for (const auto& b : reino.construcoes) v.push_back(caixaConstrucao(b));
+        for (const auto& b : reino.construcoes) {
+            if (b.defId == "muralha") {
+                // Fase 13: em ruínas não segura nada; de pé, os trechos de muro seguram todos, mas o vão do portão
+                // deixa o herdeiro e o povo passarem (só as criaturas esbarram nele)
+                if (b.level < 2) continue;
+                const ke::AABB c = caixaConstrucao(b), g = caixaPortao();
+                v.push_back({c.min, {c.max.x, g.min.y}});
+                v.push_back({{c.min.x, g.max.y}, c.max});
+                continue;
+            }
+            v.push_back(caixaConstrucao(b));
+        }
     return v;
 }
 
@@ -760,6 +781,12 @@ void World::passo(float dt, const EntradaMundo& in) {
     atualizarMoradores(dt);
     atualizarAldeoes(dt);
     atualizarInimigos(dt, obst);
+    // Fase 13: a horda chega na hora avisada; sem o herdeiro no vilarejo, as defesas lutam sozinhas
+    if (hordaDia == relogio.dia && !batalha_ && relogio.minutos >= dados().defesa.hora * 60) {
+        if (noVilarejo()) iniciarBatalha();
+        else resolverHordaSemHeroi("longe");
+    }
+    if (batalha_) atualizarDefesa(dt);
     if (jogador.vida > 0) verificarSaidas();
     reino.atualizarEra(dt);
     // Virada de era: anuncia uma vez (o visual muda devagar, em onda)
@@ -787,6 +814,8 @@ void World::passo(float dt, const EntradaMundo& in) {
 // ---------- Regiões ----------
 
 void World::entrarRegiao(const std::string& id, glm::ivec2 chegada, Direcao dir) {
+    // Fase 13: o herdeiro saiu do vilarejo no meio da batalha; as defesas terminam sem ele
+    if (batalha_ && noVilarejo() && id != regiaoAtual) resolverHordaSemHeroi("saiu");
     if (id != regiaoAtual) {
         const auto it = guardadas_.find(id);
         if (it == guardadas_.end()) return;
@@ -936,15 +965,19 @@ bool World::comprarLote(const std::string& recurso) {
 }
 
 void World::criarInimigo(const std::string& tipo, glm::ivec2 tile) {
+    criarInimigoEm(tipo, {tile.x * LADO + LADO / 2.0f, tile.y * LADO + 12.0f});
+}
+
+entt::entity World::criarInimigoEm(const std::string& tipo, glm::vec2 p) {
     const InimigoDef& d = dados().inimigos.at(tipo);
     const auto e = reg.create();
-    const glm::vec2 p{tile.x * LADO + LADO / 2.0f, tile.y * LADO + 12.0f};
     reg.emplace<Posicao>(e, p);
     Inimigo& i = reg.emplace<Inimigo>(e);
     i.tipo = tipo;
     i.vida = i.vidaMax = static_cast<int>(std::round(d.vida * estacaoAtual().inimigos));  // no inverno, mais resistentes
     i.origem = i.destino = p;
-    i.espera = 0.5f + (tile.x % 5) * 0.4f;
+    i.espera = 0.5f + (static_cast<int>(p.x) / LADO % 5) * 0.4f;
+    return e;
 }
 
 void World::renascerInimigos() {
@@ -1013,25 +1046,28 @@ void World::golpearComEspada() {
         }
         if (i.vida <= 0) mortos.push_back(e);
     }
-    for (const entt::entity e : mortos) {
-        const Inimigo& i = reg.get<Inimigo>(e);
-        const InimigoDef& d = dados().inimigos.at(i.tipo);
-        const glm::vec2 p = reg.get<Posicao>(e).v;
-        std::uniform_int_distribution<int> ouro(d.ouroMin, std::max(d.ouroMin, d.ouroMax));
-        int o = ouro(rng_);
-        if (const EventoDef* ev = eventoHoje(); ev && eventoAgora(ev->id)) o = static_cast<int>(std::round(o * ev->ouroInimigos));
-        inventario.adicionar("ouro", o);
-        ++abates[i.tipo];
-        // Cada criatura vencida enfraquece a corrupção da região
-        if (const auto it = estadoRegioes.find(regiaoAtual); it != estadoRegioes.end()) registrarAbate(it->second, transformacao(regiaoAtual));
-        eventos_.push_back({EventoJogo::Tipo::InimigoDerrotado, p, i.tipo, "ouro", o, d.nome});
-        if (d.chefe) {
-            reino.magiaLiberta = true;  // com o Cavaleiro Caído derrotado, a magia pode voltar ao reino
-            marcar("chefe_" + i.tipo, d.nome);
-        }
-        reg.destroy(e);
-    }
+    for (const entt::entity e : mortos) derrotarInimigo(e);
     if (!mortos.empty()) atualizarMissoes();
+}
+
+void World::derrotarInimigo(entt::entity e) {
+    const Inimigo& i = reg.get<Inimigo>(e);
+    const InimigoDef& d = dados().inimigos.at(i.tipo);
+    const glm::vec2 p = reg.get<Posicao>(e).v;
+    std::uniform_int_distribution<int> ouro(d.ouroMin, std::max(d.ouroMin, d.ouroMax));
+    int o = ouro(rng_);
+    if (const EventoDef* ev = eventoHoje(); ev && eventoAgora(ev->id)) o = static_cast<int>(std::round(o * ev->ouroInimigos));
+    inventario.adicionar("ouro", o);
+    ++abates[i.tipo];
+    if (i.horda) ++vencidasNaBatalha_;
+    // Cada criatura vencida enfraquece a corrupção da região
+    if (const auto it = estadoRegioes.find(regiaoAtual); it != estadoRegioes.end()) registrarAbate(it->second, transformacao(regiaoAtual));
+    eventos_.push_back({EventoJogo::Tipo::InimigoDerrotado, p, i.tipo, "ouro", o, d.nome});
+    if (d.chefe) {
+        reino.magiaLiberta = true;  // com o Cavaleiro Caído derrotado, a magia pode voltar ao reino
+        marcar("chefe_" + i.tipo, d.nome);
+    }
+    reg.destroy(e);
 }
 
 void World::ferirHeroi(int dano, glm::vec2 de) {
@@ -1050,6 +1086,17 @@ void World::ferirHeroi(int dano, glm::vec2 de) {
 
 void World::atualizarInimigos(float dt, const std::vector<ke::AABB>& obst) {
     std::uniform_real_distribution<float> u(-1.0f, 1.0f), espera(1.0f, 3.5f);
+    // Fase 13: a horda só esbarra na muralha e no portão (passa por cima do resto, como uma enxurrada)
+    std::vector<ke::AABB> barreiras;
+    if (noVilarejo())
+        if (const BuildingData* m = muralha(); m && m->level >= 2) {
+            const ke::AABB c = caixaConstrucao(*m), g = caixaPortao();
+            barreiras.push_back({c.min, {c.max.x, g.min.y}});
+            barreiras.push_back({{c.min.x, g.max.y}, c.max});
+            if (portaoDePe()) barreiras.push_back(g);
+        }
+    const glm::vec2 praca = glm::vec2(dados().defesa.praca) * static_cast<float>(LADO) + glm::vec2(8, 12);
+    std::vector<entt::entity> saqueadores, soldadosCaidos;
     for (auto [e, p, i] : reg.view<Posicao, Inimigo>().each()) {
         const InimigoDef& d = dados().inimigos.at(i.tipo);
         i.piscar = std::max(0.0f, i.piscar - dt);
@@ -1063,6 +1110,56 @@ void World::atualizarInimigos(float dt, const std::vector<ke::AABB>& obst) {
         if (glm::length(i.empurrao) > 1.0f) {
             p.v += ke::moverComColisao(mapa, caixa, i.empurrao * dt, obst, 0.0f);
             i.empurrao *= std::max(0.0f, 1.0f - 9.0f * dt);
+            continue;
+        }
+        if (i.horda) {
+            // Alvo vivo mais perto (o herói ou um soldado); sem ninguém por perto, marcha para o portão ou para a praça
+            glm::vec2 alvo{0.0f};
+            float distAlvo = 1e9f;
+            entt::entity soldadoAlvo = entt::null;
+            if (jogador.vida > 0) alvo = jogador.pos, distAlvo = glm::distance(jogador.pos, p.v);
+            for (auto [s, ps, so] : reg.view<const Posicao, const Soldado>().each())
+                if (so.vida > 0 && glm::distance(ps.v, p.v) < distAlvo) alvo = ps.v, distAlvo = glm::distance(ps.v, p.v), soldadoAlvo = s;
+            const bool persegue = distAlvo < d.visao;
+            glm::vec2 destino = praca;
+            const ke::AABB g = caixaPortao();
+            if (persegue) destino = alvo;
+            else if (portaoDePe()) destino = {g.max.x + 7.0f, std::clamp(p.v.y, g.min.y + 6.0f, g.max.y - 1.0f)};
+            const glm::vec2 dirv = destino - p.v;
+            i.andando = false;
+            if (glm::length(dirv) > 2.0f) {
+                const glm::vec2 feito = ke::moverComColisao(mapa, caixa, glm::normalize(dirv) * d.velocidade * dt, barreiras, 3.0f);
+                p.v += feito;
+                i.andando = glm::length(feito) > 0.01f;
+                if (std::abs(dirv.x) > std::abs(dirv.y)) i.dir = dirv.x < 0 ? Direcao::Esquerda : Direcao::Direita;
+                else i.dir = dirv.y < 0 ? Direcao::Cima : Direcao::Baixo;
+            }
+            if (i.andando) i.tempoAnim += dt;
+            // Encostada no portão: golpeia até ele ceder
+            if (!persegue && portaoDePe() && p.v.x - g.max.x < 14.0f && p.v.y > g.min.y && p.v.y < g.max.y + 6.0f && i.recarga <= 0.0f) {
+                portaoVida = std::max(0, portaoVida - static_cast<int>(std::round(d.dano * forcaInimigos())));
+                i.recarga = 1.2f;
+                eventos_.push_back({EventoJogo::Tipo::PortaoGolpeado, {g.max.x, p.v.y - 8.0f}, i.tipo, "", portaoVida});
+                if (portaoVida == 0) {
+                    eventos_.push_back({EventoJogo::Tipo::PortaoCaiu, (g.min + g.max) * 0.5f, "", "", 0, "O portão leste caiu! As criaturas avançam para a praça!"});
+                    bloqueio_.clear();
+                }
+            }
+            // Chegou à praça: saqueia e foge com o que pegou
+            if (!persegue && glm::distance(p.v, praca) < 22.0f) saqueadores.push_back(e);
+            // Fere quem estiver encostado
+            if (persegue && distAlvo < d.tamanho.x * 0.45f + 6.0f && i.recarga <= 0.0f) {
+                const int dano = static_cast<int>(std::round(d.dano * forcaInimigos()));
+                if (soldadoAlvo != entt::null) {
+                    Soldado& so = reg.get<Soldado>(soldadoAlvo);
+                    so.vida -= danoContra(dano, 2);
+                    so.piscar = 0.12f;
+                    if (so.vida <= 0) soldadosCaidos.push_back(soldadoAlvo);
+                } else {
+                    ferirHeroi(dano, p.v);
+                }
+                i.recarga = 1.0f;
+            }
             continue;
         }
         const glm::vec2 paraHeroi = jogador.pos - p.v;
@@ -1109,6 +1206,15 @@ void World::atualizarInimigos(float dt, const std::vector<ke::AABB>& obst) {
             ferirHeroi(static_cast<int>(std::round(d.dano * forcaInimigos())), p.v);
             i.recarga = 1.0f;
         }
+    }
+    // Fase 13: quem chegou à praça leva o saque e some; soldado ferido sai da batalha
+    for (const entt::entity e : saqueadores) {
+        saquear(reg.get<Posicao>(e).v);
+        reg.destroy(e);
+    }
+    for (const entt::entity s : soldadosCaidos) {
+        eventos_.push_back({EventoJogo::Tipo::SoldadoCaiu, reg.get<Posicao>(s).v, "", "", 0, "Um soldado caiu ferido."});
+        reg.destroy(s);
     }
 }
 
@@ -1418,6 +1524,8 @@ void World::dormir(bool desmaio) {
         inventario.remover("ouro", perda);
     }
     const int ontem = relogio.dia;
+    // Fase 13: dormir na noite da horda (antes dela ou no meio da batalha) deixa as defesas lutando sozinhas
+    if (batalha_ || hordaDia == ontem) resolverHordaSemHeroi(batalha_ ? "dormiu" : "dormiu_antes");
     relogio.novoDia();
     desmaioPendente_ = false;
     derrotaPendente_ = false;
@@ -1476,6 +1584,7 @@ void World::dormir(bool desmaio) {
     for (const auto& n : notasRegioes) ultimoRelatorio.notas.push_back(n);
     notasDaManha(ontem);
     noiteDoConselho(ultimoRelatorio.notas);
+    manhaDaDefesa();
     for (const auto& [defId, nome] : novas) marcar("construiu:" + defId, nome);
     for (const int n : {15, 25, 40})
         if (estado.populacao >= n) marcar(std::format("povo:{}", n), std::to_string(n));
@@ -1514,6 +1623,11 @@ bool World::melhorarConstrucao(const std::string& id) {
     }
     eventos_.push_back({EventoJogo::Tipo::Construiu, pontoPorta(*b), id, "", b->level, b->name});
     if (id == "casa_herdeiro") marcar(b->level == 2 ? "casa_reconstruida" : std::format("casa_n{}", b->level), b->name);
+    if (b->defId == "muralha") {
+        portaoVida = portaoVidaMax();  // muralha nova, portão novo
+        bloqueio_.clear();
+        marcar(std::format("muralha_n{}", b->level), b->name);
+    }
     return true;
 }
 
@@ -1562,6 +1676,12 @@ DadosSave World::capturar() const {
     d.leis = {leis.begin(), leis.end()};
     d.decisaoPendente = decisaoPendente;
     d.ultimaDecisao = ultimaDecisao;
+    d.temDefesa = true;
+    d.hordaDia = hordaDia;
+    d.hordaNumero = hordaNumero;
+    d.proximaHorda = proximaHorda;
+    d.portaoVida = portaoVida;
+    d.notasDefesa = notasDefesa;
     return d;
 }
 
@@ -1661,6 +1781,14 @@ void World::aplicar(const DadosSave& d) {
         if (dados().conselho.leis.contains(l)) leis.insert(l);
     decisaoPendente = dados().conselho.decisao(d.decisaoPendente) ? d.decisaoPendente : "";
     ultimaDecisao = std::min(d.ultimaDecisao, relogio.dia);
+    // Fase 13: hordas e portão (a batalha em si não se salva: se a noite da horda for carregada depois das 20:00,
+    // ela recomeça do portão)
+    batalha_ = false;
+    hordaDia = d.temDefesa && d.hordaDia >= relogio.dia ? d.hordaDia : 0;
+    hordaNumero = d.hordaNumero;
+    proximaHorda = d.proximaHorda;
+    portaoVida = d.temDefesa ? std::clamp(d.portaoVida, 0, portaoVidaMax()) : portaoVidaMax();
+    notasDefesa = d.notasDefesa;
     renascerInimigos();  // o chefe derrotado não volta (e a corrupção salva decide quantas criaturas há)
     bloqueio_.clear();
     for (const auto& m : d.moradores) {
@@ -1716,7 +1844,7 @@ int World::contarObrasProntas(bool tipos) const {
     std::set<std::string> defs;
     int n = 0;
     for (const auto& b : reino.construcoes)
-        if (b.constructed && b.defId != "casa") {
+        if (b.constructed && b.defId != "casa" && !(b.defId == "muralha" && b.level < 2)) {  // ruínas não são obra
             ++n;
             defs.insert(b.defId);
         }
@@ -1788,7 +1916,7 @@ void World::reconstruirCronicas() {
     if (const BuildingData* casa = reino.construcao("casa_herdeiro"))
         for (int n = 2; n <= casa->level; ++n) marcar(n == 2 ? "casa_reconstruida" : std::format("casa_n{}", n), "", true);
     for (const auto& b : reino.construcoes)
-        if (b.constructed && b.defId != "casa") marcar("construiu:" + b.defId, b.name, true);
+        if (b.constructed && b.defId != "casa" && b.defId != "muralha") marcar("construiu:" + b.defId, b.name, true);
     for (const auto& v : visitadas)
         if (v != "vilarejo" && regioes.contains(v)) marcar("visitou:" + v, regioes.at(v).nome, true);
     for (const MissaoDef& m : dados().missoes)
@@ -2316,6 +2444,290 @@ bool World::decidir(const std::string& opcao) {
     decisaoPendente.clear();  // o caso está resolvido antes de virar página nas Crônicas
     marcar("decisao:" + id + ":" + opcao, nome);
     eventos_.push_back({EventoJogo::Tipo::Decidiu, jogador.pos, id, opcao, 0, nome});
+    return true;
+}
+
+// ---------- Fase 13: hordas e a defesa do portão leste ----------
+
+const BuildingData* World::muralha() const {
+    for (const auto& b : reino.construcoes)
+        if (b.defId == "muralha") return &b;
+    return nullptr;
+}
+
+int World::portaoVidaMax() const {
+    const BuildingData* m = muralha();
+    const BuildingDef* d = m ? def(*m) : nullptr;
+    const NivelConstrucao* nv = d ? d->nivel(m->level) : nullptr;
+    return nv && m->constructed ? static_cast<int>(nv->efeito("vida_portao")) : 0;
+}
+
+ke::AABB World::caixaPortao() const {
+    const BuildingData* m = muralha();
+    if (!m) return {{-100, -100}, {-99, -99}};
+    // O vão do portão são a 4ª e a 5ª fileiras da muralha (a estrada)
+    const ke::AABB c = caixaConstrucao(*m);
+    return {{c.min.x, c.min.y + 3 * LADO}, {c.max.x, c.min.y + 5 * LADO}};
+}
+
+int World::danoTorres() const {
+    int n = 0;
+    for (const auto& b : reino.construcoes)
+        if (b.defId == "torre" && b.constructed)
+            if (const BuildingDef* d = def(b); d && d->nivel(b.level)) n += static_cast<int>(d->nivel(b.level)->efeito("dano_torre"));
+    return n;
+}
+
+int World::soldadosDosPostos() const {
+    int n = 0;
+    for (const auto& b : reino.construcoes)
+        if (b.defId == "posto_guarda" && b.constructed)
+            if (const BuildingDef* d = def(b); d && d->nivel(b.level)) n += static_cast<int>(d->nivel(b.level)->efeito("soldados"));
+    if (n > 0 && efeitoCargo("marechal") > 0.0f) ++n;  // o Marechal leva mais um para o portão
+    return n;
+}
+
+int World::criaturasDaHorda() const {
+    int n = 0;
+    for (auto [e, i] : reg.view<const Inimigo>().each()) n += i.horda;
+    return n;
+}
+
+int World::soldadosNoPortao() const {
+    int n = 0;
+    for (auto e : reg.view<const Soldado>()) n += e != entt::null;
+    return n;
+}
+
+int World::forcaProximaHorda() const {
+    const auto it = estadoRegioes.find("floresta");
+    int f = forcaHorda(dados().defesa, hordaNumero + 1, it == estadoRegioes.end() ? 70.0f : it->second.corrupcao);
+    if (const EventoDef* ev = eventoDoDia(hordaDia > 0 ? hordaDia : relogio.dia); ev && ev->id == "lua_sangue")
+        f = f * 3 / 2;  // horda em noite de Lua de Sangue vem maior
+    return f;
+}
+
+int World::defesaDoReino() const {
+    return portaoVida / 8 + danoTorres() * 3 + soldadosDosPostos() * 6 + resumo().seguranca / 2;
+}
+
+void World::agendarHorda(int dia) { hordaDia = std::max(dia, relogio.dia); }
+
+void World::iniciarBatalha() {
+    if (batalha_ || !noVilarejo()) return;
+    const DadosDefesa& dd = dados().defesa;
+    const int forca = forcaProximaHorda();
+    ++hordaNumero;
+    batalha_ = true;
+    vencidasNaBatalha_ = saquesNaBatalha_ = 0;
+    recargaTorre_.clear();
+    // As criaturas saem da estrada leste, em fileiras
+    const auto criaturas = composicaoHorda(dd, forca);
+    for (size_t k = 0; k < criaturas.size(); ++k) {
+        const glm::ivec2 t = dd.entrada[k % dd.entrada.size()];
+        const float atras = static_cast<float>(k / dd.entrada.size()) * 10.0f;
+        const glm::vec2 p{std::min(t.x * LADO + LADO / 2.0f + atras, mapa.largura() * LADO - 4.0f), t.y * LADO + 12.0f};
+        reg.get<Inimigo>(criarInimigoEm(criaturas[k], p)).horda = true;
+    }
+    // Os soldados dos postos correm para o portão
+    const SoldadoDef& sd = dd.soldado;
+    const int nSoldados = soldadosDosPostos();
+    for (int k = 0; k < nSoldados && !dd.postoSoldados.empty(); ++k) {
+        const glm::ivec2 t = dd.postoSoldados[k % dd.postoSoldados.size()];
+        const glm::vec2 p{t.x * LADO + LADO / 2.0f - (k / static_cast<int>(dd.postoSoldados.size())) * 12.0f, t.y * LADO + 12.0f};
+        const auto e = reg.create();
+        reg.emplace<Posicao>(e, p);
+        Soldado& s = reg.emplace<Soldado>(e);
+        s.vida = s.vidaMax = sd.vida;
+        s.posto = p;
+        s.dir = Direcao::Direita;
+    }
+    eventos_.push_back({EventoJogo::Tipo::HordaChegou, jogador.pos, "", "", static_cast<int>(criaturas.size()),
+                        std::format("Uma horda de {} criaturas chegou ao portão leste!", criaturas.size())});
+}
+
+void World::atualizarSoldados(float dt) {
+    const SoldadoDef& sd = dados().defesa.soldado;
+    const auto obst = obstaculos();
+    std::vector<entt::entity> mortos;
+    for (auto [e, p, s] : reg.view<Posicao, Soldado>().each()) {
+        s.recarga = std::max(0.0f, s.recarga - dt);
+        s.piscar = std::max(0.0f, s.piscar - dt);
+        // A criatura da horda mais perto (dentro da vista); sem nenhuma, volta para o posto
+        entt::entity alvo = entt::null;
+        float dist = sd.visao;
+        for (auto [ie, ip, ii] : reg.view<const Posicao, const Inimigo>().each())
+            if (ii.horda && ii.vida > 0 && glm::distance(ip.v, p.v) < dist) dist = glm::distance(ip.v, p.v), alvo = ie;
+        const glm::vec2 destino = alvo != entt::null ? reg.get<Posicao>(alvo).v : s.posto;
+        const glm::vec2 dirv = destino - p.v;
+        s.andando = false;
+        if (glm::length(dirv) > (alvo != entt::null ? 12.0f : 3.0f)) {
+            const ke::AABB caixa{p.v - glm::vec2(4, 4), p.v + glm::vec2(4, 1)};
+            const glm::vec2 feito = ke::moverComColisao(mapa, caixa, glm::normalize(dirv) * sd.velocidade * dt, obst, 3.0f);
+            p.v += feito;
+            s.andando = glm::length(feito) > 0.01f;
+            if (std::abs(dirv.x) > std::abs(dirv.y)) s.dir = dirv.x < 0 ? Direcao::Esquerda : Direcao::Direita;
+            else s.dir = dirv.y < 0 ? Direcao::Cima : Direcao::Baixo;
+        }
+        if (s.andando) s.tempoAnim += dt;
+        // Lança na criatura encostada
+        if (alvo != entt::null && dist < 16.0f && s.recarga <= 0.0f) {
+            Inimigo& i = reg.get<Inimigo>(alvo);
+            const int dano = danoContra(sd.dano, dados().inimigos.at(i.tipo).defesa);
+            i.vida -= dano;
+            i.piscar = 0.12f;
+            s.recarga = sd.recarga;
+            eventos_.push_back({EventoJogo::Tipo::AcertouInimigo, reg.get<Posicao>(alvo).v - glm::vec2(0, 8), i.tipo, "", dano});
+            if (i.vida <= 0 && std::ranges::find(mortos, alvo) == mortos.end()) mortos.push_back(alvo);
+        }
+    }
+    for (const entt::entity e : mortos) derrotarInimigo(e);
+}
+
+void World::atualizarDefesa(float dt) {
+    const DadosDefesa& dd = dados().defesa;
+    // Torres: uma flecha na criatura mais perto, a cada poucos segundos
+    std::vector<entt::entity> mortos;
+    for (const auto& b : reino.construcoes) {
+        if (b.defId != "torre" || !b.constructed) continue;
+        const BuildingDef* d = def(b);
+        const NivelConstrucao* nv = d ? d->nivel(b.level) : nullptr;
+        if (!nv) continue;
+        float& rc = recargaTorre_[b.id];
+        rc -= dt;
+        if (rc > 0.0f) continue;
+        const ke::AABB c = caixaConstrucao(b);
+        const glm::vec2 origem{(c.min.x + c.max.x) * 0.5f, c.min.y - 12.0f};
+        entt::entity alvo = entt::null;
+        float dist = dd.alcanceTorre;
+        for (auto [ie, ip, ii] : reg.view<const Posicao, const Inimigo>().each())
+            if (ii.horda && ii.vida > 0 && glm::distance(ip.v, origem) < dist) dist = glm::distance(ip.v, origem), alvo = ie;
+        if (alvo == entt::null) continue;
+        Inimigo& i = reg.get<Inimigo>(alvo);
+        const glm::vec2 p = reg.get<Posicao>(alvo).v;
+        const int dano = danoContra(static_cast<int>(nv->efeito("dano_torre")), dados().inimigos.at(i.tipo).defesa);
+        i.vida -= dano;
+        i.piscar = 0.12f;
+        rc = dd.recargaTorre;
+        eventos_.push_back({EventoJogo::Tipo::Flecha, origem, b.id, "", dano, "", p - glm::vec2(0, 8)});
+        eventos_.push_back({EventoJogo::Tipo::AcertouInimigo, p - glm::vec2(0, 8), i.tipo, "", dano});
+        if (i.vida <= 0 && std::ranges::find(mortos, alvo) == mortos.end()) mortos.push_back(alvo);
+    }
+    for (const entt::entity e : mortos) derrotarInimigo(e);
+    atualizarSoldados(dt);
+    if (criaturasDaHorda() == 0) terminarBatalha();
+}
+
+void World::saquear(glm::vec2 onde) {
+    const DadosDefesa& dd = dados().defesa;
+    for (const auto& [r, q] : dd.saque) inventario.remover(r, std::min(q, inventario.quantidade(r)));
+    estado.felicidade = std::max(0.0f, estado.felicidade - dd.saqueFelicidade);
+    ++saquesNaBatalha_;
+    eventos_.push_back({EventoJogo::Tipo::Saque, onde, "", "", 0, "Uma criatura saqueou a praça!"});
+}
+
+void World::terminarBatalha() {
+    const DadosDefesa& dd = dados().defesa;
+    batalha_ = false;
+    std::vector<entt::entity> soldados;
+    for (auto e : reg.view<Soldado>()) soldados.push_back(e);
+    reg.destroy(soldados.begin(), soldados.end());
+    const int bonus = vencidasNaBatalha_ * dd.ouroPorCriatura;
+    inventario.adicionar("ouro", bonus);
+    const bool limpa = saquesNaBatalha_ == 0;
+    std::string texto = limpa ? std::format("Batalha do Portão: vitória! {} criaturas vencidas; o povo juntou {} de ouro para os defensores.",
+                                            vencidasNaBatalha_, bonus)
+                              : std::format("Batalha do Portão: a horda foi vencida, mas {} criatura{} saqueou a praça.", saquesNaBatalha_,
+                                            saquesNaBatalha_ > 1 ? "s" : "");
+    notasDefesa.push_back(texto);
+    if (portaoVidaMax() > 0 && portaoVida < portaoVidaMax())
+        notasDefesa.push_back(std::format("O portão ficou com {} de {} de vida. Repare no painel da muralha.", portaoVida, portaoVidaMax()));
+    marcar(std::string(limpa ? "horda:" : "horda_saqueada:") + std::to_string(hordaNumero), std::to_string(relogio.dia));
+    eventos_.push_back({EventoJogo::Tipo::BatalhaFim, jogador.pos, limpa ? "vitoria" : "saque", "ouro", bonus, texto});
+    hordaDia = 0;
+    proximaHorda = relogio.dia + dd.intervaloMin + static_cast<int>(hashTile(hordaNumero, 77) % (dd.intervaloMax - dd.intervaloMin + 1));
+}
+
+void World::resolverHordaSemHeroi(const std::string& motivo) {
+    const DadosDefesa& dd = dados().defesa;
+    // A força é a das criaturas que ainda estão na batalha, ou a da horda inteira (se ela nem começou com o herdeiro)
+    int forca = 0;
+    if (batalha_) {
+        std::vector<entt::entity> v;
+        for (auto [e, i] : reg.view<const Inimigo>().each())
+            if (i.horda) {
+                v.push_back(e);
+                for (const auto& [tipo, pontos] : dd.custo)
+                    if (tipo == i.tipo) forca += pontos;
+            }
+        reg.destroy(v.begin(), v.end());
+        std::vector<entt::entity> soldados;
+        for (auto e : reg.view<Soldado>()) soldados.push_back(e);
+        reg.destroy(soldados.begin(), soldados.end());
+    } else {
+        forca = forcaProximaHorda();
+        ++hordaNumero;
+        vencidasNaBatalha_ = saquesNaBatalha_ = 0;
+    }
+    batalha_ = false;
+    const ResultadoHorda r = resolverSemHeroi(defesaDoReino(), forca * 6, portaoVida);
+    portaoVida = std::max(0, portaoVida - r.danoPortao);
+    for (int k = 0; k < r.invasores; ++k) saquear(glm::vec2(dd.praca) * static_cast<float>(LADO));
+    const char* onde = motivo == "longe" || motivo == "saiu" ? "Com o herdeiro longe, a horda atacou o portão leste."
+                                                             : "A horda atacou o portão leste enquanto o herdeiro dormia.";
+    notasDefesa.push_back(r.vitoria ? std::string(onde) + " As defesas seguraram sozinhas."
+                                    : std::format("{} As defesas não bastaram: {} criatura{} saqueou a praça.", onde, saquesNaBatalha_,
+                                                  saquesNaBatalha_ > 1 ? "s" : ""));
+    if (portaoVidaMax() > 0 && portaoVida < portaoVidaMax())
+        notasDefesa.push_back(std::format("O portão ficou com {} de {} de vida. Repare no painel da muralha.", portaoVida, portaoVidaMax()));
+    marcar(std::string(saquesNaBatalha_ == 0 ? "horda:" : "horda_saqueada:") + std::to_string(hordaNumero), std::to_string(relogio.dia));
+    if (motivo == "longe" || motivo == "saiu")
+        eventos_.push_back({EventoJogo::Tipo::Aviso, jogador.pos, r.vitoria ? "bom" : "", "", 0,
+                            r.vitoria ? "A horda atacou Valdren; as defesas seguraram sem você." : "A horda atacou Valdren sem você e saqueou a praça!"});
+    hordaDia = 0;
+    proximaHorda = relogio.dia + dd.intervaloMin + static_cast<int>(hashTile(hordaNumero, 77) % (dd.intervaloMax - dd.intervaloMin + 1));
+}
+
+void World::manhaDaDefesa() {
+    const DadosDefesa& dd = dados().defesa;
+    auto& notas = ultimoRelatorio.notas;
+    for (const auto& n : notasDefesa) notas.push_back(n);
+    notasDefesa.clear();
+    // O Mestre das Obras conserta parte do portão durante a noite
+    const int max = portaoVidaMax();
+    if (portaoVida < max && efeitoCargo("obras") > 0.0f) {
+        const int conserto = std::max(1, static_cast<int>(std::round((max - portaoVida) * dd.consertoMestreObras)));
+        portaoVida = std::min(max, portaoVida + conserto);
+        notas.push_back(std::format("O Mestre das Obras consertou parte do portão (+{} de vida).", conserto));
+    }
+    // Os batedores avistam a próxima horda
+    if (hordaDia == 0 && relogio.dia >= std::max(dd.diaMin, proximaHorda) && estado.populacao >= dd.populacaoMin) {
+        const int aviso = dd.avisoDias + (efeitoCargo("marechal") > 0.0f ? 1 : 0);  // o Marechal tem batedores melhores
+        agendarHorda(relogio.dia + aviso);
+        notas.push_back(std::format("Batedores avistaram uma horda na floresta: ela ataca o portão leste em {} dias, às {}:00. "
+                                    "Reforce a muralha, as torres e os postos da guarda.",
+                                    aviso, dd.hora));
+        marcar("horda_avisada");
+    } else if (hordaDia == relogio.dia) {
+        notas.push_back(std::format("A horda chega hoje, às {}:00! Fique no vilarejo para lutar no portão.", dd.hora));
+    }
+}
+
+Custo World::custoReparo() const {
+    const int falta = portaoVidaMax() - portaoVida;
+    if (falta <= 0) return {};
+    return {{"pedra", (falta + 9) / 10}, {"madeira", (falta + 19) / 20}};
+}
+
+bool World::repararPortao() {
+    const Custo c = custoReparo();
+    if (c.empty() || batalha_) return false;
+    if (!inventario.pagar(c)) {
+        eventos_.push_back({EventoJogo::Tipo::Aviso, jogador.pos, "", "", 0, "Faltam pedra e madeira para o reparo."});
+        return false;
+    }
+    portaoVida = portaoVidaMax();
+    eventos_.push_back({EventoJogo::Tipo::Aviso, jogador.pos, "bom", "", 0, "O portão está inteiro de novo."});
     return true;
 }
 

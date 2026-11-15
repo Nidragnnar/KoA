@@ -173,4 +173,17 @@ captura: 59_decisao
 [OK] E decide: a patrulha vira lei (custou 40 de ouro)
 [OK] Oswin, que pediu a patrulha, ficou mais leal
 captura: 60_conselho_com_lei
+[OK] a Muralha Leste começa em ruínas
+[OK] E na muralha abre o painel
+captura: 61_muralha_em_ruinas
+[OK] a paliçada fecha a estrada com um portão de 150 de vida
+[OK] uma torre e um posto da guarda atrás da muralha
+captura: 62_palicada
+[OK] os batedores avisaram a horda para o dia 37 (hoje é 33)
+captura: 63_aviso_da_horda
+[OK] a horda chegou ao portão (4 criaturas, 3 soldados)
+captura: 64_batalha_no_portao
+[OK] a primeira horda foi vencida e entrou nas Crônicas
+[OK] a vitória rende ouro
+captura: 65_depois_da_batalha
 RESULTADO: 0 falha(s)

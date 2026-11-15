@@ -118,6 +118,24 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     }
     for (const auto& b : w.reino.construcoes) {
         if (!w.noVilarejo()) break;  // as construções do reino ficam no vilarejo
+        if (b.defId == "muralha") {
+            // Fase 13: um trecho de muro por fileira e o portão no vão da estrada (ruínas no nível 1)
+            const float x = b.tile.x * static_cast<float>(lado);
+            for (int f = 0; f < 7; ++f) {
+                if (f == 3 || f == 4) continue;
+                const float base = (b.tile.y + f + 1) * static_cast<float>(lado);
+                const int era = w.eraEm({x + 8, base});
+                const ke::SpriteRegion& s = comEra(b.level < 2 ? "muralha_ruina" : std::format("muralha_n{}", std::min(b.level, 4)), era);
+                lista.push_back({base, &s, {x + 8 - s.tamanho.x / 2.0f, base - s.tamanho.y}});
+            }
+            if (b.level >= 2) {
+                const float base = (b.tile.y + 5) * static_cast<float>(lado);
+                const ke::SpriteRegion& s =
+                    comEra(w.portaoDePe() ? std::format("portao_n{}", std::min(b.level, 4)) : "portao_quebrado", w.eraEm({x + 8, base}));
+                lista.push_back({base - 8.0f, &s, {x + 8 - s.tamanho.x / 2.0f, base - s.tamanho.y}});
+            }
+            continue;
+        }
         const ke::SpriteRegion& s = spriteConstrucao(w, b);
         const ke::AABB c = w.caixaConstrucao(b);
         lista.push_back({c.max.y, &s, {std::floor((c.min.x + c.max.x) * 0.5f - s.tamanho.x / 2), c.max.y - s.tamanho.y}});
@@ -140,6 +158,14 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     }
     // Inimigos: sprite de 2 quadros, virado para o lado em que andam; piscam ao levar golpe
     std::vector<std::pair<glm::vec2, float>> barras;  // vida dos feridos (desenhada por cima)
+    // Fase 13: soldados dos postos no portão
+    for (auto [e, p, s] : w.reg.view<const Posicao, const Soldado>().each()) {
+        if (!visivel(p.v)) continue;
+        const ke::SpriteRegion& sp = rec_.regiao(std::format("soldado_{}", s.andando ? static_cast<int>(s.tempoAnim * 7.0f) % 2 : 0));
+        r.sprite(sombra, {std::floor(p.v.x) - 8, std::floor(p.v.y) - 3});
+        lista.push_back({p.v.y, &sp, glm::floor(p.v - glm::vec2(8, 22)), s.dir == Direcao::Esquerda, s.piscar});
+        if (s.vida < s.vidaMax) barras.push_back({p.v - glm::vec2(0, 27), static_cast<float>(s.vida) / s.vidaMax});
+    }
     for (auto [e, p, i] : w.reg.view<const Posicao, const Inimigo>().each()) {
         if (!visivel(p.v)) continue;
         const ke::SpriteRegion& s = rec_.regiao(std::format("inimigo_{}_{}", i.tipo, static_cast<int>(i.tempoAnim * 6.0f + p.v.x) % 2));
@@ -197,7 +223,7 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     const float escuro = w.relogio.escuridao();
     if (escuro > 0.0f && w.noVilarejo()) {
         for (const auto& b : w.reino.construcoes) {
-            if (b.level < 2) continue;
+            if (b.level < 2 || b.defId == "muralha") continue;  // muralha não tem janela
             const ke::AABB c = w.caixaConstrucao(b);
             for (const float x : {0.25f, 0.75f}) {
                 const glm::vec2 jan{c.min.x + (c.max.x - c.min.x) * x, c.max.y - 22.0f};
@@ -269,7 +295,7 @@ void WorldRenderer::desenharLuzes(ke::Renderer2D& r, const World& w, const ke::C
     }
     // Janelas acesas das casas reconstruídas
     for (const auto& b : w.reino.construcoes) {
-        if (b.level < 2 || !b.constructed || !w.noVilarejo()) continue;
+        if (b.level < 2 || !b.constructed || !w.noVilarejo() || b.defId == "muralha") continue;
         const ke::AABB c = w.caixaConstrucao(b);
         for (const float x : {0.25f, 0.75f}) {
             const glm::vec2 jan{c.min.x + (c.max.x - c.min.x) * x, c.max.y - 22.0f};

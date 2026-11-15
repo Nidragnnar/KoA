@@ -64,10 +64,14 @@ A 1.0 provou a base (reino, vida, RPG, eras). A 2.0 dá ao jogo a sua identidade
 - Também nesta versão: o mouse ataca (virando para o cursor) e escolhe nos menus.
 - Fica para depois: conselheiro descontente que **esconde coisas** (desvia ouro, mente no relatório) e cargos novos com a era.
 
-### Fase 13 — Defesa do reino
-- Aviso de horda com dias para se preparar.
-- Muralhas, portões, torres e soldados que patrulham.
-- Batalha no portão com o herdeiro lutando; reparos depois.
+### Fase 13 — Defesa do reino (feita, versão 1.5)
+- **Aviso de horda** (`Data/Kingdom/defesa.json`): a partir do dia 10, com 12 moradores, os batedores avisam no relatório da manhã que uma horda ataca o portão leste em 3 dias (4 com um Marechal que não esteja descontente), às 20:00. O HUD conta os dias. As próximas vêm 9 a 12 dias depois de cada batalha. A força cresce a cada horda e com a corrupção da floresta, e é maior em noite de Lua de Sangue.
+- **Muralha Leste**: fixa na entrada da estrada, começa em ruínas e se reconstrói no painel (E perto do portão): Paliçada, Muralha de Pedra e Muralha Fortificada (portão com 150, 300 e 500 de vida). O muro segura todos; o portão deixa o herdeiro e o povo passarem, mas segura as criaturas até a vida dele acabar.
+- **Torres** (agora até 3) atiram flechas nas criaturas ao alcance (6, 10 ou 16 de dano por nível). **Postos da guarda** mandam 2, 3 ou 4 soldados ao portão (mais 1 com o Marechal), que lutam com lança e podem cair feridos.
+- **Batalha no portão**: as criaturas marcham pela estrada, golpeiam o portão e, se ele cair, vão à praça. Cada uma que chega leva comida, ouro e ânimo. O herdeiro luta junto; vencida a horda, o povo dá ouro por criatura. Se o herdeiro estiver longe, dormir ou sair no meio, as defesas lutam sozinhas (a conta compara portão, torres, soldados e segurança com a força da horda).
+- **Reparos**: o portão danificado se repara no painel da muralha (pedra e madeira). Um Mestre das Obras contente conserta 30% do estrago por noite.
+- Páginas nas Crônicas (cada horda, cada nível da muralha) e falas do Oswin.
+- Fica para depois: hordas por outras entradas, muralha em volta do vilarejo inteiro e criaturas que miram construções.
 
 ### Fase 14 — Guilda, expedições e relíquias
 - Guilda que surge com a estabilidade; expedições ao longo dos dias, com resultado conforme a preparação.
@@ -86,6 +90,6 @@ A 1.0 provou a base (reino, vida, RPG, eras). A 2.0 dá ao jogo a sua identidade
 
 ## Notas técnicas
 
-- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) e a 12 para a v7 (`council.json`).
+- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) e a 13 para a v8 (`defense.json`).
 - Conteúdo (crônicas, títulos, eventos, cargos, estações) em JSON dentro de `Data/`, como missões e diálogos hoje.
 - O roteiro ponta a ponta ganha etapas a cada fase; a arte nova vem do NidraIA em sessão separada.

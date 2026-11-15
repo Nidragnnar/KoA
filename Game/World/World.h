@@ -60,7 +60,9 @@ struct EventoJogo {
         // Fase 11
         AbrirEscolha, Transformou,
         // Fase 12
-        Decidiu, Nomeou
+        Decidiu, Nomeou,
+        // Fase 13
+        HordaChegou, Flecha, PortaoGolpeado, PortaoCaiu, Saque, SoldadoCaiu, BatalhaFim
     };
     Tipo tipo;
     glm::vec2 pos{0.0f};
@@ -68,6 +70,7 @@ struct EventoJogo {
     std::string recurso;
     int quantidade = 0;
     std::string texto;
+    glm::vec2 ate{0.0f};  // fase 13: para onde a flecha voou
 };
 
 struct EntradaMundo {
@@ -211,6 +214,26 @@ public:
     bool decidir(const std::string& opcao);
     void trazerDecisao(const std::string& id);    // o conselho traz este caso agora (testes e roteiro)
 
+    // Fase 13: hordas e a defesa do portão leste
+    int hordaDia = 0;        // dia do ataque avisado (0 = nenhum)
+    int hordaNumero = 0;     // hordas que já vieram
+    int proximaHorda = 0;    // a próxima não é avisada antes deste dia
+    int portaoVida = 0;      // vida do portão da Muralha Leste
+    std::vector<std::string> notasDefesa;  // o que a batalha deixou para o relatório da manhã
+    const BuildingData* muralha() const;
+    int portaoVidaMax() const;
+    bool portaoDePe() const { return portaoVidaMax() > 0 && portaoVida > 0; }
+    ke::AABB caixaPortao() const;           // o vão do portão na muralha (só segura criaturas)
+    int forcaProximaHorda() const;
+    int defesaDoReino() const;              // a conta da batalha sem o herdeiro
+    void agendarHorda(int dia);             // os batedores avisam (testes e roteiro)
+    void iniciarBatalha();
+    bool emBatalha() const { return batalha_; }
+    int criaturasDaHorda() const;
+    int soldadosNoPortao() const;
+    Custo custoReparo() const;
+    bool repararPortao();
+
     std::vector<ke::AABB> obstaculos() const;
     ke::AABB caixaConstrucao(const BuildingData& b) const;
     glm::vec2 pontoPorta(const BuildingData& b) const;
@@ -277,6 +300,20 @@ private:
     // Fase 12
     void noiteDoConselho(std::vector<std::string>& notas);
     Relacionamento* relacao(const std::string& npc);  // o morador pode estar em qualquer registro
+    // Fase 13
+    entt::entity criarInimigoEm(const std::string& tipo, glm::vec2 pos);
+    void derrotarInimigo(entt::entity e);  // ouro, abates, Crônicas; some do mapa
+    void atualizarDefesa(float dt);    // torres, soldados e o fim da batalha
+    void atualizarSoldados(float dt);
+    void terminarBatalha();
+    void resolverHordaSemHeroi(const std::string& motivo);
+    void saquear(glm::vec2 onde);      // uma criatura chegou à praça
+    void manhaDaDefesa();              // avisos de horda e o conserto do Mestre das Obras
+    int danoTorres() const;
+    int soldadosDosPostos() const;
+    bool batalha_ = false;
+    int vencidasNaBatalha_ = 0, saquesNaBatalha_ = 0;
+    std::map<std::string, float> recargaTorre_;  // id da torre → segundos até a próxima flecha
 
     const GameData* dados_ = nullptr;
     AlvoInteracao alvo_;

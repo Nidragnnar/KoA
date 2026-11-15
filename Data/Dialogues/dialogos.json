@@ -136,6 +136,12 @@
       { "id": "oswin_marechal", "uma_vez": true, "se": { "marco": "cargo:marechal:oswin" }, "falas": [
         "Marechal de Valdren... *a voz falha* Perdão, majestade. Faz quarenta anos que ninguém me chama de nada.",
         "A guarda volta a ter um comandante. E o reino, uma muralha de gente."] },
+      { "id": "oswin_horda1", "uma_vez": true, "se": { "marco": "horda:1" }, "falas": [
+        "Seguramos, majestade. Seguramos o portão!",
+        "Quarenta anos esperando para dizer isso de novo. Valdren tem quem a defenda."] },
+      { "id": "oswin_aviso", "uma_vez": true, "se": { "marco": "horda_avisada", "sem_marco": "horda:1" }, "falas": [
+        "Os batedores viram a horda, {titulo}. Vem pela estrada leste, como sempre veio.",
+        "Erga a muralha no portão, ponha torres atrás dela e homens nos postos. E esteja lá quando escurecer."] },
       { "id": "oswin_pacto", "uma_vez": true, "se": { "marco": "escolha:golem_cinzas:pacto" }, "falas": [
         "Pacto com a coisa das minas? ...Não é meu lugar questionar, majestade.",
         "Mas vou dobrar a vigia nas noites de lua vermelha. E vou rezar. As duas coisas."] },

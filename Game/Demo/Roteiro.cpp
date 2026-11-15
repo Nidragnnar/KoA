@@ -164,7 +164,7 @@ void Roteiro::noMundo(WorldScene& cena) {
     World& w = cena.mundo();
     ke::Input& in = ctx_.app.input();
     ++quadro_;
-    if (++quadrosTotais_ > 60 * 480) {  // mais de 8 minutos de jogo simulado: algo travou
+    if (++quadrosTotais_ > 60 * 560) {  // mais de 9 minutos de jogo simulado: algo travou
         verificar(false, "roteiro terminou dentro do tempo limite");
         terminar();
         return;
@@ -175,6 +175,11 @@ void Roteiro::noMundo(WorldScene& cena) {
         if (cena.decisaoAberta() && etapa_ < 38) {
             in.simularToque(SDL_SCANCODE_ESCAPE);
             return;
+        }
+        // Fase 13: as hordas esperam a etapa delas (senão uma batalha cairia no meio das capturas antigas)
+        if (etapa_ < 40) {
+            w.hordaDia = 0;
+            w.proximaHorda = std::max(w.proximaHorda, w.relogio.dia + 100);
         }
         switch (etapa_) {
         case 0: {
@@ -949,7 +954,94 @@ void Roteiro::noMundo(WorldScene& cena) {
             if (quadro_ == 75) proxima();
             return;
         }
-        case 39:
+        // ---------- Fase 13: a Muralha Leste e a batalha no portão ----------
+        case 39: {  // E na muralha em ruínas: reconstruir como paliçada; e uma torre e um posto atrás dela
+            if (quadro_ == 1) {
+                for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 400);
+                w.relogio.minutos = 10 * 60;
+                const BuildingData* m = w.muralha();
+                verificar(m && m->level == 1 && w.portaoVidaMax() == 0, "a Muralha Leste começa em ruínas");
+                if (m) {
+                    w.jogador.pos = w.pontoPorta(*m) + glm::vec2(-6, 0);
+                    w.jogador.dir = Direcao::Direita;
+                }
+            }
+            if (quadro_ == 10) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 25) {
+                verificar(cena.painelAberto() == "muralha_leste", "E na muralha abre o painel");
+                capturar("61_muralha_em_ruinas");
+            }
+            if (quadro_ == 27) in.simularToque(SDL_SCANCODE_E);  // Reconstruir
+            if (quadro_ == 120) {
+                verificar(w.muralha()->level == 2 && w.portaoVida == 150, "a paliçada fecha a estrada com um portão de 150 de vida");
+                const std::string t = w.construir("torre", lugarLivre(w, "torre", {56, 14}));
+                const std::string p = w.construir("posto_guarda", lugarLivre(w, "posto_guarda", {55, 23}));
+                verificar(!t.empty() && !p.empty(), "uma torre e um posto da guarda atrás da muralha");
+                w.jogador.pos = {57 * 16 + 8, 19 * 16 + 14};
+                w.jogador.dir = Direcao::Direita;
+            }
+            if (quadro_ == 140) {
+                capturar("62_palicada");
+                proxima();
+            }
+            return;
+        }
+        case 40: {  // de manhã, os batedores avisam: a horda vem em alguns dias
+            if (quadro_ == 1) {
+                w.proximaHorda = 0;
+                w.estado.populacao = std::max(w.estado.populacao, ctx_.dados.defesa.populacaoMin);
+                w.relogio.dia = std::max(w.relogio.dia, ctx_.dados.defesa.diaMin);
+                diaAntes_ = w.relogio.dia;
+                w.dormir(false);
+            }
+            if (quadro_ == 20) {
+                verificar(w.hordaDia > w.relogio.dia, std::format("os batedores avisaram a horda para o dia {} (hoje é {})", w.hordaDia, w.relogio.dia));
+                capturar("63_aviso_da_horda");
+            }
+            if (quadro_ == 22) in.simularToque(SDL_SCANCODE_E);  // fecha o relatório
+            if (quadro_ == 30) proxima();
+            return;
+        }
+        case 41: {  // às 20:00 a horda chega; torre, soldados e o herdeiro lutam no portão
+            if (quadro_ == 1) {
+                w.relogio.dia = w.hordaDia;
+                w.relogio.minutos = 20 * 60 - 1.0f;
+                w.posicionarMoradores();
+                w.jogador.pos = {58 * 16 + 8, 19 * 16 + 14};
+                w.jogador.dir = Direcao::Direita;
+                ouroAntes_ = w.inventario.quantidade("ouro");
+            }
+            if (quadro_ == 90) {
+                verificar(w.emBatalha() && w.criaturasDaHorda() > 0 && w.soldadosNoPortao() > 0,
+                          std::format("a horda chegou ao portão ({} criaturas, {} soldados)", w.criaturasDaHorda(), w.soldadosNoPortao()));
+                capturar("64_batalha_no_portao");
+            }
+            if (quadro_ > 90 && w.emBatalha() && quadro_ % 18 == 0) {
+                // O herdeiro vai à criatura mais perto do portão e golpeia
+                entt::entity alvo = entt::null;
+                float d = 1e9f;
+                for (auto [e, p, i] : w.reg.view<Posicao, Inimigo>().each())
+                    if (i.horda && glm::distance(p.v, w.jogador.pos) < d) d = glm::distance(p.v, w.jogador.pos), alvo = e;
+                if (alvo != entt::null) {
+                    w.jogador.pos = w.reg.get<Posicao>(alvo).v + glm::vec2(0, 12);
+                    w.jogador.dir = Direcao::Cima;
+                    w.jogador.vida = w.jogador.vidaMax;
+                    in.simularToque(SDL_SCANCODE_J);
+                }
+            }
+            if (quadro_ > 90 && !w.emBatalha() && quadro_ < 5000) {
+                verificar(w.marcos.contains("horda:1") || w.marcos.contains("horda_saqueada:1"), "a primeira horda foi vencida e entrou nas Crônicas");
+                verificar(w.inventario.quantidade("ouro") > ouroAntes_, "a vitória rende ouro");
+                quadro_ = 5000;
+            }
+            if (quadro_ == 5040) {
+                capturar("65_depois_da_batalha");
+                proxima();
+            }
+            if (quadro_ == 3000) verificar(false, "a batalha terminou a tempo"), terminar();
+            return;
+        }
+        case 42:
             w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();

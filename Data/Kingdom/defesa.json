@@ -1,0 +1,20 @@
+{
+  "_como_funciona": "Fase 13. A primeira horda é avisada quando o reino chega a 'dia_min' e 'populacao_min'; as outras vêm 'intervalo' dias depois da anterior (sorteado no intervalo). Os batedores avisam com 'aviso_dias' (um a mais com um Marechal que não esteja descontente). O ataque é às 'hora':00 do dia marcado. Força = forca_base + forca_por_horda × (número da horda - 1) + corrupção da floresta / 10, gasta em criaturas pelo 'custo' de cada uma (as mais fortes primeiro, enquanto der). Cada criatura que chega à praça leva o 'saque'. Sem o herdeiro no vilarejo, a batalha se resolve sozinha: defesa = vida do portão / 8 + dano das torres × 3 + soldados × 6 + segurança / 2, contra força × 6.",
+  "dia_min": 10,
+  "populacao_min": 12,
+  "intervalo": [9, 12],
+  "aviso_dias": 3,
+  "hora": 20,
+  "forca_base": 8,
+  "forca_por_horda": 3,
+  "custo": { "esqueleto": 3, "lobo": 2, "sombra": 1 },
+  "entrada": [[62, 19], [62, 20], [63, 18], [63, 21], [63, 19], [63, 20]],
+  "praca": [30, 21],
+  "posto_soldados": [[58, 18], [58, 21], [57, 19], [57, 20]],
+  "saque": { "comida": 8, "ouro": 10, "felicidade": 2 },
+  "ouro_por_criatura": 3,
+  "alcance_torre": 150,
+  "recarga_torre": 1.1,
+  "soldado": { "vida": 40, "dano": 6, "velocidade": 44, "recarga": 0.8, "visao": 170 },
+  "conserto_mestre_obras": 0.3
+}

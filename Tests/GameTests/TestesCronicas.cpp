@@ -284,39 +284,55 @@ TEST(Cenarios, MontarSavesDeTeste) {
         w.equip.arma = "espada_linhagem";
         w.equip.armadura = "cota_malha";
     };
-    // Save_002: o conselho acabou de se formar, com todos os cargos vagos. Nomear pelo G (A/D e E);
-    // dormir hoje traz o primeiro caso, que abre depois do relatório da manhã
+    // Save_002: os batedores avisaram: a horda chega AMANHÃ às 20:00, e a Muralha Leste ainda está em ruínas.
+    // Há recursos para reconstruir a muralha (E nela, perto do portão leste), uma torre e um posto (B): as obras
+    // ficam prontas de manhã, a tempo
     {
         World w = vilarejo();
         reinoAvancado(w);
         equipar(w);
-        EXPECT_TRUE(w.conselhoFormado());
-        w.relogio.dia = 8;
-        w.relogio.minutos = 10 * 60;
-        w.ultimaDecisao = w.relogio.dia - 3;
-        w.inventario.definir("ouro", 200);
+        w.relogio.dia = 12;
+        w.relogio.minutos = 9 * 60;
+        for (const char* r : {"madeira", "pedra"}) w.inventario.definir(r, 250);
+        w.inventario.definir("ouro", 300);
+        w.inventario.definir("comida", 100);
+        w.agendarHorda(13);
+        w.marcar("horda_avisada", "", true);
         w.tirarEventos();
         gravar(w, "Save_002");
     }
-    // Save_003: conselho completo e um caso esperando (G). Oswin leal, Edda satisfeita, Tilda desconfiada
-    // e Bram descontente (o cargo dele não rende). Imposto alto: o protesto pode aparecer nos próximos casos.
+    // Save_003: a noite da horda, 19:30, com Muralha de Pedra (portão 300), uma Torre de Pedra e um Quartel atrás dela,
+    // e Oswin como Marechal (mais um soldado). A floresta está bem corrompida: a horda vem grande.
+    // O herdeiro está ao lado do portão; às 20:00 a horda chega pela estrada leste
     {
         World w = vilarejo();
         reinoAvancado(w);
         equipar(w);
-        w.relogio.dia = 11;
-        w.relogio.minutos = 9 * 60;
-        const std::pair<const char*, const char*> cargos[] = {{"marechal", "oswin"}, {"tesoureiro", "edda"}, {"intendente", "tilda"}, {"obras", "bram"}};
-        for (const auto& [c, npc] : cargos) ASSERT_TRUE(w.nomear(c, npc));
-        w.lealdade["oswin"] = 78;
-        w.lealdade["edda"] = 55;
-        w.lealdade["tilda"] = 32;
-        w.lealdade["bram"] = 18;
-        w.estado.imposto = Imposto::Alto;
+        w.relogio.dia = 14;
+        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 600);
+        while (w.muralha()->level < 3) ASSERT_TRUE(w.melhorarConstrucao("muralha_leste"));
+        const std::pair<const char*, glm::ivec2> obras[] = {{"torre", {56, 14}}, {"posto_guarda", {55, 23}}};
+        for (const auto& [def, perto] : obras) obra(w, def, perto);
+        w.dormir(false);  // obras prontas
+        for (const auto& b : w.reino.construcoes)
+            if (b.defId == "torre" || b.defId == "posto_guarda") {
+                const std::string id = b.id;
+                ASSERT_TRUE(w.melhorarConstrucao(id));
+            }
+        ASSERT_TRUE(w.nomear("marechal", "oswin"));
+        w.lealdade["oswin"] = 75;
+        w.estadoRegioes.at("floresta").corrupcao = 85.0f;
+        w.hordaDia = 0;
+        w.agendarHorda(w.relogio.dia);
+        w.relogio.minutos = 19 * 60 + 30;
+        w.inventario.definir("madeira", 120);
+        w.inventario.definir("pedra", 120);
         w.inventario.definir("ouro", 200);
-        w.inventario.definir("comida", 60);
-        w.trazerDecisao("refugiados");
+        w.inventario.definir("comida", 80);
+        w.jogador.pos = {58 * 16 + 8.0f, 19 * 16 + 14.0f};
+        w.jogador.dir = Direcao::Direita;
         w.tirarEventos();
+        std::printf("[cenário] horda de força %d contra defesa %d\n", w.forcaProximaHorda(), w.defesaDoReino());
         gravar(w, "Save_003");
     }
 }

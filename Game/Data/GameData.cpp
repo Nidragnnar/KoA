@@ -154,6 +154,19 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
                     if (erro) *erro = "decisão " + dec.id + " cita morador inexistente: " + npc;
                     return false;
                 }
+    // Fase 13: hordas e defesa
+    const auto tdef = ke::fs::lerTexto(pasta / "Kingdom/defesa.json");
+    const auto jdef = tdef ? nlohmann::json::parse(*tdef, nullptr, false) : nlohmann::json();
+    if (!tdef || jdef.is_discarded()) {
+        if (erro) *erro = "Data/Kingdom/defesa.json ausente ou inválido";
+        return false;
+    }
+    if (!lerDefesa(jdef, defesa, erro)) return false;
+    for (const auto& [tipo, pontos] : defesa.custo)
+        if (!inimigos.contains(tipo)) {
+            if (erro) *erro = "horda usa criatura inexistente: " + tipo;
+            return false;
+        }
     return true;
 }
 

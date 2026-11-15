@@ -94,9 +94,22 @@ void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
         hoje = "Esta noite: " + ev->nome;
         if (ev->id == "lua_sangue") corHoje = cor::ruim;
     }
-    const float l = static_cast<float>(std::max({f_.largura(era), f_.largura(data) + 50, f_.largura(titulo), f_.largura(hoje)})) + 12.0f;
-    desenharPainel(r, {634 - l, 6}, {l, hoje.empty() ? 41.0f : 52.0f});
-    if (!hoje.empty()) f_.desenhar(r, hoje, {634 - l + 6, 44}, corHoje);
+    // Fase 13: a horda avisada (contagem regressiva)
+    std::string horda;
+    if (w.emBatalha()) horda = "Batalha no portão!";
+    else if (w.hordaDia > 0) {
+        const int faltam = w.hordaDia - w.relogio.dia;
+        horda = faltam <= 0 ? std::format("Horda esta noite ({}:00)", dados_.defesa.hora) : std::format("Horda em {} dia{}", faltam, faltam > 1 ? "s" : "");
+    }
+    const float l = static_cast<float>(std::max({f_.largura(era), f_.largura(data) + 50, f_.largura(titulo), f_.largura(hoje), f_.largura(horda)})) + 12.0f;
+    const float alt = 41.0f + (hoje.empty() ? 0.0f : 11.0f) + (horda.empty() ? 0.0f : 11.0f);
+    desenharPainel(r, {634 - l, 6}, {l, alt});
+    float yLinha = 44;
+    if (!hoje.empty()) f_.desenhar(r, hoje, {634 - l + 6, yLinha}, corHoje), yLinha += 11;
+    if (!horda.empty()) {
+        const float a = 0.8f + 0.2f * std::sin(tempo * 4.0f);
+        f_.desenhar(r, horda, {634 - l + 6, yLinha}, cor::ruim * glm::vec4(a, a, a, 1));
+    }
     f_.desenhar(r, data, {634 - l + 6, 11}, cor::texto);
     const std::string hora = w.relogio.textoHora();
     f_.desenhar(r, hora, {628.0f - f_.largura(hora), 11}, w.relogio.escuridao() > 0.5f ? glm::vec4(0.6f, 0.7f, 1.0f, 1) : cor::ouro);
@@ -277,6 +290,13 @@ void Hud::painelReino(ke::Renderer2D& r, const World& w) {
     f_.desenhar(r, std::format("{:.0f} -> {:.0f}", w.estado.felicidade, rr.felicidadeAlvo), {xV + 108, y}, cor::texto);
     y += 13;
     linha("Segurança", std::to_string(rr.seguranca), rr.seguranca >= w.estado.populacao ? cor::bom : cor::texto);
+    // Fase 13: portão e a próxima horda numa linha só
+    {
+        const int max = w.portaoVidaMax();
+        std::string def = max > 0 ? std::format("portão {}/{}", w.portaoVida, max) : "muralha em ruínas";
+        if (w.hordaDia > 0) def += std::format(", horda em {} dia(s)", std::max(0, w.hordaDia - w.relogio.dia));
+        linha("Defesa", def, max > 0 && w.portaoVida == max ? cor::texto : cor::ruim);
+    }
     const int saldo = rr.comidaProduzida - rr.comidaConsumida;
     linha("Comida", std::format("{} guardada, {:+} por dia", w.inventario.quantidade("comida"), saldo), saldo < 0 ? cor::ruim : cor::bom);
     linha("Ouro por dia", std::format("{} impostos + {} construções", rr.impostos, rr.ouroProducao));
@@ -350,8 +370,18 @@ void Hud::combate(ke::Renderer2D& r, const World& w, float tempo) {
         const std::string t = "O conselho espera sua decisão (G)";
         const float a = 0.8f + 0.2f * std::sin(tempo * 3.0f);
         const float l = static_cast<float>(f_.largura(t)) + 10;
-        r.retangulo({634 - l, 63}, {l, 11}, {0.05f, 0.04f, 0.04f, 0.7f});
-        f_.desenhar(r, t, {639 - l, 65}, cor::ouro * glm::vec4(a, a, a, 1));
+        const float y = 63.0f + (w.hordaDia > 0 || w.emBatalha() ? 11.0f : 0.0f);
+        r.retangulo({634 - l, y}, {l, 11}, {0.05f, 0.04f, 0.04f, 0.7f});
+        f_.desenhar(r, t, {639 - l, y + 2}, cor::ouro * glm::vec4(a, a, a, 1));
+    }
+    // Fase 13: a batalha no portão (embaixo, como a barra de chefe)
+    if (w.emBatalha()) {
+        const int n = w.criaturasDaHorda();
+        desenharPainel(r, {170, 312}, {300, 26});
+        f_.desenharCentralizado(r, std::format("Batalha do Portão: {} criatura{}", n, n == 1 ? "" : "s"), {320, 320}, cor::ruim);
+        const int max = w.portaoVidaMax();
+        if (max > 0) barra(r, {180, 327}, 280, static_cast<float>(w.portaoVida) / max, {0.75f, 0.55f, 0.25f, 1});
+        else f_.desenharCentralizado(r, "sem portão: elas vão direto para a praça", {320, 330}, cor::apagado);
     }
     // Missões ativas (até 3), na coluna da esquerda
     const auto ativas = w.missoesAtivas();

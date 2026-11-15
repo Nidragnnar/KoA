@@ -14,7 +14,8 @@
   "_reino_inicial": "8 sobreviventes (5 com nome + 3 aldeões) nas ruínas, que abrigam 8. Felicidade 0..100; imposto 0 baixo, 1 médio, 2 alto.",
   "reino_inicial": { "populacao": 8, "populacao_base": 8, "felicidade": 40, "imposto": 1 },
   "construcoes": [
-    { "id": "casa_herdeiro", "def": "casa", "tile": [20, 13], "nivel": 1 }
+    { "id": "casa_herdeiro", "def": "casa", "tile": [20, 13], "nivel": 1 },
+    { "id": "muralha_leste", "def": "muralha", "tile": [60, 16], "nivel": 1 }
   ],
   "decoracoes": [
     { "sprite": "castelo_ruina", "tile": [27, 2], "base": [10, 5] },

@@ -14,8 +14,9 @@
 namespace koa {
 
 // Sobe quando o formato muda (com migração). v2: relógio e moradores; v3: obras e povo; v4: regiões, combate e missões;
-// v5: Crônicas do Reino; v6: regiões vivas (corrupção, segurança, prosperidade); v7: Conselho Real e leis
-constexpr int VERSAO_SAVE = 7;
+// v5: Crônicas do Reino; v6: regiões vivas (corrupção, segurança, prosperidade); v7: Conselho Real e leis;
+// v8: hordas e a defesa do portão
+constexpr int VERSAO_SAVE = 8;
 
 struct EstadoConstrucao {
     std::string id, def;
@@ -88,6 +89,10 @@ struct DadosSave {
     std::vector<std::string> leis;
     std::string decisaoPendente;
     int ultimaDecisao = 0;
+    // defense.json (v8). Saves antigos: nenhuma horda avisada e o portão inteiro
+    bool temDefesa = false;
+    int hordaDia = 0, hordaNumero = 0, proximaHorda = 0, portaoVida = 0;
+    std::vector<std::string> notasDefesa;
 };
 
 // Saves em pastas (Saves/Save_001/*.json) com backup antes de sobrescrever
