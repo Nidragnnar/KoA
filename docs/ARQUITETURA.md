@@ -73,6 +73,18 @@ Ainda não feito nesta fase: necessidades dos moradores, presentes (os gostos e 
 - **Otimização**: o `Application` registra no log, a cada 10 s, o FPS e o tempo de CPU por quadro (média e pior caso, sem a espera da sincronia vertical).
 - **Testes**: 79 (renascimento, mercado, chefe e Alta Fantasia, guia), mais o roteiro ponta a ponta que agora passa pelo título com espaços de save.
 
+## Fase 9 — Crônicas e memória do reino (versão 1.1)
+
+O plano da 2.0 está em `docs/VISAO_2.0.md`.
+
+- **Marcos e Crônicas** (`World::marcar`): todo acontecimento importante vira um marco único (`casa_reconstruida`, `construiu:taverna`, `missao:limpar_estrada`, `pista:...`, `titulo:...`). Se houver página em `Data/Lore/cronicas.json` (própria ou do grupo, `construiu:*`), ela entra em `World::cronicas` com dia e era. A cada marco os títulos são conferidos e os fragmentos do mapa são atualizados.
+- **Lore** (`Game/Lore`): definições de títulos (requisitos combináveis: marcos, obras, tipos de obra, abates, população, era, fragmentos), fragmentos (região, tile, marco para aparecer, texto) e itens de loja; `preencher` troca `{nome}` e `{titulo}`.
+- **Fragmentos no mapa**: componente `Pista`; `atualizarPistas` mantém na região ativa só os visíveis e ainda não lidos. Interação nova `TipoInteracao::Ler` e evento `LerPista`, que abre a leitura em papel.
+- **Visitante**: um morador com `visita` em `npcs.json` só aparece depois do marco e a cada N dias; com `loja`, a conversa termina na banca (`World::comprar`). Não conta como morador na população.
+- **Monumentos**: construções com `monumento` e `requer` (marco). A inscrição (`World::inscricao`) é montada com o estado real da campanha.
+- **Save v5**: arquivo novo `chronicles.json`. Saves v1 a v4 são migrados, e as Crônicas são reconstruídas a partir do que já tinha acontecido (páginas sem data). Testado numa cópia do save real (v3).
+- **Testes**: 92 (13 novos da fase 9) e o roteiro com as etapas 20 a 23 (Crônicas, leitura, mercador e carta, memorial).
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

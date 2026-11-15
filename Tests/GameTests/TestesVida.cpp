@@ -88,7 +88,9 @@ TEST(Caminho, ContornaParedeEFalhaQuandoFechado) {
 }
 
 TEST(Moradores, CarregamComRotinaEDialogos) {
-    ASSERT_EQ(dados().npcs.size(), 5u);
+    ASSERT_EQ(dados().npcs.size(), 6u);  // 5 moradores + Corvin, o mercador viajante (fase 9)
+    EXPECT_TRUE(dados().npcs.at("corvin").visitante());
+    EXPECT_FALSE(dados().npcs.at("bram").visitante());
     const NpcDef& bram = dados().npcs.at("bram");
     EXPECT_EQ(bram.profissao, "Ferreiro");
     EXPECT_EQ(bram.rotinaEm(6 * 60)->local, "casa_bram");

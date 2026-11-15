@@ -9,6 +9,7 @@
 
 #include "Game/Combat/Combate.h"
 #include "Game/Inventory/Inventory.h"
+#include "Game/Lore/Lore.h"
 #include "Game/NPC/Npc.h"
 
 namespace koa {
@@ -37,6 +38,9 @@ struct BuildingDef {
     bool construivel = false;         // aparece no menu de obras
     int limite = 0;                   // quantas podem existir (0 = sem limite)
     std::vector<NivelConstrucao> niveis;
+    // Fase 9: monumentos só liberam depois de um acontecimento (marco)
+    std::string requer, requerTexto;
+    bool monumento = false;
 
     const NivelConstrucao* nivel(int n) const;
     int nivelMax() const { return niveis.empty() ? 0 : niveis.back().nivel; }
@@ -52,6 +56,7 @@ struct GameData {
     std::map<std::string, EquipDef> equipamentos;
     std::vector<std::string> ordemEquipamentos;
     std::vector<MissaoDef> missoes;
+    Lore lore;  // Crônicas, títulos e pistas da Queda
 
     const InimigoDef* inimigoPorLetra(char c) const {
         for (const auto& [id, d] : inimigos)

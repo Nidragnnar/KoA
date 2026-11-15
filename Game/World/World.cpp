@@ -194,6 +194,7 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
     abates.clear();
     visitadas = {"vilarejo"};
     marcos.clear();
+    cronicas.clear();
     derrotaPendente_ = false;
 
     InfoRegiao info;
@@ -286,6 +287,7 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
     criarMoradores();
     posicionarMoradores();
     sincronizarAldeoes();
+    marcar("chegada", "", true);  // a primeira página das Crônicas
     return true;
 }
 
@@ -325,6 +327,10 @@ bool World::podeConstruir(const std::string& defId, glm::ivec2 tile, std::string
     const auto it = dados().construcoes.find(defId);
     if (it == dados().construcoes.end() || !it->second.construivel) return falha("Isso não se constrói.");
     const BuildingDef& d = it->second;
+    if (!monumentoLiberado(d)) {
+        if (motivo) *motivo = d.requerTexto.empty() ? "Ainda não é hora desta obra." : d.requerTexto;
+        return false;
+    }
     if (d.limite > 0 && contarConstrucoes(defId) >= d.limite) return falha("O reino já tem o máximo desta construção.");
     // Base dentro do mapa, longe da borda, e a fileira da porta livre
     if (tile.x < 1 || tile.y < 1 || tile.x + d.tamanho.x > mapa.largura() - 1 || tile.y + d.tamanho.y + 1 > mapa.altura() - 1)
@@ -369,7 +375,8 @@ std::string World::construir(const std::string& defId, glm::ivec2 tile) {
 }
 
 void World::sincronizarAldeoes() {
-    const int nomeados = static_cast<int>(dados().npcs.size());
+    // O mercador é visitante: não conta como morador
+    const int nomeados = static_cast<int>(std::ranges::count_if(dados().npcs, [](const auto& n) { return !n.second.visitante(); }));
     const int alvo = std::clamp(estado.populacao - nomeados, 0, 16);
     std::vector<entt::entity> existentes;
     for (auto [e, a] : reg.view<Aldeao>().each()) existentes.push_back(e);
@@ -556,6 +563,8 @@ AlvoInteracao World::procurarAlvo() const {
         if (!s.aberto) considerar(e, p.v + glm::vec2(0, -4), 13.0f, TipoInteracao::Saquear, "Abrir baú");
     for (auto [e, p, r] : reg.view<const Posicao, const ConstrucaoRef>().each())
         if (const BuildingData* b = reino.construcao(r.id)) considerar(e, pontoPorta(*b), 15.0f, TipoInteracao::Construcao, b->name);
+    for (auto [e, p, pi] : reg.view<const Posicao, const Pista>().each())
+        if (const PistaDef* d = dados().lore.pista(pi.id)) considerar(e, p.v + glm::vec2(0, -3), 14.0f, TipoInteracao::Ler, "Ler: " + d->titulo);
     // Moradores têm prioridade quando estão perto: falar com alguém é o que se espera
     for (auto [e, p, m, a] : reg.view<const Posicao, const Morador, const Agenda>().each()) {
         if (a.dormindo) continue;
@@ -619,6 +628,14 @@ void World::executar(const AlvoInteracao& a) {
         eventos_.push_back({EventoJogo::Tipo::AbrirConversa, a.ponto, reg.get<Morador>(a.entidade).id});
         break;
     }
+    case TipoInteracao::Ler: {
+        // O fragmento vai para as Crônicas e some do chão (atualizarPistas o remove)
+        const std::string id = reg.get<Pista>(a.entidade).id;
+        jogador.acao = 0.2f;
+        eventos_.push_back({EventoJogo::Tipo::LerPista, a.ponto, id});
+        marcar("pista:" + id, dados().lore.pista(id)->titulo);
+        break;
+    }
     case TipoInteracao::Nenhuma: break;
     }
 }
@@ -674,6 +691,7 @@ void World::passo(float dt, const EntradaMundo& in) {
     if (alvoEra > eraAnunciada_) {
         eraAnunciada_ = alvoEra;
         eventos_.push_back({EventoJogo::Tipo::EraMudou, jogador.pos, "", "", alvoEra, nomeEra(reino.eraAlvo())});
+        for (int e = 1; e <= alvoEra; ++e) marcar(std::format("era:{}", e), nomeEra(static_cast<KingdomEra>(e)));
     }
     tempoJogado += dt;
 }
@@ -705,6 +723,8 @@ void World::entrarRegiao(const std::string& id, glm::ivec2 chegada, Direcao dir)
     jogador.acao = 0.0f;
     visitadas.insert(id);
     eventos_.push_back({EventoJogo::Tipo::MudouRegiao, jogador.pos, id, "", 0, regioes.at(id).nome});
+    atualizarPistas();
+    if (id != "vilarejo") marcar("visitou:" + id, regioes.at(id).nome);
     atualizarMissoes();
 }
 
@@ -874,11 +894,11 @@ void World::golpearComEspada() {
         const int o = ouro(rng_);
         inventario.adicionar("ouro", o);
         ++abates[i.tipo];
-        if (d.chefe) {
-            marcos.insert("chefe_" + i.tipo);
-            reino.magiaLiberta = true;  // com o Cavaleiro Caído derrotado, a magia pode voltar ao reino
-        }
         eventos_.push_back({EventoJogo::Tipo::InimigoDerrotado, p, i.tipo, "ouro", o, d.nome});
+        if (d.chefe) {
+            reino.magiaLiberta = true;  // com o Cavaleiro Caído derrotado, a magia pode voltar ao reino
+            marcar("chefe_" + i.tipo, d.nome);
+        }
         reg.destroy(e);
     }
     if (!mortos.empty()) atualizarMissoes();
@@ -1025,6 +1045,7 @@ void World::atualizarMissoes() {
             for (auto& [id, g] : guardadas_) dar(g.reg);
         }
         eventos_.push_back({EventoJogo::Tipo::MissaoConcluida, jogador.pos, m.id, m.item, 0, m.nome});
+        marcar("missao:" + m.id, m.nome);
     }
 }
 
@@ -1107,8 +1128,14 @@ void World::posicionarMoradores() {
         const ItemRotina& item = dados().npcs.at(m.id).rotina[a.itemAtual];
         const glm::ivec2 t = destinoDe(e, item);
         p.v = {t.x * LADO + LADO / 2.0f, t.y * LADO + 12.0f};
-        a.dormindo = item.acao == "dormir";
+        const NpcDef& def = dados().npcs.at(m.id);
+        a.dormindo = item.acao == "dormir" || (def.visitante() && !visitanteHoje(def));  // fora do dia de visita, nem aparece
     }
+}
+
+bool World::visitanteHoje(const NpcDef& d) const {
+    if (!d.visitante()) return true;
+    return (d.visitaRequer.empty() || marcos.contains(d.visitaRequer)) && relogio.dia % d.visitaACada == 0;
 }
 
 void World::atualizarMoradores(float dt) {
@@ -1116,6 +1143,11 @@ void World::atualizarMoradores(float dt) {
         const NpcDef& def = dados().npcs.at(m.id);
         const ItemRotina* item = def.rotinaEm(relogio.minutos);
         if (!item) continue;
+        if (def.visitante() && !visitanteHoje(def)) {
+            a.dormindo = true;
+            mv.andando = false;
+            continue;
+        }
         const int idx = static_cast<int>(item - def.rotina.data());
         if (idx != a.itemAtual) {
             // Hora de mudar de atividade: sai de casa (se dormia) e vai para o próximo local
@@ -1176,13 +1208,16 @@ Conversa World::conversar(const std::string& id) {
     if (e == entt::null) return c;
     const NpcDef& def = dados().npcs.at(id);
     auto& rel = reg.get<Relacionamento>(e);
-    ContextoFala ctx{relogio.periodo(), relogio.estacao(), 1, static_cast<int>(reino.eraAtual())};
+    ContextoFala ctx{relogio.periodo(), relogio.estacao(), 1, static_cast<int>(reino.eraAtual()), &marcos, pistasEncontradas()};
     if (const BuildingData* casa = reino.construcao("casa_herdeiro")) ctx.nivelCasa = casa->level;
     const EntradaFala* fala = escolherFala(def, rel, ctx);
     c.npc = id;
     c.nome = def.nome;
     c.profissao = def.profissao;
     c.falas = fala ? fala->falas : std::vector<std::string>{"..."};
+    // O povo chama o herdeiro pelo título que ele conquistou
+    for (auto& f : c.falas) f = preencher(f, {{"titulo", titulo().nome}});
+    c.loja = !def.loja.empty();
     // Amizade cresce uma vez por dia de conversa
     if (!rel.falouHoje) {
         rel.afinidade = std::min(1000, rel.afinidade + 25);
@@ -1190,7 +1225,7 @@ Conversa World::conversar(const std::string& id) {
     }
     rel.falouHoje = true;
     rel.conheceu = true;
-    marcos.insert("primeira_conversa");
+    if (!def.visitante()) marcar("primeira_conversa");
     if (fala && fala->umaVez) rel.memoria.insert(fala->id);
     // Missão: a primeira deste morador que ainda não começou (e cujo requisito já foi cumprido)
     for (const MissaoDef& m : dados().missoes) {
@@ -1254,13 +1289,24 @@ void World::dormir(bool desmaio) {
     for (auto [e, r] : reg.view<Relacionamento>().each()) r.falouHoje = false;
     // Obras que começaram ontem ficam prontas durante a noite
     std::vector<std::string> prontas;
+    std::vector<std::pair<std::string, std::string>> novas;  // (definição, nome) para as Crônicas
     for (auto& b : reino.construcoes)
         if (!b.constructed) {
             b.constructed = true;
             prontas.push_back(b.name);
+            novas.emplace_back(b.defId, b.name);
         }
     // A noite do reino: impostos, produção, comida, felicidade e população
     ultimoRelatorio = simularDia(reino, dados(), estado, inventario);
+    for (const auto& [defId, nome] : novas) marcar("construiu:" + defId, nome);
+    for (const int n : {15, 25, 40})
+        if (estado.populacao >= n) marcar(std::format("povo:{}", n), std::to_string(n));
+    // O mercador viajante chega pela estrada leste nos dias de visita
+    for (const auto& [id, d] : dados().npcs)
+        if (d.visitante() && visitanteHoje(d)) {
+            ultimoRelatorio.notas.push_back(d.nome + " armou a banca na praça hoje.");
+            marcar("visita:" + id, d.nome);
+        }
     if (perda > 0) ultimoRelatorio.variacoes.push_back({"ouro (desmaio)", -perda});
     for (auto it = prontas.rbegin(); it != prontas.rend(); ++it) ultimoRelatorio.notas.insert(ultimoRelatorio.notas.begin(), "Obra concluída: " + *it + "!");
     bloqueio_.clear();
@@ -1288,6 +1334,7 @@ bool World::melhorarConstrucao(const std::string& id) {
         return false;
     }
     eventos_.push_back({EventoJogo::Tipo::Construiu, pontoPorta(*b), id, "", b->level, b->name});
+    if (id == "casa_herdeiro") marcar(b->level == 2 ? "casa_reconstruida" : std::format("casa_n{}", b->level), b->name);
     return true;
 }
 
@@ -1327,6 +1374,8 @@ DadosSave World::capturar() const {
     d.abates = abates;
     d.visitadas = {visitadas.begin(), visitadas.end()};
     d.marcos = {marcos.begin(), marcos.end()};
+    d.temCronicas = true;
+    d.cronicas = cronicas;
     return d;
 }
 
@@ -1402,6 +1451,9 @@ void World::aplicar(const DadosSave& d) {
     marcos = {d.marcos.begin(), d.marcos.end()};
     reino.magiaLiberta = marcos.contains("chefe_cavaleiro_caido");
     eraAnunciada_ = static_cast<int>(reino.eraAlvo());
+    cronicas = d.cronicas;
+    if (!d.temCronicas) reconstruirCronicas();
+    verificarTitulos(true);  // títulos novos desta versão valem para o que já foi feito
     jogador.vida = std::clamp(d.vida, 1, jogador.vidaMax);
     renascerInimigos();  // o chefe derrotado não volta
     bloqueio_.clear();
@@ -1418,6 +1470,7 @@ void World::aplicar(const DadosSave& d) {
     }
     posicionarMoradores();
     sincronizarAldeoes();
+    atualizarPistas();
     // Salvou fora do vilarejo: volta para a mesma região e lugar
     if (foraDaVila) {
         const glm::vec2 p = d.posJogador;
@@ -1429,6 +1482,173 @@ void World::aplicar(const DadosSave& d) {
         }
         tirarEventos();
     }
+}
+
+// ---------- Fase 9: Crônicas, títulos e o mistério ----------
+
+bool World::marcar(const std::string& marco, const std::string& nome, bool silencioso) {
+    if (!marcos.insert(marco).second) return false;
+    // Página própria ("construiu:memorial") ou a do grupo ("construiu:*")
+    const auto& paginas = dados().lore.paginas;
+    auto it = paginas.find(marco);
+    if (const auto dp = marco.find(':'); it == paginas.end() && dp != std::string::npos) it = paginas.find(marco.substr(0, dp + 1) + "*");
+    if (it != paginas.end()) {
+        EntradaCronica c{marco, relogio.dia, static_cast<int>(reino.eraAlvo()), preencher(it->second, {{"nome", nome}})};
+        cronicas.push_back(c);
+        if (!silencioso) eventos_.push_back({EventoJogo::Tipo::Cronica, jogador.pos, marco, "", 0, c.texto});
+    }
+    if (marco.starts_with("pista:") && pistasEncontradas() == static_cast<int>(dados().lore.pistas.size()))
+        marcar("misterio:primeiro_ato", "", silencioso);  // todas as peças: a primeira verdade sobre a Queda
+    if (!marco.starts_with("titulo:")) verificarTitulos(silencioso);
+    atualizarPistas();  // um acontecimento pode revelar (ou recolher) fragmentos
+    return true;
+}
+
+int World::contarObrasProntas(bool tipos) const {
+    std::set<std::string> defs;
+    int n = 0;
+    for (const auto& b : reino.construcoes)
+        if (b.constructed && b.defId != "casa") {
+            ++n;
+            defs.insert(b.defId);
+        }
+    return tipos ? static_cast<int>(defs.size()) : n;
+}
+
+int World::pistasEncontradas() const {
+    int n = 0;
+    for (const auto& p : dados().lore.pistas) n += marcos.contains("pista:" + p.id);
+    return n;
+}
+
+void World::verificarTitulos(bool silencioso) {
+    SituacaoTitulos s;
+    s.marcos = &marcos;
+    s.construcoes = contarObrasProntas(false);
+    s.tipos = contarObrasProntas(true);
+    for (const auto& [tipo, n] : abates) s.abates += n;
+    s.populacao = estado.populacao;
+    s.era = static_cast<int>(reino.eraAlvo());
+    s.pistas = pistasEncontradas();
+    const auto& titulos = dados().lore.titulos;
+    // O primeiro é o de quem acabou de chegar: não se conquista
+    for (size_t i = 1; i < titulos.size(); ++i) {
+        const TituloDef& t = titulos[i];
+        if (marcos.contains("titulo:" + t.id) || !cumpre(t.requer, s)) continue;
+        marcar("titulo:" + t.id, t.nome, silencioso);
+        if (!silencioso) eventos_.push_back({EventoJogo::Tipo::Titulo, jogador.pos, t.id, "", 0, t.nome});
+    }
+}
+
+const TituloDef& World::titulo() const {
+    const auto& titulos = dados().lore.titulos;
+    for (auto it = titulos.rbegin(); it != titulos.rend(); ++it)
+        if (marcos.contains("titulo:" + it->id)) return *it;
+    return titulos.front();
+}
+
+void World::atualizarPistas() {
+    if (!dados_) return;
+    auto visivel = [&](const PistaDef& p) {
+        return p.regiao == regiaoAtual && (p.requer.empty() || marcos.contains(p.requer)) && !marcos.contains("pista:" + p.id);
+    };
+    std::set<std::string> existentes;
+    std::vector<entt::entity> remover;
+    for (auto [e, pi] : reg.view<const Pista>().each()) {
+        const PistaDef* d = dados().lore.pista(pi.id);
+        if (!d || !visivel(*d)) remover.push_back(e);
+        else existentes.insert(pi.id);
+    }
+    reg.destroy(remover.begin(), remover.end());
+    for (const PistaDef& p : dados().lore.pistas) {
+        if (!visivel(p) || existentes.contains(p.id)) continue;
+        const auto e = reg.create();
+        reg.emplace<Posicao>(e, baseTile(p.tile.x, p.tile.y));
+        reg.emplace<Visual>(e, "pista_0");
+        reg.emplace<Animado>(e, "pista", 2, 2.5f);
+        reg.emplace<Luz>(e, glm::vec3{1.0f, 0.85f, 0.5f}, 22.0f, glm::vec2{0.0f, -3.0f});  // brilha à noite, para ser achada
+        reg.emplace<Pista>(e, p.id);
+    }
+}
+
+void World::reconstruirCronicas() {
+    // Save de antes da fase 9: refaz as páginas do que já tinha acontecido, sem data (dia 0)
+    const std::set<std::string> antigos = marcos;
+    marcos.clear();
+    cronicas.clear();
+    marcar("chegada", "", true);
+    if (const BuildingData* casa = reino.construcao("casa_herdeiro"))
+        for (int n = 2; n <= casa->level; ++n) marcar(n == 2 ? "casa_reconstruida" : std::format("casa_n{}", n), "", true);
+    for (const auto& b : reino.construcoes)
+        if (b.constructed && b.defId != "casa") marcar("construiu:" + b.defId, b.name, true);
+    for (const auto& v : visitadas)
+        if (v != "vilarejo" && regioes.contains(v)) marcar("visitou:" + v, regioes.at(v).nome, true);
+    for (const MissaoDef& m : dados().missoes)
+        if (const auto it = missoes.find(m.id); it != missoes.end() && it->second.concluida) marcar("missao:" + m.id, m.nome, true);
+    for (const auto& m : antigos) {
+        const std::string tipo = m.starts_with("chefe_") ? m.substr(6) : "";
+        marcar(m, dados().inimigos.contains(tipo) ? dados().inimigos.at(tipo).nome : "", true);
+    }
+    for (int e = 1; e <= static_cast<int>(reino.eraAlvo()); ++e) marcar(std::format("era:{}", e), nomeEra(static_cast<KingdomEra>(e)), true);
+    for (const int n : {15, 25, 40})
+        if (estado.populacao >= n) marcar(std::format("povo:{}", n), std::to_string(n), true);
+    for (auto& c : cronicas) c.dia = 0;
+}
+
+bool World::comprar(const std::string& npc, const std::string& itemId) {
+    const auto it = dados().npcs.find(npc);
+    if (it == dados().npcs.end()) return false;
+    const auto item = std::ranges::find(it->second.loja, itemId, &ItemLoja::id);
+    if (item == it->second.loja.end()) return false;
+    if (itemEsgotado(*item)) {
+        eventos_.push_back({EventoJogo::Tipo::Aviso, jogador.pos, "", "", 0, "Você já tem isso."});
+        return false;
+    }
+    if (!inventario.pagar(item->custo)) {
+        eventos_.push_back({EventoJogo::Tipo::Aviso, jogador.pos, "", "", 0, "Falta ouro para isso."});
+        return false;
+    }
+    for (const auto& [r, q] : item->ganho) {
+        inventario.adicionar(r, q);
+        eventos_.push_back({EventoJogo::Tipo::Ganhou, jogador.pos - glm::vec2(0, 10), "loja", r, q});
+    }
+    if (!item->pista.empty()) {
+        eventos_.push_back({EventoJogo::Tipo::LerPista, jogador.pos, item->pista});
+        marcar("pista:" + item->pista, dados().lore.pista(item->pista) ? dados().lore.pista(item->pista)->titulo : item->nome);
+    }
+    return true;
+}
+
+std::vector<std::string> World::inscricao(const BuildingData& b) const {
+    std::vector<std::string> l;
+    auto diaDe = [&](const std::string& marco) {
+        for (const auto& c : cronicas)
+            if (c.marco == marco) return c.dia;
+        return -1;
+    };
+    if (b.defId == "memorial") {
+        l.push_back("Que Valdren não esqueça o que perdeu nem o que reencontrou.");
+        for (const PistaDef& p : dados().lore.pistas)
+            if (marcos.contains("pista:" + p.id)) l.push_back("- " + p.titulo);
+        if (l.size() == 1) l.push_back("Ninguém ainda sabe o que causou a Queda das Cinzas.");
+        else l.push_back(std::format("{} de {} fragmentos da Queda reunidos.", pistasEncontradas(), dados().lore.pistas.size()));
+    } else if (b.defId == "estatua") {
+        l.push_back(titulo().nome + ", herdeiro de Valdren.");
+        if (const int d = diaDe("chefe_cavaleiro_caido"); d > 0) l.push_back(std::format("Derrotou o Cavaleiro Caído no dia {}.", d));
+        else if (d == 0) l.push_back("Derrotou o Cavaleiro Caído.");
+        int abatidos = 0;
+        for (const auto& [tipo, n] : abates) abatidos += n;
+        l.push_back(std::format("Criaturas vencidas: {}.", abatidos));
+        l.push_back(std::format("Páginas nas Crônicas: {}.", cronicas.size()));
+    } else if (b.defId == "jardim") {
+        l.push_back("Aqui florescem os nomes de quem ergueu o reino.");
+        for (auto [e, m, rel] : reg.view<const Morador, const Relacionamento>().each())
+            if (rel.afinidade >= 300) l.push_back("- " + dados().npcs.at(m.id).nome + ", amigo do herdeiro");
+        for (const MissaoDef& m : dados().missoes)
+            if (const auto it = missoes.find(m.id); it != missoes.end() && it->second.concluida) l.push_back("- " + m.nome);
+        if (l.size() == 1) l.push_back("Ainda há canteiros vazios. Faça amigos e ajude o povo.");
+    }
+    return l;
 }
 
 }

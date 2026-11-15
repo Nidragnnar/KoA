@@ -57,6 +57,11 @@ bool lerNpcs(const nlohmann::json& jn, const nlohmann::json& jd, std::map<std::s
             for (const auto& r : n.at("rotina"))
                 d.rotina.push_back({lerHora(r.at("hora").get<std::string>()), r.at("local").get<std::string>(), r.value("acao", "")});
             std::ranges::sort(d.rotina, {}, &ItemRotina::minuto);
+            if (n.contains("visita")) {
+                d.visitaRequer = n["visita"].value("requer", "");
+                d.visitaACada = std::max(1, n["visita"].value("a_cada", 3));
+            }
+            if (n.contains("loja")) d.loja = lerLoja(n["loja"]);
             saida[d.id] = std::move(d);
         }
         const auto& todos = jd.at("dialogos");
@@ -75,6 +80,9 @@ bool lerNpcs(const nlohmann::json& jn, const nlohmann::json& jd, std::map<std::s
                 f.se.casaNivelMin = se.value("casa_nivel_min", 0);
                 f.se.afinidadeMin = se.value("afinidade_min", 0);
                 f.se.eraMin = se.value("era_min", 0);
+                f.se.marco = se.value("marco", "");
+                f.se.semMarco = se.value("sem_marco", "");
+                f.se.pistasMin = se.value("pistas_min", 0);
                 f.falas = e.at("falas").get<std::vector<std::string>>();
                 if (f.falas.empty()) throw std::runtime_error("entrada sem falas em " + id);
                 d.dialogos.push_back(std::move(f));
@@ -98,6 +106,9 @@ const EntradaFala* escolherFala(const NpcDef& def, const Relacionamento& rel, co
         if (ctx.nivelCasa < c.casaNivelMin) continue;
         if (rel.afinidade < c.afinidadeMin) continue;
         if (ctx.era < c.eraMin) continue;
+        if (!c.marco.empty() && (!ctx.marcos || !ctx.marcos->contains(c.marco))) continue;
+        if (!c.semMarco.empty() && ctx.marcos && ctx.marcos->contains(c.semMarco)) continue;
+        if (ctx.pistas < c.pistasMin) continue;
         return &e;
     }
     return nullptr;

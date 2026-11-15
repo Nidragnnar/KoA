@@ -164,7 +164,7 @@ void Roteiro::noMundo(WorldScene& cena) {
     World& w = cena.mundo();
     ke::Input& in = ctx_.app.input();
     ++quadro_;
-    if (++quadrosTotais_ > 60 * 240) {  // 4 minutos de jogo simulado: algo travou
+    if (++quadrosTotais_ > 60 * 320) {  // mais de 5 minutos de jogo simulado: algo travou
         verificar(false, "roteiro terminou dentro do tempo limite");
         terminar();
         return;
@@ -334,7 +334,9 @@ void Roteiro::noMundo(WorldScene& cena) {
                 int aldeoes = 0;
                 for (auto [e, a] : w.reg.view<Aldeao>().each()) ++aldeoes;
                 verificar(w.estado.populacao > popAntes_, std::format("a população cresceu: {} -> {}", popAntes_, w.estado.populacao));
-                verificar(aldeoes == w.estado.populacao - static_cast<int>(ctx_.dados.npcs.size()),
+                // O mercador é visitante: não é um dos moradores que contam na população
+                const int moradores = static_cast<int>(std::ranges::count_if(ctx_.dados.npcs, [](const auto& n) { return !n.second.visitante(); }));
+                verificar(aldeoes == w.estado.populacao - moradores,
                           std::format("{} aldeões andando pelo vilarejo", aldeoes));
                 capturar("20_vilarejo_crescendo");
                 proxima();
@@ -511,7 +513,117 @@ void Roteiro::noMundo(WorldScene& cena) {
                 proxima();
             }
             return;
-        case 20:
+        // ---------- Fase 9: Crônicas, títulos, fragmentos, mercador e monumentos ----------
+        case 20: {  // o livro das Crônicas
+            auto temPagina = [&](const std::string& m) {
+                return std::ranges::any_of(w.cronicas, [&](const EntradaCronica& c) { return c.marco == m; });
+            };
+            if (quadro_ == 1) {
+                w.relogio.minutos = 10 * 60;
+                verificar(temPagina("chegada") && temPagina("casa_reconstruida") && temPagina("chefe_cavaleiro_caido") && temPagina("era:3"),
+                          std::format("as Crônicas registraram a jornada ({} páginas)", w.cronicas.size()));
+                verificar(w.marcos.contains("titulo:libertador"), "o herdeiro virou " + w.titulo().nome);
+                in.simularToque(SDL_SCANCODE_C);
+            }
+            if (quadro_ == 20) {
+                verificar(cena.cronicasAbertas(), "C abre as Crônicas");
+                capturar("32_cronicas");
+            }
+            if (quadro_ == 22) in.simularToque(SDL_SCANCODE_D);
+            if (quadro_ == 40) capturar("33_fragmentos");
+            if (quadro_ == 42) in.simularToque(SDL_SCANCODE_C);
+            if (quadro_ == 50) {
+                verificar(!cena.cronicasAbertas(), "C fecha as Crônicas");
+                proxima();
+            }
+            return;
+        }
+        case 21: {  // um fragmento da Queda: a inscrição do poço (aparece na era 1)
+            const PistaDef& p = *ctx_.dados.lore.pista("inscricao_poco");
+            if (quadro_ == 1) {
+                w.jogador.pos = {p.tile.x * 16 + 8.0f, (p.tile.y + 1) * 16 + 14.0f};
+                w.jogador.dir = Direcao::Cima;
+            }
+            if (quadro_ == 5) {
+                verificar(w.alvo().tipo == TipoInteracao::Ler, "o fragmento brilha no chão: " + w.alvo().rotulo);
+                in.simularToque(SDL_SCANCODE_E);
+            }
+            if (quadro_ == 25) {
+                verificar(cena.lendo() == p.id && w.marcos.contains("pista:" + p.id), "E lê o fragmento e o guarda nas Crônicas");
+                capturar("34_leitura_fragmento");
+            }
+            if (quadro_ == 27) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 35) {
+                verificar(cena.lendo().empty(), "E fecha a leitura");
+                proxima();
+            }
+            return;
+        }
+        case 22: {  // o mercador viajante: conversa, banca e a carta selada
+            const entt::entity corvin = w.morador("corvin");
+            if (quadro_ == 1) {
+                w.relogio.dia += (3 - w.relogio.dia % 3) % 3;  // um dia de visita
+                w.relogio.minutos = 10 * 60;
+                w.posicionarMoradores();
+                w.inventario.definir("ouro", 200);
+                verificar(!w.reg.get<Agenda>(corvin).dormindo, "com a estrada limpa, Corvin armou a banca na praça");
+                posicionarJunto(w, corvin);
+            }
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_E);
+            // Avança a conversa até a banca abrir
+            if (quadro_ > 10 && quadro_ % 10 == 0 && cena.conversa()) in.simularToque(SDL_SCANCODE_E);
+            if (!cena.lojaAberta().empty() && etapaLoja_ == 0) {
+                etapaLoja_ = quadro_;
+                capturar("35_banca_mercador");
+                return;
+            }
+            if (etapaLoja_ > 0) {
+                const int q = quadro_ - etapaLoja_;
+                if (q == 2 || q == 4 || q == 6) in.simularToque(SDL_SCANCODE_S);  // a carta é o 4º item
+                if (q == 8) in.simularToque(SDL_SCANCODE_E);
+                if (q == 30) {
+                    verificar(w.marcos.contains("pista:carta_selada") && w.inventario.quantidade("ouro") == 160,
+                              "a carta selada custou 40 de ouro e virou fragmento");
+                    capturar("36_carta_selada");
+                }
+                if (q == 32) in.simularToque(SDL_SCANCODE_E);
+                if (q == 40) in.simularToque(SDL_SCANCODE_ESCAPE);
+                if (q == 50) {
+                    verificar(cena.lojaAberta().empty(), "Esc fecha a banca");
+                    proxima();
+                }
+            }
+            if (quadro_ > 600) verificar(false, "a banca do mercador abriu"), terminar();
+            return;
+        }
+        case 23: {  // monumento: o Memorial das Cinzas guarda os fragmentos achados
+            if (quadro_ == 1) {
+                for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 300);
+                const glm::ivec2 t = lugarLivre(w, "memorial", {22, 26});
+                memorial_ = w.construir("memorial", t);
+                verificar(!memorial_.empty(), "o Memorial das Cinzas começou");
+                w.dormir(false);
+            }
+            if (quadro_ == 10) in.simularToque(SDL_SCANCODE_E);  // fecha o relatório da manhã
+            if (quadro_ == 20) {
+                const BuildingData* b = w.reino.construcao(memorial_);
+                verificar(b && b->constructed, "o Memorial ficou pronto durante a noite");
+                w.relogio.minutos = 10 * 60;
+                if (b) {
+                    w.jogador.pos = w.pontoPorta(*b) + glm::vec2(0, 6);
+                    w.jogador.dir = Direcao::Cima;
+                }
+            }
+            if (quadro_ == 25) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 45) {
+                verificar(cena.painelAberto() == memorial_, "E no Memorial mostra a inscrição");
+                capturar("37_memorial");
+            }
+            if (quadro_ == 47) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 55) proxima();
+            return;
+        }
+        case 24:
             w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();

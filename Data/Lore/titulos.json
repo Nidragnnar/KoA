@@ -1,0 +1,18 @@
+{
+  "_como_funciona": "Do mais humilde ao mais alto. O primeiro é o de quem acabou de chegar. Os outros são conquistados quando tudo em 'requer' é cumprido: marcos, construcoes_min (obras prontas, sem a casa), tipos_min (tipos diferentes de obra), abates_min, populacao_min, era_min, pistas_min. O povo usa o título mais alto conquistado ({titulo} nas falas).",
+  "titulos": [
+    { "id": "exilado", "nome": "Herdeiro Exilado", "descricao": "Voltou sem coroa, sem casa e sem povo." },
+    { "id": "senhor_cinzas", "nome": "Senhor das Cinzas", "descricao": "Reergueu a casa dos antepassados sobre as cinzas.",
+      "requer": { "marcos": ["casa_reconstruida"] } },
+    { "id": "restaurador", "nome": "O Restaurador", "descricao": "Cinco obras de pé no reino.",
+      "requer": { "construcoes_min": 5 } },
+    { "id": "protetor", "nome": "Protetor dos Povos", "descricao": "Limpou a estrada leste e venceu vinte criaturas.",
+      "requer": { "marcos": ["missao:limpar_estrada"], "abates_min": 20 } },
+    { "id": "libertador", "nome": "Libertador da Magia", "descricao": "Derrotou o Cavaleiro Caído e devolveu a magia ao reino.",
+      "requer": { "marcos": ["chefe_cavaleiro_caido"] } },
+    { "id": "guardiao_memoria", "nome": "Guardião da Memória", "descricao": "Reuniu todos os fragmentos da Queda das Cinzas.",
+      "requer": { "marcos": ["misterio:primeiro_ato"] } },
+    { "id": "rei_estandartes", "nome": "Rei dos Sete Estandartes", "descricao": "Sete tipos de obra de pé num reino renascido.",
+      "requer": { "tipos_min": 7, "era_min": 2 } }
+  ]
+}

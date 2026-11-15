@@ -6,9 +6,12 @@ era a era, até a **Alta Fantasia**.
 
 Engine própria em **C++20 + SDL3 + OpenGL 3.3** (Kingdom Engine), com EnTT, Dear ImGui, nlohmann/json e GoogleTest.
 
-## Versão 1.0
+## Versão 1.1
 
-As 8 fases do plano de arquitetura estão feitas:
+A 2.0 está em andamento (identidade e plano em `docs/VISAO_2.0.md`). A fase 9 trouxe as Crônicas do Reino
+(tecla C), os títulos do herdeiro, o mercador viajante, três monumentos e o começo do mistério da Queda das Cinzas.
+
+As 8 fases do plano de arquitetura da 1.0 estão feitas:
 
 1. Engine (janela, render em lotes, câmera, entrada, recursos, depuração)
 2. Mundo (tilemap em chunks, colisão, câmera)
@@ -25,7 +28,7 @@ As 8 fases do plano de arquitetura estão feitas:
 | E / Espaço | interagir (segure para continuar golpeando) |
 | J | atacar |
 | H | comer |
-| B / K / L | obras / reino / diário |
+| B / K / L / C | obras / reino / diário / Crônicas |
 | Esc | menu (salvar, opções, controles, título, sair) |
 | F5 | salvar |
 | F11 | tela cheia |
@@ -47,7 +50,7 @@ Precisa do Visual Studio 2026 com C++. As bibliotecas são baixadas na primeira 
 
 - `Engine/`: a Kingdom Engine (núcleo, plataforma, render, mundo, física, áudio, recursos, UI, depuração)
 - `Game/`: as regras e as cenas do jogo
-- `Data/`: construções, recursos, moradores, diálogos, missões, inimigos e mapas (`Data/World/*.txt`, um caractere por tile, editáveis no Bloco de Notas)
+- `Data/`: construções, recursos, moradores, diálogos, missões, inimigos, Crônicas/títulos/fragmentos (`Data/Lore`) e mapas (`Data/World/*.txt`, um caractere por tile, editáveis no Bloco de Notas)
 - `Assets/`: atlas de sprites, arte do NidraIA (`Assets/Arte`), fonte, ícone e shaders
 - `Tools/AssetGen`: monta o atlas (arte importada + procedural + versões por era) e o ícone
 - `Tools/Balanceamento`: jogador automático que mede o ritmo da economia

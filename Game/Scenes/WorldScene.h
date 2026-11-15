@@ -46,6 +46,10 @@ public:
     // Fase 7
     void chamarDragao() { proximoDragao_ = 0.0f; }
     bool dragaoVoando() const { return dragaoAtivo_; }
+    // Fase 9
+    bool cronicasAbertas() const { return cronicas_; }
+    const std::string& lendo() const { return leitura_; }
+    const std::string& lojaAberta() const { return loja_; }
 
 private:
     std::vector<std::string> opcoesObras() const;
@@ -53,6 +57,8 @@ private:
     void entradaColocacao();
     void entradaPainelReino();
     void entradaForja();
+    void entradaCronicas();
+    void entradaLoja();
     std::vector<std::string> opcoesPainel() const;
     void entradaJogo();
     void entradaPainel();
@@ -100,6 +106,14 @@ private:
     float tempoAtmosfera_ = 0.0f;
     bool dragaoAtivo_ = false;  // sobrevoo na Alta Fantasia
     float dragaoX_ = 0.0f, dragaoY_ = 0.0f, proximoDragao_ = 20.0f;
+    // Fase 9
+    bool cronicas_ = false;
+    int abaCronicas_ = 0, rolagem_ = 0, selFragmento_ = 0;
+    std::string leitura_;  // fragmento sendo lido ("" = nenhum)
+    std::string loja_;     // banca aberta (id do mercador)
+    int selLoja_ = 0;
+    float tituloNovo_ = 0.0f;  // anúncio de título conquistado
+    std::string nomeTitulo_;
     float transicao_ = -1.0f;  // -1 = nenhuma; 0..2 = escurece, troca o dia (em 1), clareia
     bool desmaio_ = false;
     bool mostrarColisoes_ = false;

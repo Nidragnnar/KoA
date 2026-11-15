@@ -9,6 +9,7 @@
 #include <nlohmann/json_fwd.hpp>
 
 #include "Game/Kingdom/Clock.h"
+#include "Game/Lore/Lore.h"
 #include "Game/Player/Player.h"
 
 namespace koa {
@@ -28,6 +29,10 @@ struct CondicoesFala {
     int casaNivelMin = 0;
     int afinidadeMin = 0;
     int eraMin = 0;  // 1 Despertar, 2 Renascido, 3 Alta Fantasia
+    // Fase 9: o mundo lembra
+    std::string marco;     // só depois deste acontecimento
+    std::string semMarco;  // só antes dele
+    int pistasMin = 0;     // fragmentos da Queda já encontrados
 };
 
 struct EntradaFala {
@@ -42,7 +47,12 @@ struct NpcDef {
     std::vector<std::string> gosta, odeia;
     std::vector<ItemRotina> rotina;  // em ordem de horário
     std::vector<EntradaFala> dialogos;
+    // Fase 9: visitante (o mercador) só aparece a cada `visitaACada` dias, depois do marco `visitaRequer`
+    std::string visitaRequer;
+    int visitaACada = 0;
+    std::vector<ItemLoja> loja;
 
+    bool visitante() const { return visitaACada > 0; }
     // Item de rotina valendo no minuto dado (o último que já começou; antes do primeiro, o último do dia anterior)
     const ItemRotina* rotinaEm(float minuto) const;
 };
@@ -94,6 +104,8 @@ struct ContextoFala {
     Estacao estacao = Estacao::Primavera;
     int nivelCasa = 1;
     int era = 0;
+    const std::set<std::string>* marcos = nullptr;
+    int pistas = 0;
 };
 
 // Primeira entrada cujas condições batem (ou nenhuma)

@@ -1,0 +1,42 @@
+{
+  "_como_funciona": "Cada acontecimento (marco) acontece uma vez só. Se ele tiver página aqui, entra nas Crônicas do Reino com o dia e a era. 'grupo:*' vale para todos do grupo que não tenham página própria. {nome} vira o nome do acontecimento (obra, missão, região...).",
+  "paginas": {
+    "chegada": "O último herdeiro voltou a Valdren depois de anos de exílio. Encontrou cinzas, ruínas e oito sobreviventes.",
+    "casa_reconstruida": "O herdeiro reergueu a casa dos antepassados. Pela primeira vez em anos, saiu fumaça de uma chaminé em Valdren.",
+    "casa_n3": "A casa do herdeiro tornou-se uma {nome}: pedra, carvalho e lareira para o inverno.",
+    "casa_n4": "A casa do herdeiro tornou-se a {nome}. À noite, os cristais do telhado iluminam a praça.",
+
+    "construiu:*": "Ergueu-se {nome}, a primeira do seu tipo no reino que renasce.",
+    "construiu:campo": "A primeira horta foi arada em terra que não via semente desde a Queda.",
+    "construiu:moradia": "Uma família voltou a ter teto: a primeira moradia nova de Valdren.",
+    "construiu:taverna": "A taverna reabriu as portas. Naquela noite, alguém cantou na praça.",
+    "construiu:forja": "A forja voltou a arder. O som do martelo de Bram ecoou pelo vilarejo.",
+    "construiu:capela": "Uma capela foi erguida para os nomes que ninguém mais lembrava.",
+    "construiu:mercado": "Um mercado abriu na praça. O ouro voltou a trocar de mãos.",
+    "construiu:memorial": "Ergueu-se o Memorial das Cinzas, para que a Queda nunca seja esquecida.",
+    "construiu:jardim": "O Jardim dos Heróis floresceu, com um canteiro para cada amigo do reino.",
+    "construiu:estatua": "Uma estátua do herdeiro foi erguida. O povo jura que ela olha para a estrada leste.",
+
+    "visitou:*": "O herdeiro entrou pela primeira vez em {nome}.",
+    "visitou:floresta": "O herdeiro seguiu a estrada leste e entrou na Floresta Amaldiçoada, onde as árvores sussurram.",
+    "visitou:cripta": "Sob a floresta, o herdeiro desceu à Cripta do Cavaleiro.",
+
+    "missao:*": "Missão cumprida: {nome}.",
+    "missao:limpar_estrada": "A estrada leste foi limpa das sombras. Logo os viajantes voltariam a usá-la.",
+    "missao:martelo_bram": "Bram voltou a ter uma forja. O ferreiro sorriu, e quem viu jura que foi a primeira vez.",
+    "missao:taverna_viva": "Edda voltou a servir na sua taverna. Sopa de raiz, agora com sal.",
+
+    "chefe_cavaleiro_caido": "O Cavaleiro Caído tombou na cripta. Com ele, algo antigo e preso se libertou.",
+
+    "era:1": "O reino entrou em uma nova era: {nome}. As cinzas pararam de cair.",
+    "era:2": "O reino entrou em uma nova era: {nome}. Pedra branca, estandartes e uma fonte na praça.",
+    "era:3": "O reino entrou em uma nova era: {nome}. A magia voltou, e um dragão cruzou o céu.",
+
+    "povo:*": "Valdren chegou a {nome} moradores.",
+    "visita:*": "{nome}, um mercador viajante, chegou pela estrada leste. Valdren voltou ao mapa dos comerciantes.",
+    "pista:*": "Fragmento da Queda encontrado: {nome}.",
+    "titulo:*": "O povo passou a chamar o herdeiro de {nome}.",
+
+    "misterio:primeiro_ato": "As peças se juntaram: a Queda das Cinzas começou dentro do castelo, pelas mãos do próprio rei. Resta saber para onde foi a Chama."
+  }
+}

@@ -24,7 +24,7 @@ namespace koa {
 // Tipos de terreno do tilemap
 enum Terreno : uint16_t { T_GRAMA = 0, T_TERRA, T_LAMA, T_AGUA, T_CALCADA, T_MURO, T_QTD };
 
-enum class TipoInteracao { Nenhuma, Cortar, Quebrar, Saquear, Construcao, Conversar };
+enum class TipoInteracao { Nenhuma, Cortar, Quebrar, Saquear, Construcao, Conversar, Ler };
 
 // Uma conversa pronta para a caixa de diálogo
 struct Conversa {
@@ -33,6 +33,7 @@ struct Conversa {
     int coracoes = 0;
     bool ganhouAmizade = false;
     std::string missao;  // missão oferecida nesta conversa ("" = nenhuma)
+    bool loja = false;   // ao fim da conversa abre a banca (mercador)
 };
 
 struct AlvoInteracao {
@@ -49,7 +50,9 @@ struct EventoJogo {
         // Fase 6
         Ataque, AcertouInimigo, InimigoDerrotado, HeroiFerido, HeroiDerrotado, MudouRegiao, MissaoNova, MissaoConcluida, Comeu, Forjou,
         // Fase 7
-        EraMudou
+        EraMudou,
+        // Fase 9
+        Cronica, Titulo, LerPista
     };
     Tipo tipo;
     glm::vec2 pos{0.0f};
@@ -144,6 +147,18 @@ public:
     std::vector<const MissaoDef*> missoesAtivas() const;
     int progressoMissao(const MissaoDef& m) const;
 
+    // Fase 9: Crônicas, títulos, o mistério, o mercador e os monumentos
+    // Registra um acontecimento (uma vez só); se ele tiver página, entra nas Crônicas. true = era novo
+    bool marcar(const std::string& marco, const std::string& nome = "", bool silencioso = false);
+    const TituloDef& titulo() const;  // o mais alto conquistado
+    int pistasEncontradas() const;
+    bool visitanteHoje(const NpcDef& d) const;  // o mercador está no vilarejo hoje?
+    bool comprar(const std::string& npc, const std::string& item);
+    bool itemEsgotado(const ItemLoja& i) const { return !i.pista.empty() && marcos.contains("pista:" + i.pista); }
+    bool monumentoLiberado(const BuildingDef& d) const { return d.requer.empty() || marcos.contains(d.requer); }
+    std::vector<std::string> inscricao(const BuildingData& b) const;  // o que o monumento registra da história real
+    std::vector<EntradaCronica> cronicas;
+
     std::vector<ke::AABB> obstaculos() const;
     ke::AABB caixaConstrucao(const BuildingData& b) const;
     glm::vec2 pontoPorta(const BuildingData& b) const;
@@ -193,6 +208,11 @@ private:
     const GameData& dados() const { return *dados_; }
     AlvoInteracao procurarAlvo() const;
     void executar(const AlvoInteracao& a);
+    // Fase 9
+    void verificarTitulos(bool silencioso);
+    void atualizarPistas();       // fragmentos visíveis na região ativa (os já lidos somem)
+    void reconstruirCronicas();   // save antigo: páginas do que já tinha acontecido
+    int contarObrasProntas(bool tipos) const;
 
     const GameData* dados_ = nullptr;
     AlvoInteracao alvo_;

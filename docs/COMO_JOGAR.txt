@@ -1,5 +1,5 @@
 KINGDOM OF ASHES: THE LAST CROWN
-Versão 1.0
+Versão 1.1
 ==========
 
 Você é o último herdeiro de uma linhagem real. Depois de anos de exílio,
@@ -36,6 +36,7 @@ CONTROLES
   J .................. atacar com a espada
   H .................. comer (3 de comida = +25 de vida)
   L .................. diário (missões, equipamento, criaturas derrotadas)
+  C .................. Crônicas do Reino e fragmentos da Queda
   M .................. ligar/desligar o som
   Esc ................ menu (continuar, salvar, opções, controles, título, sair)
   F5 ................. salvar
@@ -115,6 +116,30 @@ ALÉM DO VILAREJO
   aparece na esquerda da tela e no diário (L); a recompensa vem na hora.
   Equipamento: construa a Forja e escolha "Forjar equipamento" na porta
   dela para fazer espadas e armaduras melhores.
+
+AS CRÔNICAS E O MISTÉRIO DA QUEDA
+--------------------------------
+  O reino lembra o que você faz. Cada grande acontecimento (a casa
+  reerguida, a primeira horta, a estrada limpa, o Cavaleiro vencido,
+  uma nova era) vira uma página das Crônicas do Reino: aperte C para ler.
+
+  Títulos: conforme suas conquistas, o povo passa a chamá-lo de
+  Senhor das Cinzas, O Restaurador, Protetor dos Povos... O título
+  aparece no canto da tela e os moradores falam com você por ele.
+
+  Ninguém sabe ao certo o que causou a Queda das Cinzas. Há 6 fragmentos
+  da verdade espalhados: pergaminhos que brilham no chão (de noite fica
+  mais fácil achar). Procure no castelo, nos túmulos, na floresta...
+  alguns só aparecem depois de certos acontecimentos, e um deles está
+  à venda. Os fragmentos lidos ficam nas Crônicas (C, aba da direita).
+
+  O mercador: depois que a estrada leste for limpa, Corvin passa por
+  Valdren a cada 3 dias e arma a banca na praça. Converse com ele para
+  comprar grãos, tábuas, pedra... e outras curiosidades.
+
+  Monumentos (menu B): o Memorial das Cinzas, o Jardim dos Heróis e a
+  Estátua do Herdeiro liberam com o tempo. Aperte E na frente deles:
+  a inscrição conta a história real da sua partida.
 
 O jogo salva sozinho depois de cada obra, a cada manhã e ao sair pelo menu.
 Os saves ficam em:  %APPDATA%\Nidragnnar\KingdomOfAshes\Saves

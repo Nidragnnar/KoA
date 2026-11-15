@@ -1361,6 +1361,112 @@ Img iconeCoroa(int lado) {
     return t;
 }
 
+// ---------- Fase 9: fragmentos da Queda e monumentos ----------
+
+// Pergaminho caído com selo vermelho; o quadro 1 tem um brilho (para ser achado)
+Img pista(int q) {
+    Img t(14, 12);
+    const Cor papel = hex("#d8c8a0"), sombra = hex("#a89870"), rolo = hex("#b8a478");
+    t.elipse(7, 10, 6, 1, hex("#000000", 80));
+    t.rect(2, 4, 10, 5, papel);
+    t.rect(2, 8, 10, 1, sombra);
+    t.rect(1, 3, 2, 7, rolo);
+    t.rect(11, 3, 2, 7, rolo);
+    t.linha(4, 5, 9, 5, hex("#6a5a48"));
+    t.linha(4, 7, 8, 7, hex("#6a5a48"));
+    t.rect(6, 6, 2, 2, hex("#a02828"));  // selo
+    t.contornar(CONTORNO);
+    if (q == 1) {
+        t.px(11, 1, hex("#fff8d0"));
+        t.px(10, 1, hex("#ffe890", 180));
+        t.px(12, 1, hex("#ffe890", 180));
+        t.px(11, 0, hex("#ffe890", 180));
+        t.px(11, 2, hex("#ffe890", 180));
+    }
+    return t;
+}
+
+// Memorial das Cinzas: obelisco de pedra escura com placa e velas
+Img memorial() {
+    std::mt19937 r(9100);
+    Img t(32, 56);
+    t.elipse(16, 54, 15, 2, hex("#000000", 90));
+    t.rect(4, 44, 24, 10, hex("#4a4642"));  // degrau
+    t.rect(4, 44, 24, 1, hex("#5e5a55"));
+    t.rect(9, 10, 14, 35, hex("#55514c"));  // obelisco
+    t.rect(9, 10, 2, 35, hex("#6a665f"));
+    t.rect(21, 10, 2, 35, hex("#403c38"));
+    for (int y = 0; y < 8; ++y) {  // ponta (estreita no alto)
+        const int l = 2 + y + y / 2;
+        t.rect(16 - l / 2, 2 + y, l, 1, hex("#55514c"));
+    }
+    t.salpicar(r, 40, hex("#3c3834"), 9, 10, 23, 44);
+    t.rect(11, 24, 10, 8, hex("#8a7a5a"));  // placa de bronze
+    for (int y = 26; y < 31; y += 2) t.rect(12, y, 8, 1, hex("#5a4a34"));
+    for (const int x : {6, 25}) {  // velas
+        t.rect(x, 38, 2, 6, hex("#e0d8c0"));
+        t.px(x, 36, hex("#ffb040"));
+        t.px(x + 1, 37, hex("#ff8020"));
+    }
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Jardim dos Heróis: canteiros floridos, sebe baixa e uma pedra com nomes
+Img jardim() {
+    std::mt19937 r(9200);
+    Img t(48, 40);
+    t.rect(1, 8, 46, 30, hex("#3a5a2a"));  // gramado
+    t.salpicar(r, 120, hex("#4a6e34"), 1, 8, 47, 38);
+    for (int x = 1; x < 47; x += 2) t.rect(x, 8, 2, 3, hex(x % 4 ? "#2e4a22" : "#365a28"));  // sebe
+    const char* flores[] = {"#e86a7a", "#f0d060", "#8ab0f0", "#f0f0f0", "#d070d0"};
+    for (int c = 0; c < 3; ++c) {  // canteiros
+        const int x0 = 4 + c * 15;
+        t.rect(x0, 16, 11, 7, hex("#4a3424"));
+        for (int i = 0; i < 9; ++i) t.px(x0 + 1 + static_cast<int>(r() % 9), 17 + static_cast<int>(r() % 5), hex(flores[(c + i) % 5]));
+    }
+    t.rect(19, 27, 10, 9, hex("#6a665f"));  // pedra dos nomes
+    t.rect(19, 27, 10, 1, hex("#8a857c"));
+    for (int y = 29; y < 35; y += 2) t.rect(21, y, 6, 1, hex("#4a4642"));
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Estátua do Herdeiro: o herói em pedra clara, de capa e espada, sobre um pedestal
+Img estatua() {
+    Img t(32, 72);
+    t.elipse(16, 70, 15, 2, hex("#000000", 90));
+    const Cor pedra = hex("#9a958c"), clara = hex("#b8b2a6"), escura = hex("#6e6a62");
+    t.rect(5, 52, 22, 18, hex("#5a5650"));  // pedestal
+    t.rect(5, 52, 22, 2, hex("#76716a"));
+    t.rect(9, 58, 14, 6, hex("#8a7a5a"));   // placa
+    t.rect(9, 23, 13, 28, escura);          // capa
+    t.rect(11, 22, 9, 14, pedra);           // tronco
+    t.rect(11, 22, 2, 14, clara);
+    t.rect(11, 34, 9, 1, escura);           // cinto
+    t.rect(12, 36, 3, 16, pedra);           // pernas
+    t.rect(16, 36, 3, 16, escura);
+    t.rect(9, 23, 2, 11, pedra);            // braço esquerdo, junto ao corpo
+    t.rect(20, 17, 2, 8, clara);            // braço direito erguido
+    t.rect(14, 20, 3, 2, escura);           // pescoço
+    t.rect(13, 13, 6, 7, pedra);            // cabeça
+    t.rect(13, 13, 2, 7, clara);
+    t.rect(13, 11, 6, 2, clara);            // coroa
+    for (const int x : {13, 15, 18}) t.px(x, 10, clara);
+    t.rect(21, 3, 2, 13, clara);            // espada erguida para o céu
+    t.rect(19, 15, 6, 1, escura);
+    t.contornar(CONTORNO);
+    return t;
+}
+
+void fase9(Lista& l) {
+    l.emplace_back("pista_0", pista(0));
+    l.emplace_back("pista_1", pista(1));
+    l.emplace_back("memorial_n1", memorial());
+    l.emplace_back("jardim_n1", jardim());
+    l.emplace_back("estatua_n1", estatua());
+}
+
 std::vector<std::pair<std::string, Img>> gerarTodos() {
     Lista l;
     const char* nomes[] = {"grama", "terra", "lama", "agua", "calcada", "muro"};
@@ -1397,6 +1503,7 @@ std::vector<std::pair<std::string, Img>> gerarTodos() {
     construcoesFase5(l);
     fase6(l);
     fase7(l);
+    fase9(l);
     return l;
 }
 

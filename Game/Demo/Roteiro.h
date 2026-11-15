@@ -49,6 +49,9 @@ private:
     bool trocouRegiao_ = false;
     std::map<std::string, int> inventarioSalvo_;
     int esgotadosSalvos_ = 0;
+    // Fase 9
+    int etapaLoja_ = 0;     // quadro em que a banca do mercador abriu
+    std::string memorial_;  // id do memorial construído
 };
 
 }

@@ -35,6 +35,11 @@ public:
     void combate(ke::Renderer2D& r, const World& w, float tempo);  // vida, chefe e missões ativas
     void lojaForja(ke::Renderer2D& r, const World& w, const std::vector<std::string>& itens, int sel);
     void diario(ke::Renderer2D& r, const World& w);
+    // Fase 9
+    void cronicas(ke::Renderer2D& r, const World& w, int aba, int rolagem, int selFragmento);
+    void leitura(ke::Renderer2D& r, const PistaDef& p);
+    void lojaMercador(ke::Renderer2D& r, const World& w, const NpcDef& npc, int sel);
+    static int paginasVisiveis() { return 5; }  // quantas páginas das Crônicas cabem de uma vez
 
 private:
     void custoEmLinha(ke::Renderer2D& r, const Custo& c, const Inventory& inv, glm::vec2 pos);

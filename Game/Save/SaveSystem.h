@@ -8,10 +8,13 @@
 #include <glm/vec2.hpp>
 #include <nlohmann/json_fwd.hpp>
 
+#include "Game/Lore/Lore.h"
+
 namespace koa {
 
-// Sobe quando o formato muda (com migração). v2: relógio e moradores; v3: obras e povo; v4: regiões, combate e missões
-constexpr int VERSAO_SAVE = 4;
+// Sobe quando o formato muda (com migração). v2: relógio e moradores; v3: obras e povo; v4: regiões, combate e missões;
+// v5: Crônicas do Reino
+constexpr int VERSAO_SAVE = 5;
 
 struct EstadoConstrucao {
     std::string id, def;
@@ -72,6 +75,9 @@ struct DadosSave {
     std::map<std::string, int> abates;
     std::vector<std::string> visitadas{"vilarejo"};
     std::vector<std::string> marcos;
+    // chronicles.json (v5). Saves antigos não têm: as Crônicas são refeitas pelo que já aconteceu
+    bool temCronicas = false;
+    std::vector<EntradaCronica> cronicas;
 };
 
 // Saves em pastas (Saves/Save_001/*.json) com backup antes de sobrescrever

@@ -78,6 +78,11 @@ struct TrocaPorEra {
     std::string sprite;
 };
 
+// Fragmento da Queda das Cinzas no chão (carta, diário, inscrição): E para ler
+struct Pista {
+    std::string id;
+};
+
 // Fonte de luz (tochas)
 struct Luz {
     glm::vec3 cor{1.0f, 0.6f, 0.3f};

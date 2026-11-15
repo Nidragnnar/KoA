@@ -1,0 +1,58 @@
+{
+  "_como_funciona": "Fragmentos da Queda das Cinzas. Ficam no chão da 'regiao', no 'tile' (brilham à noite); E para ler. 'requer' = marco para aparecer. Sem 'regiao', o fragmento vem de outro jeito (a carta é vendida pelo mercador). Cada parágrafo de 'texto' é um bloco na leitura. Achar todos libera a página 'misterio:primeiro_ato'.",
+  "pistas": [
+    {
+      "id": "ordem_chamuscada", "titulo": "Ordem real, chamuscada",
+      "regiao": "vilarejo", "tile": [26, 8],
+      "texto": [
+        "Um pergaminho preso sob uma pedra do castelo. As bordas estão queimadas, mas o selo real ainda se vê.",
+        "\"Por ordem de Aldric, rei de Valdren: que a Torre do Selo seja aberta na lua nova. Que ninguém interfira, nem mesmo a rainha.\"",
+        "\"O reino será salvo pela Chama, ou não será salvo.\""
+      ]
+    },
+    {
+      "id": "lapide_rainha", "titulo": "A lápide sem corpo",
+      "regiao": "vilarejo", "tile": [52, 7],
+      "texto": [
+        "Uma lápide nova no meio das antigas, gravada com cuidado. Não há ninguém enterrado embaixo dela.",
+        "\"Aqui deveria repousar Isolde, rainha de Valdren. Na Noite das Cinzas ela partiu levando o filho para longe do fogo.\"",
+        "\"Que a estrada a tenha guardado.\""
+      ]
+    },
+    {
+      "id": "inscricao_poco", "titulo": "Inscrição no fundo do poço",
+      "regiao": "vilarejo", "tile": [31, 18], "requer": "era:1",
+      "texto": [
+        "Com a água limpa da nova era, letras antigas aparecem nas pedras do fundo do poço.",
+        "\"A Chama não foi criada. Foi aprisionada pelos primeiros reis sob o castelo, e cada rei renovou a prisão com o próprio sangue.\"",
+        "\"Quem a libertar herdará o reino. Ou as cinzas dele.\""
+      ]
+    },
+    {
+      "id": "diario_soldado", "titulo": "Diário de um soldado",
+      "regiao": "floresta", "tile": [30, 10],
+      "texto": [
+        "Um caderno de couro encharcado, entre as pedras da ruína. A letra é firme no começo e tremida no fim.",
+        "\"Terceiro dia de marcha. O fogo não veio dos inimigos. Veio do castelo, de baixo para cima, como se a terra respirasse chamas.\"",
+        "\"O capitão Hadrian deu meia-volta sozinho. Disse que ia impedir o rei. Assinado: Tobias.\""
+      ]
+    },
+    {
+      "id": "juramento_hadrian", "titulo": "Juramento gravado na pedra",
+      "regiao": "cripta", "tile": [13, 5], "requer": "chefe_cavaleiro_caido",
+      "texto": [
+        "Onde o Cavaleiro Caído montava guarda, a pedra tem palavras raspadas a ponta de espada.",
+        "\"Eu, Hadrian, capitão da guarda, falhei em deter meu rei. Que esta cripta seja selada comigo dentro.\"",
+        "\"Que nenhum Valdren desça aqui de novo sem antes saber o que fizemos.\""
+      ]
+    },
+    {
+      "id": "carta_selada", "titulo": "Carta selada com o brasão real",
+      "texto": [
+        "O selo de cera se parte na sua mão. A letra é a do rei Aldric, o seu pai.",
+        "\"Isolde: se a Chama me responder, nosso filho herdará um reino eterno. Se não responder, leve-o para longe.\"",
+        "\"E não deixe que ele volte antes de estar pronto para escolher melhor do que eu.\""
+      ]
+    }
+  ]
+}

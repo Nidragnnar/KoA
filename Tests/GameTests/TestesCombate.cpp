@@ -242,9 +242,11 @@ TEST(SaveV4, MigraSaveV3SemMissoes) {
     ASSERT_TRUE(s.salvar(w.capturar()));
     // Vira um save v3: sem quests.json e sem os campos novos do player
     std::filesystem::remove(pasta / "Save_001/quests.json");
+    std::filesystem::remove(pasta / "Save_001/chronicles.json");
     ke::fs::gravarTextoSeguro(pasta / "Save_001/player.json", R"({"x": 344, "y": 318, "direcao": 0})");
     auto meta = *ke::fs::lerTexto(pasta / "Save_001/metadata.json");
-    meta.replace(meta.find("\"versao_formato\": 4"), 19, "\"versao_formato\": 3");
+    const std::string atual = "\"versao_formato\": " + std::to_string(VERSAO_SAVE);
+    meta.replace(meta.find(atual), atual.size(), "\"versao_formato\": 3");
     ke::fs::gravarTextoSeguro(pasta / "Save_001/metadata.json", meta);
     std::string erro;
     const auto d = s.carregar("Save_001", &erro);

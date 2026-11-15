@@ -95,4 +95,23 @@ captura: 29_era_3
 captura: 30_era_3_noite_dragao
 [OK] a transformação avança em onda a partir da casa
 captura: 31_onda_de_transformacao
+[OK] as Crônicas registraram a jornada (14 páginas)
+[OK] o herdeiro virou Libertador da Magia
+[OK] C abre as Crônicas
+captura: 32_cronicas
+captura: 33_fragmentos
+[OK] C fecha as Crônicas
+[OK] o fragmento brilha no chão: Ler: Inscrição no fundo do poço
+[OK] E lê o fragmento e o guarda nas Crônicas
+captura: 34_leitura_fragmento
+[OK] E fecha a leitura
+[OK] com a estrada limpa, Corvin armou a banca na praça
+captura: 35_banca_mercador
+[OK] a carta selada custou 40 de ouro e virou fragmento
+captura: 36_carta_selada
+[OK] Esc fecha a banca
+[OK] o Memorial das Cinzas começou
+[OK] o Memorial ficou pronto durante a noite
+[OK] E no Memorial mostra a inscrição
+captura: 37_memorial
 RESULTADO: 0 falha(s)

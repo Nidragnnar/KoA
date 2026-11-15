@@ -42,9 +42,14 @@ glm::ivec2 lugarLivre(const World& w, const std::string& def, glm::ivec2 perto) 
 }
 
 TEST(Obras, DadosDas8Construcoes) {
-    int construiveis = 0;
-    for (const auto& id : dados().ordemConstrucoes) construiveis += dados().construcoes.at(id).construivel;
+    int construiveis = 0, monumentos = 0;
+    for (const auto& id : dados().ordemConstrucoes) {
+        const BuildingDef& d = dados().construcoes.at(id);
+        construiveis += d.construivel && !d.monumento;
+        monumentos += d.monumento;
+    }
     EXPECT_EQ(construiveis, 8);
+    EXPECT_EQ(monumentos, 3);  // memorial, jardim e estátua (fase 9)
     EXPECT_EQ(dados().construcoes.at("taverna").nivel(1)->nome, "Pequena Taverna");
     EXPECT_EQ(dados().construcoes.at("taverna").nivel(3)->nome, "Grande Estalagem");
     EXPECT_FLOAT_EQ(dados().construcoes.at("campo").nivel(1)->efeito("comida_dia"), 5.0f);
@@ -172,14 +177,17 @@ TEST(SaveV3, MigraCopiaDeSaveReal) {
     w.aplicar(*d);
     EXPECT_EQ(w.reino.construcao("casa_herdeiro")->level, std::ranges::find(d->construcoes, std::string("casa_herdeiro"), &EstadoConstrucao::id)->nivel);
     EXPECT_EQ(w.relogio.dia, d->dia);
-    EXPECT_EQ(w.estado.populacao, 8) << "save antigo começa com o povo inicial";
+    if (!d->temPovo) EXPECT_EQ(w.estado.populacao, 8) << "save antigo começa com o povo inicial";
     // E grava de volta já no formato novo
     ASSERT_TRUE(s.salvar(w.capturar()));
     const auto d2 = s.carregar();
     ASSERT_TRUE(d2);
     EXPECT_TRUE(d2->temPovo);
-    std::printf("[save real] dia %d, casa nível %d, %zu objetos alterados, %zu moradores\n", d2->dia,
-                w.reino.construcao("casa_herdeiro")->level, d2->objetos.size(), d2->moradores.size());
+    EXPECT_TRUE(d2->temCronicas);
+    std::printf("[save real] dia %d, casa nível %d, %zu objetos alterados, %zu moradores, %zu páginas nas Crônicas, título %s\n", d2->dia,
+                w.reino.construcao("casa_herdeiro")->level, d2->objetos.size(), d2->moradores.size(), d2->cronicas.size(),
+                w.titulo().nome.c_str());
+    for (const auto& c : d2->cronicas) std::printf("  [%s] %s\n", c.marco.c_str(), c.texto.c_str());
 }
 
 TEST(SaveV3, GuardaObrasEPovo) {

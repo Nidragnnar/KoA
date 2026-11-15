@@ -46,6 +46,6 @@
     "casa_bram": [39, 12], "casa_edda": [12, 16], "casa_tilda": [9, 31], "casa_oswin": [57, 18], "casa_maelis": [41, 8],
     "forja_ruina": [35, 9], "poco": [28, 20], "praca": [30, 22], "praca_fogueira": [33, 23], "taverna_ruina": [26, 21],
     "cemiterio": [49, 9], "castelo": [32, 8], "portao_leste": [61, 18], "estrada": [45, 19], "campo": [15, 26],
-    "floresta_borda": [12, 7]
+    "floresta_borda": [12, 7], "banca_mercador": [35, 20]
   }
 }

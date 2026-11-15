@@ -50,10 +50,13 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
     }
     json jNpcs = {{"moradores", npcs}};
     json jRel = {{"afinidades", relacoes}};
+    json paginas = json::array();
+    for (const auto& c : d.cronicas) paginas.push_back({{"marco", c.marco}, {"dia", c.dia}, {"era", c.era}, {"texto", c.texto}});
+    json cronicas = {{"cronicas", paginas}};
 
     const std::pair<const char*, const json*> arquivos[] = {
         {"player.json", &player}, {"inventory.json", &inv}, {"kingdom.json", &reino}, {"world.json", &mundo},
-        {"npcs.json", &jNpcs}, {"relationships.json", &jRel}, {"quests.json", &quests},
+        {"npcs.json", &jNpcs}, {"relationships.json", &jRel}, {"quests.json", &quests}, {"chronicles.json", &cronicas},
         {"metadata.json", &meta}};  // metadata por último: só existe save "válido" quando tudo foi gravado
     for (const auto& [nome, conteudo] : arquivos) {
         if (!ke::fs::gravarTextoSeguro(dir / nome, conteudo->dump(2))) {
@@ -88,6 +91,11 @@ json SaveSystem::migrar(json tudo, int deVersao) {
                           {"marcos", json::array()}};
         deVersao = 4;
     }
+    if (deVersao < 5) {
+        // v4 não tinha Crônicas: o jogo as reconstrói a partir do que já aconteceu (marcos, missões, obras)
+        tudo["chronicles"] = {{"cronicas", json::array()}, {"reconstruir", true}};
+        deVersao = 5;
+    }
     tudo["metadata"]["versao_formato"] = deVersao;
     return tudo;
 }
@@ -114,8 +122,9 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
         }
         // Arquivos que só existem a partir da v2
         if (versao >= 2) {
-            for (const char* nome : {"npcs", "relationships", "quests"}) {
+            for (const char* nome : {"npcs", "relationships", "quests", "chronicles"}) {
                 if (std::string(nome) == "quests" && versao < 4) continue;
+                if (std::string(nome) == "chronicles" && versao < 5) continue;
                 const auto texto = ke::fs::lerTexto(dir / (std::string(nome) + ".json"));
                 tudo[nome] = texto ? json::parse(*texto, nullptr, false) : json();
                 if (tudo[nome].is_discarded() || !tudo[nome].is_object()) {
@@ -147,6 +156,10 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
             for (const auto& [id, n] : jq["abates"].items()) d.abates[id] = std::max(0, n.get<int>());
         d.visitadas = jq.value("visitadas", std::vector<std::string>{"vilarejo"});
         d.marcos = jq.value("marcos", std::vector<std::string>{});
+        const json& jc = tudo["chronicles"];
+        d.temCronicas = !jc.value("reconstruir", false);
+        for (const auto& c : jc.value("cronicas", json::array()))
+            d.cronicas.push_back({c.value("marco", ""), std::max(0, c.value("dia", 0)), std::clamp(c.value("era", 0), 0, 3), c.value("texto", "")});
         for (const auto& [id, q] : tudo["inventory"].items())
             if (q.is_number_integer()) d.inventario[id] = std::max(0, q.get<int>());
         const json& r = tudo["kingdom"];

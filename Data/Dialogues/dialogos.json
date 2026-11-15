@@ -1,5 +1,5 @@
 {
-  "_como_funciona": "Para cada morador vale a PRIMEIRA entrada cujas condições batem (de cima para baixo). Condições: primeiro_encontro, ja_falou_hoje, periodo (manha/tarde/noite), estacao (primavera/verao/outono/inverno), casa_nivel_min, afinidade_min. 'uma_vez': a entrada vira lembrança e não se repete.",
+  "_como_funciona": "Para cada morador vale a PRIMEIRA entrada cujas condições batem (de cima para baixo). Condições: primeiro_encontro, ja_falou_hoje, periodo (manha/tarde/noite), estacao (primavera/verao/outono/inverno), casa_nivel_min, afinidade_min, era_min, marco (só depois do acontecimento), sem_marco (só antes), pistas_min (fragmentos da Queda achados). 'uma_vez': a entrada vira lembrança e não se repete. {titulo} vira o título atual do herdeiro.",
   "dialogos": {
     "bram": [
       { "id": "bram_conhece", "se": { "primeiro_encontro": true }, "falas": [
@@ -9,6 +9,12 @@
       { "id": "bram_casa", "uma_vez": true, "se": { "casa_nivel_min": 2 }, "falas": [
         "Vi a casa que você levantou. Paredes retas, telhado inteiro.",
         "...Não está ruim. Não conte pra ninguém que eu disse isso."] },
+      { "id": "bram_titulo", "uma_vez": true, "se": { "marco": "titulo:senhor_cinzas" }, "falas": [
+        "Senhor das Cinzas, é? O povo inventa cada coisa.",
+        "...Combina. Você tem fuligem até na sobrancelha."] },
+      { "id": "bram_hadrian", "uma_vez": true, "se": { "marco": "chefe_cavaleiro_caido" }, "falas": [
+        "O Cavaleiro Caído... Dizem que usava a armadura do capitão Hadrian. Fui eu que forjei aquela armadura.",
+        "Se era ele, que descanse. Merecia mais do que vigiar um buraco no chão."] },
       { "id": "bram_era1", "uma_vez": true, "se": { "era_min": 1 }, "falas": ["Sentiu? O ar mudou. Até o ferro velho parece menos frio na mão.", "Não sou de superstição. Mas alguma coisa está acordando."] },
       { "id": "bram_era2", "uma_vez": true, "se": { "era_min": 2 }, "falas": ["Pedra branca na praça, estandartes na muralha... Parece o reino que meu avô descrevia.", "Vou precisar de aprendizes. Muitos."] },
       { "id": "bram_era3", "uma_vez": true, "se": { "era_min": 3 }, "falas": ["O metal canta quando bato agora. CANTA, majestade.", "Se isso é magia, não reclamo. Só não toque na minha bigorna."] },
@@ -26,6 +32,12 @@
       { "id": "edda_casa", "uma_vez": true, "se": { "casa_nivel_min": 2 }, "falas": [
         "Você viu? Tem fumaça saindo da chaminé da sua casa!",
         "Fumaça de chaminé é sinal de gente viva. Faz anos que eu não via isso aqui."] },
+      { "id": "edda_mercador", "uma_vez": true, "se": { "marco": "visita:corvin" }, "falas": [
+        "Viu o mercador na praça? Corvin. Cobra o olho da cara.",
+        "Mas trouxe sal! SAL, {titulo}! A sopa nunca mais será a mesma."] },
+      { "id": "edda_restaurador", "uma_vez": true, "se": { "marco": "titulo:restaurador" }, "falas": [
+        "As crianças agora brincam de 'Restaurador'. Uma é você, as outras são as casas.",
+        "Você sempre ganha."] },
       { "id": "edda_era1", "uma_vez": true, "se": { "era_min": 1 }, "falas": ["Acordei e ouvi passarinho. Passarinho! Chorei na sopa.", "As cinzas pararam de cair, você reparou?"] },
       { "id": "edda_era2", "uma_vez": true, "se": { "era_min": 2 }, "falas": ["Tem gente de outros reinos perguntando de você na estrada.", "Uma fonte na praça! Agora sim dá pra marcar encontro."] },
       { "id": "edda_era3", "uma_vez": true, "se": { "era_min": 3 }, "falas": ["Vi um DRAGÃO passar sobre a praça. Ninguém acredita em mim.", "...Majestade, você acredita em mim, né?"] },
@@ -43,6 +55,18 @@
       { "id": "maelis_casa", "uma_vez": true, "se": { "casa_nivel_min": 2 }, "falas": [
         "A terra sentiu quando você ergueu aquelas paredes.",
         "Um reino não renasce de uma vez. Renasce casa por casa."] },
+      { "id": "maelis_ato1", "uma_vez": true, "se": { "marco": "misterio:primeiro_ato" }, "falas": [
+        "Então é isso. O rei abriu a Torre do Selo, e a Chama não salvou o reino: consumiu.",
+        "Mas uma Chama assim não morre, {titulo}. Apenas muda de lugar.",
+        "Quando Valdren estiver pronta, precisaremos descobrir para onde ela foi."] },
+      { "id": "maelis_rainha", "uma_vez": true, "se": { "marco": "pista:lapide_rainha" }, "falas": [
+        "Encontrou a lápide vazia. Fui eu que a gravei.",
+        "Sua mãe partiu naquela noite com você nos braços. Nunca soube se chegou a algum lugar.",
+        "Você chegou. Isso me basta."] },
+      { "id": "maelis_pistas", "uma_vez": true, "se": { "pistas_min": 2 }, "falas": [
+        "Você anda juntando papéis queimados. Eu vi.",
+        "Cuidado, {titulo}. Há verdades que os mortos enterraram por um motivo.",
+        "...Mas os vivos merecem conhecê-las. Leia tudo nas suas Crônicas (C) e pense."] },
       { "id": "maelis_era1", "uma_vez": true, "se": { "era_min": 1 }, "falas": ["A luz despertou. Fraca, mas desperta.", "Os túmulos estão em silêncio pela primeira vez em anos. Os mortos descansam."] },
       { "id": "maelis_era2", "uma_vez": true, "se": { "era_min": 2 }, "falas": ["A terra lembra o seu nome agora, herdeiro.", "Plantei flores sobre as lápides. Elas floresceram em uma noite."] },
       { "id": "maelis_era3", "uma_vez": true, "se": { "era_min": 3 }, "falas": ["A magia voltou por completo. Sinto-a em cada pedra do caminho.", "Cuidado: o que é muito luminoso também projeta sombras longas."] },
@@ -60,6 +84,12 @@
       { "id": "oswin_casa", "uma_vez": true, "se": { "casa_nivel_min": 2 }, "falas": [
         "A casa do herdeiro de pé outra vez. Isso merece uma saudação.",
         "*bate o punho no peito* Pela coroa."] },
+      { "id": "oswin_soldado", "uma_vez": true, "se": { "marco": "pista:diario_soldado" }, "falas": [
+        "Esse diário... a letra é do Tobias, meu sobrinho. Marchou com o capitão Hadrian.",
+        "Nunca voltou. Agora sei que viu o fogo sair do castelo. Obrigado por me trazer isso."] },
+      { "id": "oswin_estrada", "uma_vez": true, "se": { "marco": "missao:limpar_estrada" }, "falas": [
+        "A estrada está livre. Dizem que até mercadores vão voltar a passar por ela.",
+        "Esperei quarenta anos de guarda para ver isso, {titulo}."] },
       { "id": "oswin_era1", "uma_vez": true, "se": { "era_min": 1 }, "falas": ["Lampiões na estrada. Dá para vigiar sem forçar o olho.", "As criaturas da floresta estão mais quietas. Ou mais espertas."] },
       { "id": "oswin_era2", "uma_vez": true, "se": { "era_min": 2 }, "falas": ["Estandartes da coroa na muralha. Achei que morreria sem ver isso de novo."] },
       { "id": "oswin_era3", "uma_vez": true, "se": { "era_min": 3 }, "falas": ["Um dragão no céu e ninguém correu. Que tempos, majestade. Que tempos."] },
@@ -73,6 +103,12 @@
         "Herdeiro. Tilda. Planto o que der.",
         "A terra aqui é escura, mas não está morta. Ela só precisa de mãos."] },
       { "id": "tilda_casa", "uma_vez": true, "se": { "casa_nivel_min": 2 }, "falas": ["Casa nova. Bom. Agora falta um campo decente perto dela."] },
+      { "id": "tilda_memorial", "uma_vez": true, "se": { "marco": "construiu:memorial" }, "falas": [
+        "Levei flores ao Memorial. Meu pai está naqueles nomes que ninguém sabe.",
+        "É bom ter um lugar pra chorar que não seja a cozinha."] },
+      { "id": "tilda_horta", "uma_vez": true, "se": { "marco": "construiu:campo" }, "falas": [
+        "Terra arada! Cheiro de terra arada, {titulo}!",
+        "Vou plantar nabo, cenoura, repolho... e uma flor. Uma só. Pra mim."] },
       { "id": "tilda_era1", "uma_vez": true, "se": { "era_min": 1 }, "falas": ["A grama está ficando verde de verdade. A terra perdoou."] },
       { "id": "tilda_era2", "uma_vez": true, "se": { "era_min": 2 }, "falas": ["Flor no meio do trigo. Não arranquei. Deu sorte."] },
       { "id": "tilda_era3", "uma_vez": true, "se": { "era_min": 3 }, "falas": ["As plantas brilham à noite agora. Esquisito. Bonito, mas esquisito."] },
@@ -81,6 +117,17 @@
       { "se": { "estacao": "inverno" }, "falas": ["Inverno. Terra dormindo. Eu não."] },
       { "se": { "afinidade_min": 300 }, "falas": ["Separei sementes boas pra quando você tiver um campo. Não estrague."] },
       { "se": {}, "falas": ["Comida guardada é gente viva.", "Cogumelos na borda da floresta. Os escuros, não. Os escuros, nunca."] }
+    ],
+    "corvin": [
+      { "id": "corvin_conhece", "se": { "primeiro_encontro": true }, "falas": [
+        "Ora, ora! Então é verdade: há um herdeiro em Valdren!",
+        "Corvin, mercador, ao seu dispor. A estrada leste ficou fechada por anos. Alguém a limpou, e eu sigo o ouro.",
+        "Tenho grãos, pedra, tábuas... e uma ou outra curiosidade do velho reino."] },
+      { "se": { "pistas_min": 1, "sem_marco": "pista:carta_selada" }, "falas": [
+        "Anda lendo papéis velhos, {titulo}? Então vai gostar do que achei no baú de um nobre fugido.",
+        "Uma carta selada com o brasão real. Não abri. Juro pela minha balança."] },
+      { "se": { "ja_falou_hoje": true }, "falas": ["Volte quando o bolso pesar mais, {titulo}."] },
+      { "se": {}, "falas": ["Bons preços para um bom {titulo}! Bem, preços justos. Bem... preços.", "Dê uma olhada na banca."] }
     ]
   }
 }

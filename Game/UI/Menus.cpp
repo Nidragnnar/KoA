@@ -15,6 +15,7 @@ const char* CONTROLES[][2] = {
     {"B", "obras: escolher e posicionar"},
     {"K", "painel do reino e impostos"},
     {"L", "diário: missões e equipamento"},
+    {"C", "Crônicas do Reino e fragmentos"},
     {"F5", "salvar"},
     {"M", "som ligado/desligado"},
     {"F11", "tela cheia"},

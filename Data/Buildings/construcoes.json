@@ -101,6 +101,31 @@
         { "nivel": 3, "nome": "Torre Arcana", "descricao": "Os primeiros sinais de magia retornando ao mundo.",
           "custo": { "pedra": 60, "ouro": 150 }, "efeitos": { "seguranca": 12, "felicidade": 4 } }
       ]
+    },
+    {
+      "_monumento": "Fase 9: monumentos registram a história real da campanha (E na frente para ler). 'requer' = marco que libera a obra.",
+      "id": "memorial", "aparencia": "memorial", "tamanho": [2, 2], "construivel": true, "limite": 1, "monumento": true,
+      "requer": "casa_reconstruida", "requer_texto": "Reconstrua a sua casa primeiro.",
+      "niveis": [
+        { "nivel": 1, "nome": "Memorial das Cinzas", "descricao": "Uma pedra para lembrar a Queda e quem se perdeu nela.",
+          "custo": { "pedra": 20, "madeira": 5, "ouro": 15 }, "efeitos": { "felicidade": 4 } }
+      ]
+    },
+    {
+      "id": "jardim", "aparencia": "jardim", "tamanho": [3, 2], "construivel": true, "limite": 1, "monumento": true,
+      "requer": "era:1", "requer_texto": "Só floresce quando o reino despertar (era 1).",
+      "niveis": [
+        { "nivel": 1, "nome": "Jardim dos Heróis", "descricao": "Um canteiro para cada amigo do reino e cada promessa cumprida.",
+          "custo": { "madeira": 15, "pedra": 10, "ouro": 25, "comida": 10 }, "efeitos": { "felicidade": 5 } }
+      ]
+    },
+    {
+      "id": "estatua", "aparencia": "estatua", "tamanho": [2, 2], "construivel": true, "limite": 1, "monumento": true,
+      "requer": "chefe_cavaleiro_caido", "requer_texto": "Derrote o Cavaleiro Caído primeiro.",
+      "niveis": [
+        { "nivel": 1, "nome": "Estátua do Herdeiro", "descricao": "O herdeiro em pedra, olhando para a estrada leste.",
+          "custo": { "pedra": 45, "ouro": 40 }, "efeitos": { "felicidade": 6, "seguranca": 2 } }
+      ]
     }
   ]
 }

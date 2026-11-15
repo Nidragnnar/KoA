@@ -75,6 +75,28 @@
         { "hora": "17:00", "local": "poco", "acao": "buscar água" },
         { "hora": "19:00", "local": "casa_tilda", "acao": "dormir" }
       ]
+    },
+    {
+      "id": "corvin", "nome": "Corvin", "profissao": "Mercador viajante",
+      "personalidade": "Simpático demais para ser de confiança.",
+      "casa": "portao_leste",
+      "_visita": "Visitante: só aparece depois do marco 'requer', a cada 'a_cada' dias (no dia em que dia % a_cada == 0).",
+      "visita": { "requer": "missao:limpar_estrada", "a_cada": 3 },
+      "gosta": ["ouro"], "odeia": ["fiado"],
+      "aparencia": { "pele": "#c89070", "cabelo": "#4a2e22", "roupa": "#6a3a5a", "roupa2": "#c8a040", "chapeu": true, "barba": true },
+      "rotina": [
+        { "hora": "06:00", "local": "portao_leste", "acao": "chegar" },
+        { "hora": "08:00", "local": "banca_mercador", "acao": "vender" },
+        { "hora": "18:00", "local": "portao_leste", "acao": "partir" },
+        { "hora": "19:00", "local": "portao_leste", "acao": "dormir" }
+      ],
+      "_loja": "O que vende depois da conversa. 'pista' = a compra revela um fragmento da Queda (uma vez só).",
+      "loja": [
+        { "id": "comida", "nome": "Saco de grãos (10 comida)", "custo": { "ouro": 15 }, "ganho": { "comida": 10 } },
+        { "id": "madeira", "nome": "Feixe de tábuas (10 madeira)", "custo": { "ouro": 25 }, "ganho": { "madeira": 10 } },
+        { "id": "pedra", "nome": "Carroça de pedra (10 pedra)", "custo": { "ouro": 35 }, "ganho": { "pedra": 10 } },
+        { "id": "carta", "nome": "Carta selada com o brasão real", "custo": { "ouro": 40 }, "pista": "carta_selada" }
+      ]
     }
   ]
 }

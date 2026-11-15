@@ -30,6 +30,9 @@ bool GameData::lerJson(const nlohmann::json& jr, const nlohmann::json& jc, std::
             d.construivel = c.value("construivel", false);
             d.limite = c.value("limite", 0);
             if (c.contains("tamanho")) d.tamanho = {c["tamanho"][0].get<int>(), c["tamanho"][1].get<int>()};
+            d.requer = c.value("requer", "");
+            d.requerTexto = c.value("requer_texto", "");
+            d.monumento = c.value("monumento", false);
             for (const auto& n : c.at("niveis")) {
                 NivelConstrucao nv;
                 nv.nivel = n.at("nivel").get<int>();
@@ -90,7 +93,19 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
             return false;
         }
     }
-    return lerCombate(jc3[0], jc3[1], jc3[2], inimigos, equipamentos, ordemEquipamentos, missoes, erro);
+    if (!lerCombate(jc3[0], jc3[1], jc3[2], inimigos, equipamentos, ordemEquipamentos, missoes, erro)) return false;
+    // Fase 9: Crônicas, títulos e pistas
+    nlohmann::json jl[3];
+    const char* arquivosLore[3] = {"Lore/cronicas.json", "Lore/titulos.json", "Lore/pistas.json"};
+    for (int i = 0; i < 3; ++i) {
+        const auto t = ke::fs::lerTexto(pasta / arquivosLore[i]);
+        jl[i] = t ? nlohmann::json::parse(*t, nullptr, false) : nlohmann::json();
+        if (!t || jl[i].is_discarded()) {
+            if (erro) *erro = std::string("Data/") + arquivosLore[i] + " ausente ou inválido";
+            return false;
+        }
+    }
+    return lerLore(jl[0], jl[1], jl[2], lore, erro);
 }
 
 }
