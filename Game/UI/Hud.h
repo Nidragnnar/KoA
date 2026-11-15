@@ -45,6 +45,10 @@ public:
     void painelRegioes(ke::Renderer2D& r, const World& w);
     void painelEscolha(ke::Renderer2D& r, const World& w, const EscolhaDef& d, int sel, float tempo);
     static bool mostraCristal(const World& w);  // a linha de cristal aparece depois das minas
+    // Fase 12: `proposto` é quem o herdeiro está olhando para o cargo selecionado (A/D), antes de nomear
+    void painelConselho(ke::Renderer2D& r, const World& w, int sel, const std::string& proposto, float tempo);
+    void painelDecisao(ke::Renderer2D& r, const World& w, const DecisaoDef& d, int sel, float tempo);
+    std::string textoEfeito(const CargoDef& c, float valor) const;  // "+6 segurança", "+22% impostos"...
 
     // Onde cada opção dos painéis apareceu no último quadro (a cena limpa antes de desenhar)
     Cliques cliques;

@@ -133,6 +133,27 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
                 if (erro) *erro = "escolha " + id + " dá item inexistente: " + o.item;
                 return false;
             }
+    // Fase 12: o Conselho Real
+    const auto tc = ke::fs::lerTexto(pasta / "Kingdom/conselho.json");
+    const auto jcs = tc ? nlohmann::json::parse(*tc, nullptr, false) : nlohmann::json();
+    if (!tc || jcs.is_discarded()) {
+        if (erro) *erro = "Data/Kingdom/conselho.json ausente ou inválido";
+        return false;
+    }
+    if (!lerConselho(jcs, conselho, erro)) return false;
+    for (const auto& cargo : conselho.cargos)
+        for (const auto& [npc, apt] : cargo.aptidao)
+            if (!npcs.contains(npc)) {
+                if (erro) *erro = "cargo " + cargo.id + " cita morador inexistente: " + npc;
+                return false;
+            }
+    for (const auto& dec : conselho.decisoes)
+        for (const auto& o : dec.opcoes)
+            for (const auto& [npc, valor] : o.efeitos.amizade)
+                if (!npcs.contains(npc)) {
+                    if (erro) *erro = "decisão " + dec.id + " cita morador inexistente: " + npc;
+                    return false;
+                }
     return true;
 }
 

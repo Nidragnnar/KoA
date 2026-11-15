@@ -58,7 +58,9 @@ struct EventoJogo {
         // Fase 10
         EventoRaro, Festival,
         // Fase 11
-        AbrirEscolha, Transformou
+        AbrirEscolha, Transformou,
+        // Fase 12
+        Decidiu, Nomeou
     };
     Tipo tipo;
     glm::vec2 pos{0.0f};
@@ -192,6 +194,23 @@ public:
     bool escolher(const std::string& escolha, const std::string& opcao);
     static constexpr int MADEIRA_ENTULHO = 15;
 
+    // Fase 12: o Conselho Real e as decisões políticas
+    std::map<std::string, std::string> conselho;  // cargo → morador (sem entrada = vago)
+    std::map<std::string, int> lealdade;          // morador → 0..100 (quem já foi nomeado alguma vez)
+    std::set<std::string> leis;                   // leis valendo
+    std::string decisaoPendente;                  // caso esperando o herdeiro ("" = nenhum)
+    int ultimaDecisao = 0;                        // dia em que o último caso chegou
+    bool conselhoFormado() const { return marcos.contains("conselho_formado"); }
+    std::string ocupante(const std::string& cargo) const;
+    std::string cargoDe(const std::string& npc) const;
+    std::vector<std::string> candidatos() const;  // moradores que podem ser nomeados (o mercador não)
+    bool nomear(const std::string& cargo, const std::string& npc);  // "" deixa o cargo vago
+    float efeitoCargo(const std::string& cargo) const;  // o que o cargo rende hoje (0 = vago ou insatisfeito)
+    const DecisaoDef* decisaoAtual() const { return decisaoPendente.empty() ? nullptr : dados_->conselho.decisao(decisaoPendente); }
+    bool decisaoPossivel(const DecisaoDef& d) const;
+    bool decidir(const std::string& opcao);
+    void trazerDecisao(const std::string& id);    // o conselho traz este caso agora (testes e roteiro)
+
     std::vector<ke::AABB> obstaculos() const;
     ke::AABB caixaConstrucao(const BuildingData& b) const;
     glm::vec2 pontoPorta(const BuildingData& b) const;
@@ -255,6 +274,9 @@ private:
     void noiteDasRegioes(std::vector<std::pair<std::string, int>>& producao, std::vector<std::string>& notas);
     void receberItem(const std::string& item);
     void anunciarTransformacao(const std::string& regiao);
+    // Fase 12
+    void noiteDoConselho(std::vector<std::string>& notas);
+    Relacionamento* relacao(const std::string& npc);  // o morador pode estar em qualquer registro
 
     const GameData* dados_ = nullptr;
     AlvoInteracao alvo_;

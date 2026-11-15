@@ -15,6 +15,9 @@
       { "id": "bram_titulo", "uma_vez": true, "se": { "marco": "titulo:senhor_cinzas" }, "falas": [
         "Senhor das Cinzas, é? O povo inventa cada coisa.",
         "...Combina. Você tem fuligem até na sobrancelha."] },
+      { "id": "bram_obras", "uma_vez": true, "se": { "marco": "cargo:obras:bram" }, "falas": [
+        "Mestre das Obras. Eu. Hm.",
+        "Vou precisar de lenhadores que saibam a diferença entre um machado e uma colher. Deixe comigo."] },
       { "id": "bram_cristal", "uma_vez": true, "se": { "marco": "primeiro_cristal" }, "falas": [
         "Isso é cristal das minas velhas? Deixe eu ver... É. É sim.",
         "Me traga oito desses e um saco de ouro, e com a forja grande eu faço uma lâmina que corta até sombra."] },
@@ -38,6 +41,9 @@
         "Majestade! Ninguém aqui acreditava que você voltaria. Eu acreditava. Mais ou menos.",
         "Sou Edda. Tinha uma taverna ali na praça, antes do fogo.",
         "Hoje sirvo sopa de raiz pra quem sobrou. Mas ainda sei rir alto!"] },
+      { "id": "edda_moeda", "uma_vez": true, "se": { "marco": "cargo:tesoureiro:edda" }, "falas": [
+        "Mestre da Moeda! Eu sei quem deve o quê nesta vila há trinta anos, {titulo}.",
+        "Ninguém vai fugir do imposto comigo olhando. Nem o Bram."] },
       { "id": "edda_pacto", "uma_vez": true, "se": { "marco": "escolha:golem_cinzas:pacto" }, "falas": [
         "Não sei o que você fez nas minas, {titulo}, mas o pão anda com gosto de cinza.",
         "E o povo dorme mal. Eu também. Não que eu esteja reclamando. Estou um pouquinho."] },
@@ -127,6 +133,9 @@
       { "id": "oswin_soldado", "uma_vez": true, "se": { "marco": "pista:diario_soldado" }, "falas": [
         "Esse diário... a letra é do Tobias, meu sobrinho. Marchou com o capitão Hadrian.",
         "Nunca voltou. Agora sei que viu o fogo sair do castelo. Obrigado por me trazer isso."] },
+      { "id": "oswin_marechal", "uma_vez": true, "se": { "marco": "cargo:marechal:oswin" }, "falas": [
+        "Marechal de Valdren... *a voz falha* Perdão, majestade. Faz quarenta anos que ninguém me chama de nada.",
+        "A guarda volta a ter um comandante. E o reino, uma muralha de gente."] },
       { "id": "oswin_pacto", "uma_vez": true, "se": { "marco": "escolha:golem_cinzas:pacto" }, "falas": [
         "Pacto com a coisa das minas? ...Não é meu lugar questionar, majestade.",
         "Mas vou dobrar a vigia nas noites de lua vermelha. E vou rezar. As duas coisas."] },
@@ -156,6 +165,9 @@
       { "se": { "estacao": "outono", "ja_falou_hoje": false }, "falas": [
         "Outono. Colhe tudo, guarda tudo.",
         "No inverno a terra dorme. A barriga não."] },
+      { "id": "tilda_celeiro", "uma_vez": true, "se": { "marco": "cargo:intendente:tilda" }, "falas": [
+        "Intendente do Celeiro. Bom. Ninguém passa fome comigo contando os sacos.",
+        "Primeira regra: quem pisar na horta, capina a horta."] },
       { "id": "tilda_floresta", "uma_vez": true, "se": { "marco": "purificou:floresta" }, "falas": [
         "Fui à floresta. Sozinha. Voltei com um cesto de amoras.",
         "Sete anos sem amora, {titulo}. Sete."] },

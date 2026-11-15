@@ -53,9 +53,15 @@ public:
     // Fase 11
     bool painelRegioesAberto() const { return painelRegioes_; }
     const std::string& escolhaAberta() const { return escolha_; }
+    // Fase 12
+    bool conselhoAberto() const { return painelConselho_; }
+    bool decisaoAberta() const { return decisao_; }
 
 private:
     void entradaEscolha();
+    void entradaConselho();
+    void entradaDecisao();
+    std::string propostoConselho() const;  // candidato que o herdeiro está olhando no cargo selecionado
     std::vector<std::string> opcoesObras() const;
     void entradaMenuObras();
     void entradaColocacao();
@@ -126,6 +132,10 @@ private:
     std::string escolha_;  // chefe rendido esperando a decisão ("" = nenhuma)
     int selEscolha_ = 0;
     float tempoEncanto_ = 0.0f;  // vagalumes e brilhos da terra purificada
+    // Fase 12
+    bool painelConselho_ = false, decisao_ = false;
+    int selConselho_ = 0, selDecisao_ = 0;
+    int proposta_ = -1;  // índice em [vago, candidatos...] para o cargo selecionado (-1 = quem já ocupa)
     float transicao_ = -1.0f;  // -1 = nenhuma; 0..2 = escurece, troca o dia (em 1), clareia
     bool desmaio_ = false;
     bool mostrarColisoes_ = false;

@@ -187,7 +187,84 @@ void WorldScene::entradaJogo() {
         painelRegioes_ = true;
         return;
     }
+    if (in.pressionou(SDL_SCANCODE_G)) {
+        painelConselho_ = true;
+        selConselho_ = 0;
+        proposta_ = -1;
+        return;
+    }
     mundo_.passo(static_cast<float>(1.0 / 60.0), e);
+}
+
+std::string WorldScene::propostoConselho() const {
+    const auto& cargos = ctx_.dados.conselho.cargos;
+    if (selConselho_ < 0 || selConselho_ >= static_cast<int>(cargos.size())) return "";
+    if (proposta_ < 0) return mundo_.ocupante(cargos[selConselho_].id);
+    const auto cand = mundo_.candidatos();
+    return proposta_ == 0 || proposta_ > static_cast<int>(cand.size()) ? "" : cand[proposta_ - 1];
+}
+
+void WorldScene::entradaConselho() {
+    ke::Input& in = ctx_.app.input();
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_G) || cliqueFecha(in, hud_.cliques)) {
+        painelConselho_ = false;
+        return;
+    }
+    if (!mundo_.conselhoFormado()) return;
+    const auto& cargos = ctx_.dados.conselho.cargos;
+    const int nCargos = static_cast<int>(cargos.size());
+    const int n = nCargos + (mundo_.decisaoAtual() ? 1 : 0);  // a última linha é o caso esperando
+    selConselho_ = std::clamp(selConselho_, 0, n - 1);
+    const int antes = selConselho_;
+    if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selConselho_ = (selConselho_ + n - 1) % n;
+    if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selConselho_ = (selConselho_ + 1) % n;
+    const bool clique = listaComMouse(in, hud_.cliques, selConselho_, n);
+    // Setas clicáveis do seletor (300 + linha = anterior, 310 + linha = próximo)
+    const int seta = in.clicou(ke::BotaoMouse::Esquerdo) ? hud_.cliques.em(in.mouse()) : -1;
+    if (seta >= 300 && seta < 320) selConselho_ = seta % 10;
+    if (selConselho_ != antes) proposta_ = -1;  // outro cargo: começa por quem já está nele
+    int dir = 0;
+    if (in.pressionou(SDL_SCANCODE_A) || in.pressionou(SDL_SCANCODE_LEFT) || (seta >= 300 && seta < 310)) dir = -1;
+    if (in.pressionou(SDL_SCANCODE_D) || in.pressionou(SDL_SCANCODE_RIGHT) || (seta >= 310 && seta < 320)) dir = 1;
+    if (dir != 0 && selConselho_ < nCargos) {
+        // Lista: vago, depois os moradores
+        const auto cand = mundo_.candidatos();
+        const int total = static_cast<int>(cand.size()) + 1;
+        int atual = proposta_;
+        if (atual < 0) {
+            const std::string quem = mundo_.ocupante(cargos[selConselho_].id);
+            const auto it = std::ranges::find(cand, quem);
+            atual = quem.empty() || it == cand.end() ? 0 : static_cast<int>(it - cand.begin()) + 1;
+        }
+        proposta_ = (atual + dir + total) % total;
+        ctx_.app.audio().tocar(ke::Som::Menu);
+    }
+    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique) {
+        if (selConselho_ == nCargos) {
+            decisao_ = true;  // abre o caso por cima do conselho
+            selDecisao_ = 0;
+        } else if (const std::string quem = propostoConselho(); quem != mundo_.ocupante(cargos[selConselho_].id)) {
+            mundo_.nomear(cargos[selConselho_].id, quem);
+            proposta_ = -1;
+        }
+    }
+}
+
+void WorldScene::entradaDecisao() {
+    ke::Input& in = ctx_.app.input();
+    const DecisaoDef* d = mundo_.decisaoAtual();
+    if (!d || in.pressionou(SDL_SCANCODE_ESCAPE)) {  // Esc deixa para depois: o caso espera no conselho (G)
+        decisao_ = false;
+        return;
+    }
+    const int n = static_cast<int>(d->opcoes.size());
+    if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selDecisao_ = (selDecisao_ + n - 1) % n;
+    if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selDecisao_ = (selDecisao_ + 1) % n;
+    const bool clique = listaComMouse(in, hud_.cliques, selDecisao_, n);
+    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique) {
+        const std::string opcao = d->opcoes[selDecisao_].id;
+        if (mundo_.decidir(opcao)) decisao_ = false;
+    }
 }
 
 void WorldScene::entradaEscolha() {
@@ -589,6 +666,18 @@ void WorldScene::tratarEventos() {
                 ke::log::info("escolha aberta: {}", e.alvo);
             }
             break;
+        case EventoJogo::Tipo::Decidiu:
+            hud_.aviso("Decidido: " + e.texto, cor::ouro);
+            flash_ = std::max(flash_, 0.3f);
+            som.tocar(ke::Som::Construir);
+            ke::log::info("decisão do conselho: {} -> {}", e.alvo, e.recurso);
+            salvar();
+            break;
+        case EventoJogo::Tipo::Nomeou:
+            hud_.aviso(e.texto, cor::ouro);
+            som.tocar(ke::Som::Magia);
+            ke::log::info("conselho: {} no cargo {}", e.recurso, e.alvo);
+            break;
         case EventoJogo::Tipo::Transformou:
             nomeRegiao_ = e.texto;
             tituloRegiao_ = 3.5f;
@@ -768,7 +857,7 @@ void WorldScene::atualizar(double dtD) {
     // O relógio para em menus, painéis, conversas e no sono
     mundo_.relogio.parado = pausa_ || !painel_.empty() || conversa_.has_value() || transicao_ >= 0.0f || menuObras_ || painelReino_ ||
                             relatorio_ || diario_ || forja_ || cronicas_ || !leitura_.empty() || !loja_.empty() || painelRegioes_ ||
-                            !escolha_.empty();
+                            !escolha_.empty() || painelConselho_ || decisao_;
     feridoFlash_ = std::max(0.0f, feridoFlash_ - dt);
     tituloRegiao_ = std::max(0.0f, tituloRegiao_ - dt);
     tituloEra_ = std::max(0.0f, tituloEra_ - dt);
@@ -797,11 +886,16 @@ void WorldScene::atualizar(double dtD) {
     } else if (relatorio_) {
         ke::Input& in = ctx_.app.input();
         if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_ESCAPE) ||
-            in.pressionou(SDL_SCANCODE_SPACE) || in.clicou(ke::BotaoMouse::Esquerdo))
+            in.pressionou(SDL_SCANCODE_SPACE) || in.clicou(ke::BotaoMouse::Esquerdo)) {
             relatorio_ = false;
+            // Caso que o conselho trouxe esta manhã: abre logo depois do relatório
+            if (mundo_.decisaoAtual() && mundo_.ultimaDecisao == mundo_.relogio.dia) decisao_ = true, selDecisao_ = 0;
+        }
         mundo_.passo(dt, {});
     } else if (conversa_) entradaDialogo(dt);
     else if (!escolha_.empty()) entradaEscolha();
+    else if (decisao_) entradaDecisao();
+    else if (painelConselho_) entradaConselho();
     else if (painelRegioes_) {
         ke::Input& in = ctx_.app.input();
         if (in.pressionou(SDL_SCANCODE_R) || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques))
@@ -871,7 +965,8 @@ void WorldScene::renderizar(float) {
     }
     r.definirMistura(ke::Mistura::Normal);
     if (painel_.empty() && !pausa_ && !conversa_ && transicao_ < 0.0f && colocando_.empty() && !menuObras_ && !painelReino_ &&
-        !relatorio_ && !diario_ && !forja_ && !cronicas_ && leitura_.empty() && loja_.empty() && !painelRegioes_ && escolha_.empty())
+        !relatorio_ && !diario_ && !forja_ && !cronicas_ && leitura_.empty() && loja_.empty() && !painelRegioes_ && escolha_.empty() &&
+        !painelConselho_ && !decisao_)
         rend_.desenharAlvo(r, f, mundo_, tempo_);
     std::string motivoObra;
     bool obraValida = false;
@@ -948,6 +1043,11 @@ void WorldScene::renderizar(float) {
     if (!colocando_.empty()) hud_.dicaColocacao(r, ctx_.dados.construcoes.at(colocando_).nivel(1)->nome, obraValida, motivoObra);
     if (painelReino_) hud_.painelReino(r, mundo_);
     if (painelRegioes_) hud_.painelRegioes(r, mundo_);
+    if (painelConselho_) hud_.painelConselho(r, mundo_, selConselho_, propostoConselho(), tempo_);
+    if (decisao_ && mundo_.decisaoAtual()) {
+        hud_.cliques.limpar();  // por cima do conselho: só as opções do caso valem para o mouse
+        hud_.painelDecisao(r, mundo_, *mundo_.decisaoAtual(), selDecisao_, tempo_);
+    }
     if (!escolha_.empty()) hud_.painelEscolha(r, mundo_, ctx_.dados.escolhas.at(escolha_), selEscolha_, tempo_);
     if (relatorio_ && transicao_ < 0.0f && leitura_.empty()) hud_.relatorioManha(r, mundo_);
     if (pausa_) hud_.menuPausa(r, OPCOES_PAUSA, selPausa_);

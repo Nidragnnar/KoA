@@ -14,8 +14,8 @@
 namespace koa {
 
 // Sobe quando o formato muda (com migração). v2: relógio e moradores; v3: obras e povo; v4: regiões, combate e missões;
-// v5: Crônicas do Reino; v6: regiões vivas (corrupção, segurança, prosperidade)
-constexpr int VERSAO_SAVE = 6;
+// v5: Crônicas do Reino; v6: regiões vivas (corrupção, segurança, prosperidade); v7: Conselho Real e leis
+constexpr int VERSAO_SAVE = 7;
 
 struct EstadoConstrucao {
     std::string id, def;
@@ -82,6 +82,12 @@ struct DadosSave {
     // regions.json (v6). Saves antigos não têm: cada região começa como no mapa, visitada hoje
     bool temRegioes = false;
     std::map<std::string, EstadoRegiao> regioes;
+    // council.json (v7). Saves antigos: sem conselho (ele se forma na próxima manhã se o reino já tiver obras)
+    std::map<std::string, std::string> conselho;  // cargo → morador
+    std::map<std::string, int> lealdade;
+    std::vector<std::string> leis;
+    std::string decisaoPendente;
+    int ultimaDecisao = 0;
 };
 
 // Saves em pastas (Saves/Save_001/*.json) com backup antes de sobrescrever

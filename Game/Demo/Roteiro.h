@@ -56,6 +56,8 @@ private:
     int ouroAntes_ = 0;
     // Fase 11
     bool escolhaAbriu_ = false;
+    // Fase 12
+    int lealdadeAntes_ = 0;
 };
 
 }

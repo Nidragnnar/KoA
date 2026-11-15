@@ -1,0 +1,139 @@
+{
+  "_como_funciona": "Fase 12. Com 'obras_para_formar' obras de pé, o povo pede um Conselho Real (tecla G). Cada cargo rende 'forca' × aptidão do morador × lealdade (1 com 50+, 0,6 entre 25 e 49, nada abaixo de 25). A cada 'dias_entre_decisoes' o conselho traz um caso de manhã; cada cargo apoia uma opção ('conselho'): seguir o conselho dá +8 de lealdade, decidir contra tira 6. Efeitos de uma opção: recursos (negativo = gasto), felicidade, populacao, lealdade {cargo}, amizade {morador}, corrupcao {região}, lei/revogar, imposto (0 baixo, 1 médio, 2 alto).",
+  "obras_para_formar": 4,
+  "dias_entre_decisoes": 3,
+  "cargos": [
+    { "id": "marechal", "nome": "Marechal", "efeito": "seguranca", "forca": 6,
+      "descricao": "Comanda a guarda do reino.",
+      "aptidao": { "oswin": 1.0, "bram": 0.6, "tilda": 0.4, "edda": 0.3, "maelis": 0.4 } },
+    { "id": "tesoureiro", "nome": "Mestre da Moeda", "efeito": "impostos", "forca": 0.25,
+      "descricao": "Cobra e conta os impostos.",
+      "aptidao": { "edda": 0.9, "maelis": 0.6, "tilda": 0.5, "bram": 0.4, "oswin": 0.4 } },
+    { "id": "intendente", "nome": "Intendente do Celeiro", "efeito": "comida", "forca": 0.3,
+      "descricao": "Cuida das hortas e do celeiro.",
+      "aptidao": { "tilda": 1.0, "edda": 0.7, "maelis": 0.5, "bram": 0.3, "oswin": 0.4 } },
+    { "id": "obras", "nome": "Mestre das Obras", "efeito": "obras", "forca": 3,
+      "descricao": "Organiza lenhadores e pedreiros.",
+      "aptidao": { "bram": 1.0, "oswin": 0.5, "tilda": 0.5, "edda": 0.3, "maelis": 0.3 } }
+  ],
+  "leis": {
+    "isencao_vael": { "nome": "Isenção dos Vael", "ouro_dia": 4, "felicidade": -3 },
+    "patrulha": { "nome": "Patrulha da estrada", "seguranca": 4, "ouro_dia": -2 },
+    "culto_tolerado": { "nome": "Pregadores tolerados", "felicidade": -2 },
+    "exclusividade_corvin": { "nome": "Exclusividade de Corvin", "ouro_dia": 5, "felicidade": -2 }
+  },
+  "decisoes": [
+    { "id": "lenhadores", "titulo": "Os lenhadores pedem proteção",
+      "requer": { "marco": "visitou:floresta", "sem_lei": "patrulha" },
+      "texto": ["Criaturas da floresta atacaram dois lenhadores na estrada leste. Os outros se recusam a voltar sem escolta."],
+      "opcoes": [
+        { "id": "patrulha", "nome": "Criar uma patrulha na estrada", "descricao": "Lei: +4 de segurança, -2 de ouro por dia. Custa 40 de ouro agora.",
+          "efeitos": { "ouro": -40, "lei": "patrulha" } },
+        { "id": "armar", "nome": "Dar lanças e machados ao povo", "descricao": "Custa 25 de madeira e 15 de pedra. O povo se sente capaz (+2) e enfrenta as criaturas (floresta -8 de corrupção).",
+          "efeitos": { "madeira": -25, "pedra": -15, "felicidade": 2, "corrupcao": { "floresta": -8 } } },
+        { "id": "recusar", "nome": "Que tenham coragem", "descricao": "Não custa nada. O povo fica com medo (-5 de felicidade).",
+          "efeitos": { "felicidade": -5 } }
+      ],
+      "conselho": {
+        "marechal": { "apoia": "patrulha", "fala": "Me dê seis homens e a estrada fica limpa." },
+        "tesoureiro": { "apoia": "armar", "fala": "Patrulha custa ouro todo santo dia." },
+        "obras": { "apoia": "armar", "fala": "Lança se faz com sobra de madeira." }
+      } },
+    { "id": "refugiados", "titulo": "Refugiados no portão",
+      "requer": { "populacao_min": 10 },
+      "texto": ["Uma caravana de famílias fugidas do norte chegou ao portão leste, com fome e frio. Pedem para ficar."],
+      "opcoes": [
+        { "id": "acolher", "nome": "Acolher todos", "descricao": "+3 moradores (se houver onde morar) e +3 de felicidade. Gasta 30 de comida.",
+          "efeitos": { "populacao": 3, "comida": -30, "felicidade": 3 } },
+        { "id": "trabalho", "nome": "Acolher quem puder trabalhar", "descricao": "+1 morador, e eles chegam trazendo 15 de madeira.",
+          "efeitos": { "populacao": 1, "madeira": 15 } },
+        { "id": "recusar", "nome": "Fechar o portão", "descricao": "Nada se gasta. O povo se envergonha (-4) e Maelis não perdoa tão cedo.",
+          "efeitos": { "felicidade": -4, "amizade": { "maelis": -100 } } }
+      ],
+      "conselho": {
+        "intendente": { "apoia": "trabalho", "fala": "Cada boca a mais é um pão a menos. Só quem trabalha." },
+        "obras": { "apoia": "acolher", "fala": "Braços! Eu preciso de braços." },
+        "marechal": { "apoia": "recusar", "fala": "Não sabemos quem são, majestade." }
+      } },
+    { "id": "nobre_isencao", "titulo": "Um nobre pede isenção",
+      "requer": { "populacao_min": 12 },
+      "texto": ["Lorde Aldous Vael voltou do exílio com a família e os criados. Promete trazer comércio a Valdren, mas pede para não pagar impostos."],
+      "opcoes": [
+        { "id": "conceder", "nome": "Conceder a isenção", "descricao": "Lei: o comércio dos Vael rende +4 de ouro por dia, mas o povo acha injusto (-3 de felicidade).",
+          "efeitos": { "lei": "isencao_vael" } },
+        { "id": "ouro_agora", "nome": "Isentar em troca de ouro agora", "descricao": "Vael paga 50 de ouro de uma vez. O povo resmunga (-1).",
+          "efeitos": { "ouro": 50, "felicidade": -1 } },
+        { "id": "recusar", "nome": "Todos pagam igual", "descricao": "O povo aplaude (+3), mas os Vael vão embora (-1 morador).",
+          "efeitos": { "felicidade": 3, "populacao": -1 } }
+      ],
+      "conselho": {
+        "tesoureiro": { "apoia": "ouro_agora", "fala": "Ouro na mão vale mais que promessa de nobre." },
+        "marechal": { "apoia": "recusar", "fala": "Lei é lei, majestade. Para todos." },
+        "intendente": { "apoia": "recusar", "fala": "Quem planta paga. Quem não planta, paga também." }
+      } },
+    { "id": "disputa_campo", "titulo": "Uma briga por terra",
+      "requer": { "marco": "construiu:campo", "populacao_min": 11 },
+      "texto": ["Tilda e um recém-chegado disputam o mesmo pedaço de terra boa perto do rio. Os dois juram que chegaram primeiro."],
+      "opcoes": [
+        { "id": "tilda", "nome": "Dar a terra a Tilda", "descricao": "Tilda fica grata (amizade). Os novos moradores se sentem de fora (-1).",
+          "efeitos": { "amizade": { "tilda": 100 }, "felicidade": -1 } },
+        { "id": "dividir", "nome": "Dividir o campo", "descricao": "Ninguém fica feliz de tudo, mas a paz vale (+2). A colheita dividida rende 10 de comida.",
+          "efeitos": { "felicidade": 2, "comida": 10 } },
+        { "id": "novato", "nome": "Dar ao recém-chegado", "descricao": "A família dele fica e chama parentes (+1 morador). Tilda não vai gostar nada.",
+          "efeitos": { "populacao": 1, "amizade": { "tilda": -150 } } }
+      ],
+      "conselho": {
+        "marechal": { "apoia": "dividir", "fala": "Briga por terra vira briga de faca. Divida." },
+        "tesoureiro": { "apoia": "novato", "fala": "Família nova paga imposto novo." },
+        "intendente": { "apoia": "tilda", "fala": "A terra é de quem cuida dela." }
+      } },
+    { "id": "panelaco", "titulo": "O povo reclama dos impostos", "repetir": true,
+      "requer": { "imposto_min": 2 },
+      "texto": ["Na praça, um grupo bate panelas: com o imposto alto, falta pão na mesa."],
+      "opcoes": [
+        { "id": "baixar", "nome": "Baixar o imposto para médio", "descricao": "O povo comemora (+3).",
+          "efeitos": { "imposto": 1, "felicidade": 3 } },
+        { "id": "manter", "nome": "Manter o imposto", "descricao": "O cofre agradece. O povo, não (-4).",
+          "efeitos": { "felicidade": -4 } },
+        { "id": "banquete", "nome": "Manter, mas dar um banquete", "descricao": "Gasta 30 de comida e 20 de ouro. Barriga cheia reclama menos (+4).",
+          "efeitos": { "comida": -30, "ouro": -20, "felicidade": 4 } }
+      ],
+      "conselho": {
+        "tesoureiro": { "apoia": "manter", "fala": "Panela batendo não enche o cofre." },
+        "intendente": { "apoia": "banquete", "fala": "Um banquete e eles esquecem por um mês." },
+        "marechal": { "apoia": "baixar", "fala": "Povo com fome é povo com raiva. Baixe." }
+      } },
+    { "id": "pregadores", "titulo": "Pregadores das cinzas",
+      "requer": { "marco": "evento:lua_sangue" },
+      "texto": ["Dois encapuzados pregam na praça que a Chama vai voltar, e que só quem a servir sobreviverá. Alguns param para ouvir."],
+      "opcoes": [
+        { "id": "prender", "nome": "Prender os pregadores", "descricao": "O povo se assusta com a prisão (-2). O Marechal aprova.",
+          "efeitos": { "felicidade": -2, "lealdade": { "marechal": 5 } } },
+        { "id": "tolerar", "nome": "Deixar que falem", "descricao": "Lei: o medo se espalha devagar (-2 de felicidade enquanto valer). Maelis desaprova.",
+          "efeitos": { "lei": "culto_tolerado", "amizade": { "maelis": -50 } } },
+        { "id": "expulsar", "nome": "Expulsar de Valdren", "descricao": "Eles somem pela estrada. O povo respira aliviado (+2).",
+          "efeitos": { "felicidade": 2 } }
+      ],
+      "conselho": {
+        "marechal": { "apoia": "prender", "fala": "Quem prega fogo acaba acendendo um." },
+        "tesoureiro": { "apoia": "tolerar", "fala": "Eles compram muita vela, sabe?" },
+        "intendente": { "apoia": "expulsar", "fala": "Que preguem para os corvos, longe daqui." }
+      } },
+    { "id": "corvin", "titulo": "Corvin quer exclusividade",
+      "requer": { "marco": "visita:corvin", "sem_lei": "exclusividade_corvin" },
+      "texto": ["Corvin propõe vir mais vezes e trazer mercadoria de longe, desde que seja o único mercador a vender em Valdren."],
+      "opcoes": [
+        { "id": "aceitar", "nome": "Aceitar o acordo", "descricao": "Lei: +5 de ouro por dia em comércio, mas os preços sobem (-2 de felicidade).",
+          "efeitos": { "lei": "exclusividade_corvin" } },
+        { "id": "negociar", "nome": "Recusar, mas cobrar pela conversa", "descricao": "Corvin paga 40 de ouro para manter a amizade.",
+          "efeitos": { "ouro": 40 } },
+        { "id": "recusar", "nome": "Mercado livre", "descricao": "O povo gosta de escolher onde compra (+1).",
+          "efeitos": { "felicidade": 1 } }
+      ],
+      "conselho": {
+        "tesoureiro": { "apoia": "aceitar", "fala": "Ouro todo dia, majestade. Todo dia!" },
+        "intendente": { "apoia": "recusar", "fala": "Com um vendedor só, o preço do sal vai às nuvens." },
+        "obras": { "apoia": "negociar", "fala": "Tire o ouro dele e deixe a porta aberta." }
+      } }
+  ]
+}

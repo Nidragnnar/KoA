@@ -62,6 +62,14 @@
     "tomada:floresta": "Sem o herdeiro por perto, as criaturas tomaram a floresta de novo.",
     "tomada:minas": "Sem o herdeiro por perto, as criaturas tomaram as minas de novo.",
 
+    "conselho_formado": "Pela primeira vez desde a Queda, Valdren teve um Conselho Real. O povo pediu, e o herdeiro aceitou ouvir.",
+    "cargo:*": "{nome} jurou servir no Conselho Real.",
+    "decisao:*": "O conselho se reuniu e o herdeiro decidiu: {nome}.",
+    "decisao:refugiados:acolher": "Uma caravana de refugiados do norte encontrou o portão de Valdren aberto. O herdeiro acolheu todos.",
+    "decisao:refugiados:recusar": "O herdeiro fechou o portão para os refugiados do norte. Naquela noite, ninguém cantou na praça.",
+    "decisao:lenhadores:patrulha": "Uma patrulha passou a guardar a estrada leste. Os lenhadores voltaram ao trabalho.",
+    "decisao:pregadores:tolerar": "O herdeiro deixou que os pregadores das cinzas falassem na praça. Maelis passou a noite em claro.",
+
     "misterio:primeiro_ato": "As peças se juntaram: a Queda das Cinzas começou dentro do castelo, pelas mãos do próprio rei. Resta saber para onde foi a Chama."
   }
 }

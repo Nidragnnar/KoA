@@ -102,6 +102,18 @@ O plano da 2.0 está em `docs/VISAO_2.0.md`.
 - **Save v6**: arquivo novo `regions.json`. Saves v1 a v5 são migrados: as regiões começam como no mapa e visitadas no dia carregado (sem abandono acumulado). Testado numa cópia do save real (v3).
 - **Testes**: 119 (16 novos da fase 11) e o roteiro com as etapas 30 a 35 (painel R, o rito no Coração, a passagem, as minas, o veio, o golem que se rende, a escolha e as Minas Arcanas).
 
+## Mouse (versão 1.3, depois da fase 11)
+
+- **Engine**: `ke::Input` lê o mouse e converte a posição da janela para a tela interna (640×360), descontando as faixas pretas do letterbox e a densidade de pixels (`definirTela`, chamado pelo `Application` a cada quadro). Cliques e roda valem um passo de lógica, como as teclas. Com a janela de depuração (F1) sob o cursor, o jogo ignora o clique.
+- **Jogo**: `Game/UI/Cliques.h` guarda as áreas clicáveis que cada painel registra ao ser desenhado; o passo seguinte consulta (`listaComMouse`: passar seleciona, clicar confirma; `cliqueFecha`: clicar fora ou no rodapé fecha). Assim o mouse usa exatamente o lugar onde a opção apareceu. O clique esquerdo fora dos menus ataca, virando o herói para o cursor.
+
+## Fase 12 — Conselho Real e decisões (versão 1.4)
+
+- **Conselho** (`Game/Kingdom/Conselho.h`): cargos, leis e casos vêm de `Data/Kingdom/conselho.json`. Regras puras (`fatorLealdade`, `efeitoNoCargo`, `lealdadeInicial`) separadas do `World`. O efeito de cada cargo entra em `World::modificadorReino`, junto com as leis; o `ModificadorDia` ganhou impostos, segurança, ouro por dia e madeira/pedra por dia, que `calcularResumo` aplica. O ouro da noite nunca deixa o cofre negativo.
+- **Casos**: `World::noiteDoConselho` (em `dormir`) forma o conselho, mexe na lealdade conforme a felicidade e, a cada `dias_entre_decisoes`, traz um caso possível (requisitos de população, era, imposto, marco e lei; casos decididos só voltam se `repetir`). `World::decidir` aplica recursos (gasta até o que houver), felicidade, população, amizade, corrupção de região, lei, imposto e a lealdade de quem apoiou ou não aquela saída, e grava o marco `decisao:<caso>:<saída>`.
+- **Save v7**: arquivo novo `council.json` (cargos, lealdade, leis, caso pendente, dia do último caso). Saves v1 a v6 começam sem conselho; ele se forma na manhã seguinte se o reino já tiver as obras.
+- **Testes**: 131 (11 novos da fase 12 e 1 do mouse) e o roteiro com as etapas 36 a 38 (mouse na pausa e no ataque, nomear pelo G, o caso que abre depois do relatório e vira lei).
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

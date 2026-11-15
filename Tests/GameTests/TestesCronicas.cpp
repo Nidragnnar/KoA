@@ -284,38 +284,38 @@ TEST(Cenarios, MontarSavesDeTeste) {
         w.equip.arma = "espada_linhagem";
         w.equip.armadura = "cota_malha";
     };
-    // Save_002: a floresta quase limpa (corrupção 31). Vencer umas criaturas, purificar o Coração, abrir as minas
-    // e enfrentar o golem com o rito já aprendido (a opção "purificar" fica disponível)
+    // Save_002: o conselho acabou de se formar, com todos os cargos vagos. Nomear pelo G (A/D e E);
+    // dormir hoje traz o primeiro caso, que abre depois do relatório da manhã
     {
         World w = vilarejo();
         reinoAvancado(w);
         equipar(w);
-        w.relogio.dia = 9;
-        w.relogio.minutos = 9 * 60;
-        w.inventario.definir("madeira", 40);  // 15 escoram a passagem das minas
-        w.inventario.definir("ouro", 300);
-        w.estadoRegioes.at("floresta") = {31.0f, 20.0f, 25.0f, 8};
-        w.entrarRegiao("floresta", {3, 17}, Direcao::Direita);
+        EXPECT_TRUE(w.conselhoFormado());
+        w.relogio.dia = 8;
+        w.relogio.minutos = 10 * 60;
+        w.ultimaDecisao = w.relogio.dia - 3;
+        w.inventario.definir("ouro", 200);
         w.tirarEventos();
         gravar(w, "Save_002");
     }
-    // Save_003: diante do golem, nas minas já abertas, sem a floresta purificada ("purificar" bloqueada).
-    // A floresta está abandonada há 5 dias (corrupção 83): dormir hoje a deixa tomada pelas criaturas.
-    // 10 cristais e 300 de ouro para testar a forja (nível 3) no vilarejo.
+    // Save_003: conselho completo e um caso esperando (G). Oswin leal, Edda satisfeita, Tilda desconfiada
+    // e Bram descontente (o cargo dele não rende). Imposto alto: o protesto pode aparecer nos próximos casos.
     {
         World w = vilarejo();
         reinoAvancado(w);
         equipar(w);
-        w.relogio.dia = 12;
-        w.relogio.minutos = 18 * 60 + 30;
-        w.inventario.definir("ouro", 300);
-        w.inventario.definir("cristal", 10);
-        w.marcar("minas_abertas", "", true);
-        w.visitadas.insert("minas");
-        w.marcar("visitou:minas", "Minas Abandonadas", true);
-        w.estadoRegioes.at("floresta") = {83.0f, 0.0f, 8.0f, 7};
-        w.estadoRegioes.at("minas") = {80.0f, 0.0f, 0.0f, 12};
-        w.entrarRegiao("minas", {25, 2}, Direcao::Baixo);
+        w.relogio.dia = 11;
+        w.relogio.minutos = 9 * 60;
+        const std::pair<const char*, const char*> cargos[] = {{"marechal", "oswin"}, {"tesoureiro", "edda"}, {"intendente", "tilda"}, {"obras", "bram"}};
+        for (const auto& [c, npc] : cargos) ASSERT_TRUE(w.nomear(c, npc));
+        w.lealdade["oswin"] = 78;
+        w.lealdade["edda"] = 55;
+        w.lealdade["tilda"] = 32;
+        w.lealdade["bram"] = 18;
+        w.estado.imposto = Imposto::Alto;
+        w.inventario.definir("ouro", 200);
+        w.inventario.definir("comida", 60);
+        w.trazerDecisao("refugiados");
         w.tirarEventos();
         gravar(w, "Save_003");
     }

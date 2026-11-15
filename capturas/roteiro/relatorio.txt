@@ -161,4 +161,16 @@ captura: 55_terras_do_reino
 captura: 56_pausa_mouse
 [OK] clicar em Continuar fecha a pausa
 [OK] o clique esquerdo ataca virado para o cursor
+[OK] com as obras de pé, o povo pediu um Conselho Real
+[OK] G abre o Conselho Real
+captura: 57_conselho_escolhendo
+[OK] A/D e E nomeiam Oswin Marechal
+[OK] o Marechal traz segurança (4)
+captura: 58_conselho
+[OK] G fecha o conselho
+[OK] o caso do conselho abre depois do relatório
+captura: 59_decisao
+[OK] E decide: a patrulha vira lei (custou 40 de ouro)
+[OK] Oswin, que pediu a patrulha, ficou mais leal
+captura: 60_conselho_com_lei
 RESULTADO: 0 falha(s)

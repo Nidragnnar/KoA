@@ -32,14 +32,14 @@ ResumoReino calcularResumo(const Kingdom& k, const GameData& dados, const Estado
         pedra += nv->efeito("pedra_dia");
     }
     r.populacaoMax = e.populacaoBase + static_cast<int>(pop);
-    r.seguranca = static_cast<int>(seguranca);
+    r.seguranca = std::max(0, static_cast<int>(seguranca) + mod.seguranca);
     r.comidaProduzida = static_cast<int>(std::round(comida * mod.comida));
     r.comidaConsumida = static_cast<int>(std::ceil(e.populacao * mod.consumo));  // cada morador come 1 por dia
     static const int porMorador[] = {1, 2, 3};
-    r.impostos = e.populacao * porMorador[static_cast<int>(e.imposto)];
-    r.ouroProducao = static_cast<int>(std::round(ouro * mod.ouro));
-    r.madeiraDia = static_cast<int>(madeira);
-    r.pedraDia = static_cast<int>(pedra);
+    r.impostos = static_cast<int>(std::round(e.populacao * porMorador[static_cast<int>(e.imposto)] * mod.impostos));
+    r.ouroProducao = static_cast<int>(std::round(ouro * mod.ouro)) + mod.ouroDia;  // pode ficar negativo (uma patrulha custa)
+    r.madeiraDia = static_cast<int>(madeira) + mod.madeiraDia;
+    r.pedraDia = static_cast<int>(pedra) + mod.pedraDia;
     // Felicidade: base sombria + construções + impostos + proteção
     static const float porImposto[] = {10.0f, 0.0f, -12.0f};
     float alvo = 35.0f + felicidade + porImposto[static_cast<int>(e.imposto)] + mod.felicidade;
@@ -55,8 +55,9 @@ RelatorioDia simularDia(const Kingdom& k, const GameData& dados, EstadoReino& e,
     const ResumoReino r = calcularResumo(k, dados, e, mod);
 
     // Ouro, madeira e pedra
-    const int ouro = r.impostos + r.ouroProducao;
-    inv.adicionar("ouro", ouro);
+    const int ouro = std::max(r.impostos + r.ouroProducao, -inv.quantidade("ouro"));  // nunca deixa o cofre negativo
+    if (ouro >= 0) inv.adicionar("ouro", ouro);
+    else inv.remover("ouro", -ouro);
     rel.variacoes.push_back({"ouro", ouro});
     if (r.madeiraDia) inv.adicionar("madeira", r.madeiraDia), rel.variacoes.push_back({"madeira", r.madeiraDia});
     if (r.pedraDia) inv.adicionar("pedra", r.pedraDia), rel.variacoes.push_back({"pedra", r.pedraDia});

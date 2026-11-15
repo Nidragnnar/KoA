@@ -9,6 +9,7 @@
 
 #include "Game/Combat/Combate.h"
 #include "Game/Inventory/Inventory.h"
+#include "Game/Kingdom/Conselho.h"
 #include "Game/Kingdom/Estacoes.h"
 #include "Game/Lore/Lore.h"
 #include "Game/NPC/Npc.h"
@@ -61,6 +62,7 @@ struct GameData {
     Lore lore;  // Crônicas, títulos e pistas da Queda
     DadosEstacoes estacoes;  // estações, acontecimentos raros e o festival
     std::map<std::string, EscolhaDef> escolhas;  // fase 11: chefes que se rendem
+    DadosConselho conselho;                      // fase 12: cargos, leis e decisões políticas
 
     const InimigoDef* inimigoPorLetra(char c) const {
         for (const auto& [id, d] : inimigos)

@@ -117,7 +117,7 @@ void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
     // Dica de controles nos primeiros segundos
     if (tempoDica_ > 0.0f) {
         const float a = std::min(1.0f, tempoDica_);
-        const std::string dica = "WASD andar  E interagir  clique atacar  B obras  K reino  R terras  L diário  C crônicas";
+        const std::string dica = "WASD andar  E interagir  clique atacar  B obras  K reino  R terras  G conselho  L diário  C crônicas";
         f_.desenharCentralizado(r, dica, {320, 348}, {0.85f, 0.82f, 0.75f, a});
     }
     (void)tempo;
@@ -344,6 +344,14 @@ void Hud::combate(ke::Renderer2D& r, const World& w, float tempo) {
         const float a = 0.8f + 0.2f * std::sin(tempo * 3.0f);
         r.retangulo({6, 108 + dy}, {static_cast<float>(f_.largura(texto)) + 10, 11}, {0.05f, 0.04f, 0.04f, 0.7f});
         f_.desenhar(r, texto, {11, 110 + dy}, cor::ouro * glm::vec4(a, a, a, 1));
+    }
+    // Fase 12: caso do conselho esperando (canto direito, embaixo da data)
+    if (w.decisaoAtual()) {
+        const std::string t = "O conselho espera sua decisão (G)";
+        const float a = 0.8f + 0.2f * std::sin(tempo * 3.0f);
+        const float l = static_cast<float>(f_.largura(t)) + 10;
+        r.retangulo({634 - l, 63}, {l, 11}, {0.05f, 0.04f, 0.04f, 0.7f});
+        f_.desenhar(r, t, {639 - l, 65}, cor::ouro * glm::vec4(a, a, a, 1));
     }
     // Missões ativas (até 3), na coluna da esquerda
     const auto ativas = w.missoesAtivas();
@@ -631,6 +639,152 @@ void Hud::menuPausa(ke::Renderer2D& r, const std::vector<std::string>& opcoes, i
         cliques.area({p.x + 10, y - 7}, {140, 16}, static_cast<int>(i));
         f_.desenharCentralizado(r, opcoes[i], {320, y}, s ? cor::ouro : cor::texto);
     }
+}
+
+// ---------- Fase 12: o Conselho Real e as decisões ----------
+
+std::string Hud::textoEfeito(const CargoDef& c, float v) const {
+    if (c.efeito == "seguranca") return std::format("+{} de segurança", static_cast<int>(std::round(v)));
+    if (c.efeito == "impostos") return std::format("+{}% de impostos", static_cast<int>(std::round(v * 100)));
+    if (c.efeito == "comida") return std::format("+{}% de comida", static_cast<int>(std::round(v * 100)));
+    return std::format("+{} de madeira e pedra por noite", static_cast<int>(std::round(v)));
+}
+
+void Hud::painelConselho(ke::Renderer2D& r, const World& w, int sel, const std::string& proposto, float tempo) {
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.45f});
+    const glm::vec2 p{80, 22}, s{480, 316};
+    desenharPainel(r, p, s);
+    painelClicavel(p, s);
+    f_.desenharCentralizado(r, "Conselho Real", {320, p.y + 12}, cor::ouro, true, 1);
+    const std::string rodape = "W/S cargo   A/D conselheiro   E nomear   G ou Esc fechar";
+    if (!w.conselhoFormado()) {
+        float y = p.y + 50;
+        const std::string t = std::format("Valdren ainda não tem um conselho. Quando o reino tiver {} obras de pé, o povo pedirá um.",
+                                          dados_.conselho.obrasParaFormar);
+        for (const auto& l : quebrarLinhas(f_, t, static_cast<int>(s.x) - 60)) f_.desenharCentralizado(r, l, {320, y}, cor::texto), y += 12;
+        f_.desenharCentralizado(r, "G ou Esc fechar", {320, p.y + s.y - 12}, cor::apagado);
+        rodapeFechar("G ou Esc fechar", {320, p.y + s.y - 12});
+        return;
+    }
+    f_.desenharCentralizado(r, "Contente, rende muito. Descontente, faz o mínimo.", {320, p.y + 25}, cor::apagado);
+    const float xR = p.x + 16, xO = p.x + 190;
+    float y = p.y + 42;
+    const auto& cargos = dados_.conselho.cargos;
+    for (size_t i = 0; i < cargos.size(); ++i) {
+        const CargoDef& c = cargos[i];
+        const bool marcada = static_cast<int>(i) == sel;
+        const std::string atual = w.ocupante(c.id);
+        // Na linha selecionada aparece o candidato que o herdeiro está olhando
+        const std::string quem = marcada ? proposto : atual;
+        const bool mudando = marcada && proposto != atual;
+        if (marcada) r.retangulo({p.x + 8, y - 4}, {s.x - 16, 45}, {0.45f, 0.36f, 0.22f, 0.45f});
+        cliques.area({p.x + 8, y - 4}, {s.x - 16, 45}, static_cast<int>(i));
+        f_.desenhar(r, c.nome, {xR, y}, cor::ouro);
+        const std::string nome = quem.empty() ? "vago" : dados_.npcs.at(quem).nome;
+        const std::string seletor = "< " + nome + " >";
+        const float brilho = mudando ? 0.85f + 0.15f * std::sin(tempo * 5.0f) : 1.0f;
+        f_.desenhar(r, seletor, {xO, y}, mudando ? cor::ouro * glm::vec4(brilho, brilho, brilho, 1) : quem.empty() ? cor::apagado : cor::texto);
+        cliques.area({xO - 4, y - 3}, {14, 13}, 300 + static_cast<int>(i));
+        cliques.area({xO + f_.largura(seletor) - 10.0f, y - 3}, {14, 13}, 310 + static_cast<int>(i));
+        if (mudando) f_.desenhar(r, "E nomeia", {xO + f_.largura(seletor) + 10.0f, y}, cor::ouro);
+        y += 12;
+        f_.desenhar(r, c.descricao, {xR + 6, y}, cor::apagado);
+        if (!quem.empty()) {
+            const float apt = c.aptidaoDe(quem);
+            const std::string oficio = apt >= 0.8f ? "no ofício certo" : apt <= 0.4f ? "fora do ofício" : "dá conta";
+            f_.desenhar(r, oficio, {p.x + s.x - 16 - f_.largura(oficio), y}, apt >= 0.8f ? cor::bom : cor::apagado);
+        }
+        y += 12;
+        if (!quem.empty()) {
+            // Lealdade em palavra e barra (sem número: só o efeito tem número)
+            const auto it = w.lealdade.find(quem);
+            const Relacionamento* rel = nullptr;
+            for (auto [e, m, rr] : w.reg.view<const Morador, const Relacionamento>().each())
+                if (m.id == quem) rel = &rr;
+            const int l = it != w.lealdade.end() ? it->second : lealdadeInicial(rel ? rel->afinidade : 0);
+            const glm::vec4 cl = l >= 50 ? cor::bom : l >= regra::LEALDADE_INSATISFEITO ? cor::ouro : cor::ruim;
+            f_.desenhar(r, palavraLealdade(l), {xR + 6, y}, cl);
+            barra(r, {xR + 16.0f + f_.largura("Insatisfeito"), y + 1}, 60, l / 100.0f, cl);
+            const std::string ef = textoEfeito(c, efeitoNoCargo(c, quem, l));
+            f_.desenhar(r, ef, {p.x + s.x - 16 - f_.largura(ef), y}, fatorLealdade(l) > 0.0f ? cor::bom : cor::ruim);
+        } else {
+            f_.desenhar(r, "Ninguém no cargo: ele não rende nada.", {xR + 6, y}, cor::apagado);
+        }
+        y += 22;
+    }
+    // Leis valendo e o caso pendente
+    std::string leis;
+    for (const auto& id : w.leis)
+        if (const auto it = dados_.conselho.leis.find(id); it != dados_.conselho.leis.end()) leis += (leis.empty() ? "" : ", ") + it->second.nome;
+    f_.desenhar(r, "Leis", {xR, y}, cor::ouro);
+    for (const auto& l : quebrarLinhas(f_, leis.empty() ? "nenhuma" : leis, static_cast<int>(s.x) - 90))
+        f_.desenhar(r, l, {xR + 60, y}, leis.empty() ? cor::apagado : cor::texto), y += 11;
+    y += 6;
+    const int n = static_cast<int>(cargos.size());
+    if (const DecisaoDef* d = w.decisaoAtual()) {
+        const bool marcada = sel == n;
+        if (marcada) r.retangulo({p.x + 8, y - 4}, {s.x - 16, 14}, {0.45f, 0.36f, 0.22f, 0.45f});
+        cliques.area({p.x + 8, y - 4}, {s.x - 16, 14}, n);
+        const float pulso = 0.8f + 0.2f * std::sin(tempo * 4.0f);
+        f_.desenhar(r, "Caso esperando: " + d->titulo + " (E)", {xR, y}, cor::ouro * glm::vec4(pulso, pulso, pulso, 1));
+    } else {
+        const int faltam = std::clamp(dados_.conselho.diasEntreDecisoes - (w.relogio.dia - w.ultimaDecisao), 1, dados_.conselho.diasEntreDecisoes);
+        f_.desenhar(r, std::format("Nenhum caso esperando. O conselho se reúne em uns {} dia{}.", faltam, faltam > 1 ? "s" : ""), {xR, y},
+                    cor::apagado);
+    }
+    f_.desenharCentralizado(r, rodape, {320, p.y + s.y - 12}, cor::apagado);
+    rodapeFechar("G ou Esc fechar", {320 + f_.largura("W/S cargo   A/D conselheiro   E nomear   ") / 2.0f, p.y + s.y - 12});
+}
+
+void Hud::painelDecisao(ke::Renderer2D& r, const World& w, const DecisaoDef& d, int sel, float tempo) {
+    r.retangulo({0, 0}, {640, 360}, {0.03f, 0.02f, 0.02f, 0.5f});
+    const int largura = 400;
+    std::vector<std::string> texto;
+    for (const auto& par : d.texto)
+        for (const auto& l : quebrarLinhas(f_, par, largura)) texto.push_back(l);
+    // Cada opção: nome, descrição e as falas de quem a apoia no conselho
+    struct Bloco {
+        std::vector<std::string> desc, falas;
+    };
+    std::vector<Bloco> blocos;
+    float altOpcoes = 0.0f;
+    for (const auto& o : d.opcoes) {
+        Bloco b;
+        b.desc = quebrarLinhas(f_, o.descricao, largura - 20);
+        for (const auto& [cargo, op] : d.conselho) {
+            const std::string npc = w.ocupante(cargo);
+            if (op.first != o.id || npc.empty()) continue;
+            const auto it = w.lealdade.find(npc);
+            const bool fala = it == w.lealdade.end() || it->second >= regra::LEALDADE_INSATISFEITO;  // descontente nem opina
+            for (const auto& l : quebrarLinhas(f_, dados_.npcs.at(npc).nome + ": " + (fala ? "\"" + op.second + "\"" : "(dá de ombros)"), largura - 30))
+                b.falas.push_back(l);
+        }
+        altOpcoes += 15.0f + b.desc.size() * 10.0f + b.falas.size() * 10.0f + 7.0f;
+        blocos.push_back(std::move(b));
+    }
+    const float alt = std::min(352.0f, 46.0f + texto.size() * 11.0f + 8.0f + altOpcoes + 20.0f);
+    const glm::vec2 p{100, std::floor(180 - alt / 2)}, s{440, alt};
+    desenharPainel(r, p, s);
+    painelClicavel(p, s);
+    const float pulso = 0.85f + 0.15f * std::sin(tempo * 3.0f);
+    f_.desenharCentralizado(r, "O conselho pede sua decisão", {320, p.y + 11}, cor::apagado);
+    f_.desenharCentralizado(r, d.titulo, {320, p.y + 25}, cor::ouro * glm::vec4(pulso, pulso, pulso, 1), true, 1);
+    float y = p.y + 40;
+    for (const auto& l : texto) f_.desenhar(r, l, {p.x + 20, y}, cor::texto), y += 11;
+    y += 8;
+    for (size_t i = 0; i < d.opcoes.size(); ++i) {
+        const Bloco& b = blocos[i];
+        const bool marcada = static_cast<int>(i) == sel;
+        const float h = 15.0f + b.desc.size() * 10.0f + b.falas.size() * 10.0f;
+        if (marcada) r.retangulo({p.x + 10, y - 4}, {s.x - 20, h + 2}, {0.45f, 0.36f, 0.22f, 0.45f});
+        cliques.area({p.x + 10, y - 4}, {s.x - 20, h + 2}, static_cast<int>(i));
+        f_.desenhar(r, d.opcoes[i].nome, {p.x + 18, y}, marcada ? cor::ouro : cor::texto);
+        y += 13;
+        for (const auto& l : b.desc) f_.desenhar(r, l, {p.x + 28, y}, cor::apagado), y += 10;
+        for (const auto& l : b.falas) f_.desenhar(r, l, {p.x + 32, y}, cor::bom), y += 10;
+        y += 9;
+    }
+    f_.desenharCentralizado(r, "W/S ou mouse escolher   E ou clique decidir   Esc decidir depois (G)", {320, p.y + s.y - 11}, cor::apagado);
 }
 
 // ---------- Fase 11: terras do reino e chefes com escolha ----------

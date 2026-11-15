@@ -55,10 +55,14 @@ A 1.0 provou a base (reino, vida, RPG, eras). A 2.0 dá ao jogo a sua identidade
 - Missões novas: O Coração da Floresta (Maelis), As Minas de Valdren (Bram) e O Gigante das Minas (Oswin). Falas que reagem à purificação, às minas, ao cristal, à terra tomada e ao pacto.
 - Fica para depois: o Cavaleiro Caído continua só com "derrotar", porque a história da Alta Fantasia depende dele.
 
-### Fase 12 — Conselho real e decisões
-- Conselho formado pelos moradores (ex.: Oswin como Marechal, Bram como Mestre das Obras), começando com 3 ou 4 cargos.
-- Eventos políticos com 2 ou 3 escolhas (nobre pede menos impostos, vila pede proteção...).
-- Conselheiros com opinião e lealdade: podem discordar e, mais tarde, esconder coisas.
+### Fase 12 — Conselho real e decisões (feita, versão 1.4)
+- **Conselho Real** (tecla **G**, `Data/Kingdom/conselho.json`): forma-se quando o reino tem 4 obras de pé. São 4 cargos: Marechal (segurança), Mestre da Moeda (impostos), Intendente do Celeiro (comida) e Mestre das Obras (madeira e pedra por noite). Cada morador tem jeito maior ou menor para cada cargo (Oswin nasceu Marechal, Bram é das Obras, Tilda é do Celeiro, Edda é da Moeda). A/D escolhe e E nomeia. Quem perde o cargo fica magoado (-20 de lealdade).
+- **Lealdade** (palavra e barra, sem número): começa pela amizade. Sobe ao conversar (+2 por dia), com o povo feliz e quando o herdeiro segue o conselho da pessoa (+8); cai quando ele decide contra (-6) e com o povo infeliz. Com 50 ou mais, o conselheiro rende tudo; entre 25 e 49, rende 60%; abaixo de 25 fica descontente, não rende nada e não opina. O relatório da manhã avisa.
+- **Casos políticos** a cada 3 dias, sorteados entre os possíveis: lenhadores pedem proteção, refugiados no portão, nobre pede isenção, briga por terra, protesto contra o imposto alto (pode voltar), pregadores das cinzas e a exclusividade de Corvin. Cada um tem 3 saídas, com o que custa e o que rende escrito, e a fala de cada conselheiro embaixo da saída que ele apoia. O caso abre depois do relatório da manhã; Esc deixa para depois e ele espera no G.
+- **Leis** que valem todo dia: patrulha da estrada, isenção dos Vael, pregadores tolerados e exclusividade de Corvin.
+- Páginas nas Crônicas (o conselho, cada nomeação, cada decisão) e falas de quem assume o cargo natural.
+- Também nesta versão: o mouse ataca (virando para o cursor) e escolhe nos menus.
+- Fica para depois: conselheiro descontente que **esconde coisas** (desvia ouro, mente no relatório) e cargos novos com a era.
 
 ### Fase 13 — Defesa do reino
 - Aviso de horda com dias para se preparar.
@@ -82,6 +86,6 @@ A 1.0 provou a base (reino, vida, RPG, eras). A 2.0 dá ao jogo a sua identidade
 
 ## Notas técnicas
 
-- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`).
+- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) e a 12 para a v7 (`council.json`).
 - Conteúdo (crônicas, títulos, eventos, cargos, estações) em JSON dentro de `Data/`, como missões e diálogos hoje.
 - O roteiro ponta a ponta ganha etapas a cada fase; a arte nova vem do NidraIA em sessão separada.

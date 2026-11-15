@@ -18,6 +18,11 @@ struct ModificadorDia {
     float ouro = 1.0f;        // ouro das construções (comércio)
     float felicidade = 0.0f;  // somado ao alvo de felicidade
     int viajantes = 0;        // famílias a mais quando o povo está feliz e há casa
+    // Fase 12: conselho e leis
+    float impostos = 1.0f;    // multiplica os impostos (Mestre da Moeda)
+    int seguranca = 0;        // somado à segurança (Marechal, patrulha)
+    int ouroDia = 0;          // ouro a mais (ou a menos) por noite (leis)
+    int madeiraDia = 0, pedraDia = 0;  // Mestre das Obras
 };
 
 struct EstacaoDef {

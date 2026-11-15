@@ -57,11 +57,13 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
     for (const auto& [id, e] : d.regioes)
         jRegioes[id] = {{"corrupcao", e.corrupcao}, {"seguranca", e.seguranca}, {"prosperidade", e.prosperidade}, {"ultima_visita", e.ultimaVisita}};
     json regioes = {{"regioes", jRegioes}};
+    json conselho = {{"cargos", d.conselho}, {"lealdade", d.lealdade}, {"leis", d.leis}, {"decisao_pendente", d.decisaoPendente},
+                     {"ultima_decisao", d.ultimaDecisao}};
 
     const std::pair<const char*, const json*> arquivos[] = {
         {"player.json", &player}, {"inventory.json", &inv}, {"kingdom.json", &reino}, {"world.json", &mundo},
         {"npcs.json", &jNpcs}, {"relationships.json", &jRel}, {"quests.json", &quests}, {"chronicles.json", &cronicas},
-        {"regions.json", &regioes},
+        {"regions.json", &regioes}, {"council.json", &conselho},
         {"metadata.json", &meta}};  // metadata por último: só existe save "válido" quando tudo foi gravado
     for (const auto& [nome, conteudo] : arquivos) {
         if (!ke::fs::gravarTextoSeguro(dir / nome, conteudo->dump(2))) {
@@ -106,6 +108,11 @@ json SaveSystem::migrar(json tudo, int deVersao) {
         tudo["regions"] = {{"regioes", json::object()}, {"padrao", true}};
         deVersao = 6;
     }
+    if (deVersao < 7) {
+        // v6 não tinha conselho: começa sem conselheiros, sem leis e sem caso pendente
+        tudo["council"] = {{"cargos", json::object()}, {"lealdade", json::object()}, {"leis", json::array()}};
+        deVersao = 7;
+    }
     tudo["metadata"]["versao_formato"] = deVersao;
     return tudo;
 }
@@ -132,10 +139,11 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
         }
         // Arquivos que só existem a partir da v2
         if (versao >= 2) {
-            for (const char* nome : {"npcs", "relationships", "quests", "chronicles", "regions"}) {
+            for (const char* nome : {"npcs", "relationships", "quests", "chronicles", "regions", "council"}) {
                 if (std::string(nome) == "quests" && versao < 4) continue;
                 if (std::string(nome) == "chronicles" && versao < 5) continue;
                 if (std::string(nome) == "regions" && versao < 6) continue;
+                if (std::string(nome) == "council" && versao < 7) continue;
                 const auto texto = ke::fs::lerTexto(dir / (std::string(nome) + ".json"));
                 tudo[nome] = texto ? json::parse(*texto, nullptr, false) : json();
                 if (tudo[nome].is_discarded() || !tudo[nome].is_object()) {
@@ -182,6 +190,16 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
             e.ultimaVisita = std::max(1, je.value("ultima_visita", 1));
             d.regioes[id] = e;
         }
+        const json& jcons = tudo["council"];
+        const json cargos = jcons.value("cargos", json::object());  // variável: .items() de temporário quebra
+        for (const auto& [cargo, npc] : cargos.items())
+            if (npc.is_string() && !npc.get<std::string>().empty()) d.conselho[cargo] = npc.get<std::string>();
+        const json leal = jcons.value("lealdade", json::object());
+        for (const auto& [npc, l] : leal.items())
+            if (l.is_number_integer()) d.lealdade[npc] = std::clamp(l.get<int>(), 0, 100);
+        d.leis = jcons.value("leis", std::vector<std::string>{});
+        d.decisaoPendente = jcons.value("decisao_pendente", "");
+        d.ultimaDecisao = std::max(0, jcons.value("ultima_decisao", 0));
         for (const auto& [id, q] : tudo["inventory"].items())
             if (q.is_number_integer()) d.inventario[id] = std::max(0, q.get<int>());
         const json& r = tudo["kingdom"];

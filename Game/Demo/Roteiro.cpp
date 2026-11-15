@@ -171,6 +171,11 @@ void Roteiro::noMundo(WorldScene& cena) {
     }
 
     if (fase_ == 1) {
+        // Fase 12: um caso do conselho abre sozinho depois do relatório da manhã; antes da etapa dele, fica para depois
+        if (cena.decisaoAberta() && etapa_ < 38) {
+            in.simularToque(SDL_SCANCODE_ESCAPE);
+            return;
+        }
         switch (etapa_) {
         case 0: {
             if (quadro_ < 40) return;
@@ -891,7 +896,60 @@ void Roteiro::noMundo(WorldScene& cena) {
             }
             return;
         }
-        case 37:
+        // ---------- Fase 12: o Conselho Real e as decisões ----------
+        case 37: {  // G: três cargos já nomeados; o Marechal o herdeiro escolhe com A/D e E
+            if (quadro_ == 1) {
+                verificar(w.conselhoFormado(), "com as obras de pé, o povo pediu um Conselho Real");
+                w.decisaoPendente.clear();
+                for (const auto& [c, npc] : {std::pair{"tesoureiro", "edda"}, {"intendente", "tilda"}, {"obras", "bram"}}) w.nomear(c, npc);
+                w.nomear("marechal", "");
+                w.relogio.minutos = 10 * 60;
+            }
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_G);
+            // vago → Bram → Edda → Maelis → Oswin
+            if (quadro_ == 10 || quadro_ == 12 || quadro_ == 14 || quadro_ == 16) in.simularToque(SDL_SCANCODE_D);
+            if (quadro_ == 25) {
+                verificar(cena.conselhoAberto(), "G abre o Conselho Real");
+                capturar("57_conselho_escolhendo");
+            }
+            if (quadro_ == 27) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 40) {
+                verificar(w.ocupante("marechal") == "oswin", "A/D e E nomeiam Oswin Marechal");
+                verificar(w.resumo().seguranca > 0, std::format("o Marechal traz segurança ({})", w.resumo().seguranca));
+                capturar("58_conselho");
+            }
+            if (quadro_ == 42) in.simularToque(SDL_SCANCODE_G);
+            if (quadro_ == 50) {
+                verificar(!cena.conselhoAberto(), "G fecha o conselho");
+                proxima();
+            }
+            return;
+        }
+        case 38: {  // o caso chega de manhã, abre depois do relatório, e a decisão vira lei
+            if (quadro_ == 1) {
+                w.dormir(false);
+                w.trazerDecisao("lenhadores");  // a mesa do conselho naquela manhã
+                w.inventario.definir("ouro", 200);
+                lealdadeAntes_ = w.lealdade.at("oswin");
+            }
+            if (quadro_ == 10) in.simularToque(SDL_SCANCODE_E);  // fecha o relatório da manhã
+            if (quadro_ == 30) {
+                verificar(cena.decisaoAberta(), "o caso do conselho abre depois do relatório");
+                capturar("59_decisao");
+            }
+            if (quadro_ == 32) in.simularToque(SDL_SCANCODE_E);  // 1ª opção: a patrulha
+            if (quadro_ == 50) {
+                verificar(!cena.decisaoAberta() && w.leis.contains("patrulha") && w.inventario.quantidade("ouro") == 160,
+                          "E decide: a patrulha vira lei (custou 40 de ouro)");
+                verificar(w.lealdade.at("oswin") > lealdadeAntes_, "Oswin, que pediu a patrulha, ficou mais leal");
+                in.simularToque(SDL_SCANCODE_G);
+            }
+            if (quadro_ == 65) capturar("60_conselho_com_lei");
+            if (quadro_ == 67) in.simularToque(SDL_SCANCODE_G);
+            if (quadro_ == 75) proxima();
+            return;
+        }
+        case 39:
             w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();
