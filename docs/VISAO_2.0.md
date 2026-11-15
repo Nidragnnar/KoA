@@ -40,10 +40,11 @@ A 1.0 provou a base (reino, vida, RPG, eras). A 2.0 dá ao jogo a sua identidade
 - **Monumentos:** Memorial das Cinzas (depois da casa), Jardim dos Heróis (era 1) e Estátua do Herdeiro (depois do Cavaleiro). A inscrição de cada um mostra fatos reais da campanha.
 - **Começo do mistério:** 6 fragmentos da Queda (`Data/Lore/pistas.json`): no castelo, no cemitério, no poço (era 1), na floresta, na cripta (depois do Cavaleiro) e uma carta vendida pelo mercador. Juntos, revelam o primeiro ato: o rei Aldric abriu a Torre do Selo, e a Chama consumiu o reino.
 
-### Fase 10 — Estações e acontecimentos
-- Estações mudam a economia: plantio e viajantes na primavera, comércio no verão, colheita no outono, escassez e criaturas mais fortes no inverno.
-- Eventos raros: lua de sangue, aurora mágica, chuva de meteoros.
-- **O primeiro festival:** poucas pessoas e uma fogueira; ele cresce a cada era.
+### Fase 10 — Estações e acontecimentos (feita, versão 1.2)
+- **Estações de 7 dias** (o ano tem 28), definidas em `Data/World/estacoes.json`: primavera com ânimo (+1 de felicidade), verão com comércio (+25% de ouro das construções e o mercador a cada 2 dias), outono com colheita (hortas +50%), inverno com escassez (hortas a 40%, -3 de felicidade, criaturas +30%). O painel K mostra o efeito da estação; o relatório da manhã avisa quando o inverno está chegando.
+- **Acontecimentos raros** (no máximo um por noite, sorteado de forma fixa pelo dia): Lua de Sangue (noite vermelha, criaturas mais fortes com o dobro de ouro), Aurora Mágica (céu dançando, +6 de felicidade) e Chuva de Meteoros (uma estrela cai perto do vilarejo e vale 40 de ouro). O HUD avisa de manhã ("Esta noite: ...").
+- **Festival da Colheita** (último dia do outono, 17:00 às 23:00): o povo larga a rotina e vai para a praça; conversar vale amizade em dobro; no dia seguinte, +10 de felicidade. A festa cresce com a era: lanternas e fogueira (cinzas), barracas (Despertar), bandeirolas e banquete (Renascido), fogos (Alta Fantasia). Cada festival ganha uma página nas Crônicas com o tom da era.
+- Primeiro verão, outono e inverno, cada acontecimento raro e cada ano novo também entram nas Crônicas.
 
 ### Fase 11 — Regiões vivas
 - Cada região com **corrupção, segurança e prosperidade**.

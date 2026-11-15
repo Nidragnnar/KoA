@@ -85,9 +85,10 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
         }
 
     // Enfeites só aparecem quando a era chega ao lugar deles
+    // (e os da festa, só durante o festival)
     auto escondido = [&](entt::entity e, glm::vec2 p) {
         const auto* en = w.reg.try_get<Enfeite>(e);
-        return en && w.eraEm(p) < en->eraMin;
+        return en && (w.eraEm(p) < en->eraMin || (en->festival && !w.festivalAgora()));
     };
 
     // 2) Sombras no chão
@@ -185,7 +186,7 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     r.definirMistura(ke::Mistura::Aditiva);
     const ke::SpriteRegion& luz = rec_.regiao("luz");
     for (auto [e, p, l] : w.reg.view<const Posicao, const Luz>().each()) {
-        if (!visivel(p.v)) continue;
+        if (!visivel(p.v) || escondido(e, p.v)) continue;
         const float cint = 0.85f + 0.15f * std::sin(tempo * 9.0f + p.v.x) * std::sin(tempo * 5.3f + p.v.y);
         const float raio = l.raio * cint;
         r.sprite(luz, p.v + l.desloc - raio, glm::vec4(l.cor, 0.38f * cint), false, raio * 2.0f / 64.0f);
@@ -241,7 +242,7 @@ void WorldRenderer::desenharLuzes(ke::Renderer2D& r, const World& w, const ke::C
     for (auto [e, p, l] : w.reg.view<const Posicao, const Luz>().each()) {
         if (p.v.x < canto.x - 200 || p.v.x > canto.x + cam.vista.x + 200 || p.v.y < canto.y - 200 || p.v.y > canto.y + cam.vista.y + 200)
             continue;
-        if (const auto* en = w.reg.try_get<Enfeite>(e); en && w.eraEm(p.v) < en->eraMin) continue;
+        if (const auto* en = w.reg.try_get<Enfeite>(e); en && (w.eraEm(p.v) < en->eraMin || (en->festival && !w.festivalAgora()))) continue;
         const float cint = 0.9f + 0.1f * std::sin(tempo * 8.0f + p.v.x) * std::sin(tempo * 4.7f + p.v.y);
         const float raio = l.raio * 1.8f * cint;
         // Na Alta Fantasia as tochas viram chama mágica azul

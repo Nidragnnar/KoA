@@ -114,6 +114,9 @@ private:
     int selLoja_ = 0;
     float tituloNovo_ = 0.0f;  // anúncio de título conquistado
     std::string nomeTitulo_;
+    // Fase 10
+    float tempoFolhas_ = 0.0f, tempoMeteoro_ = 0.0f, tempoFogos_ = 0.0f;
+    ke::ParticleSystem ceu_;  // fogos e estrelas cadentes: desenhados depois da escuridão da noite (brilham de verdade)
     float transicao_ = -1.0f;  // -1 = nenhuma; 0..2 = escurece, troca o dia (em 1), clareia
     bool desmaio_ = false;
     bool mostrarColisoes_ = false;

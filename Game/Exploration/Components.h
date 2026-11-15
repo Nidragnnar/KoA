@@ -70,6 +70,12 @@ struct Decoracao {
 // Enfeite que só aparece quando a era chega ao lugar dele (estandartes, lampiões, cristais)
 struct Enfeite {
     int eraMin = 1;
+    bool festival = false;  // fase 10: só aparece durante o festival
+};
+
+// Estrela caída numa noite de meteoros (vale ouro; some no dia seguinte)
+struct Meteorito {
+    int dia = 0;  // a noite em que caiu
 };
 
 // Objeto que vira outro a partir de uma era (o poço vira fonte)

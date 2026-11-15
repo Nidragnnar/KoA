@@ -37,6 +37,21 @@
     "pista:*": "Fragmento da Queda encontrado: {nome}.",
     "titulo:*": "O povo passou a chamar o herdeiro de {nome}.",
 
+    "estacao:verao": "Chegou o primeiro verão desde a volta do herdeiro. O comércio esquentou na estrada leste.",
+    "estacao:outono": "O primeiro outono trouxe colheita farta e o cheiro de pão nas casas.",
+    "estacao:inverno": "O primeiro inverno chegou. Neve caiu sobre as cinzas, e o povo se juntou perto do fogo.",
+    "ano:*": "A primavera voltou: começou o ano {nome} desde a volta do herdeiro. Valdren sobreviveu ao inverno.",
+
+    "festival_era0:*": "O Festival da Colheita do ano {nome} teve poucas pessoas, duas lanternas e uma fogueira. Mas teve risada, e isso bastou.",
+    "festival_era1:*": "No Festival da Colheita do ano {nome}, barracas voltaram à praça e as lanternas iluminaram a noite.",
+    "festival_era2:*": "O Festival da Colheita do ano {nome} encheu a praça: bandeirolas, banquete e viajantes de longe.",
+    "festival_era3:*": "No Festival da Colheita do ano {nome}, fogos mágicos coloriram o céu de Valdren até a madrugada.",
+
+    "evento:lua_sangue": "Na primeira Lua de Sangue desde a volta do herdeiro, as criaturas uivaram até o amanhecer.",
+    "evento:aurora": "Uma aurora mágica dançou sobre Valdren. Maelis disse que era a terra agradecendo.",
+    "evento:meteoros": "Estrelas riscaram o céu de Valdren numa chuva de meteoros.",
+    "estrela_caida": "O herdeiro recolheu uma estrela caída. Ainda estava morna.",
+
     "misterio:primeiro_ato": "As peças se juntaram: a Queda das Cinzas começou dentro do castelo, pelas mãos do próprio rei. Resta saber para onde foi a Chama."
   }
 }

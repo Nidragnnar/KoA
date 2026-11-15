@@ -9,6 +9,7 @@
 
 #include "Game/Combat/Combate.h"
 #include "Game/Inventory/Inventory.h"
+#include "Game/Kingdom/Estacoes.h"
 #include "Game/Lore/Lore.h"
 #include "Game/NPC/Npc.h"
 
@@ -57,6 +58,7 @@ struct GameData {
     std::vector<std::string> ordemEquipamentos;
     std::vector<MissaoDef> missoes;
     Lore lore;  // Crônicas, títulos e pistas da Queda
+    DadosEstacoes estacoes;  // estações, acontecimentos raros e o festival
 
     const InimigoDef* inimigoPorLetra(char c) const {
         for (const auto& [id, d] : inimigos)

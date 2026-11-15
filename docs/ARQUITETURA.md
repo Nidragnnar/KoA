@@ -85,6 +85,14 @@ O plano da 2.0 está em `docs/VISAO_2.0.md`.
 - **Save v5**: arquivo novo `chronicles.json`. Saves v1 a v4 são migrados, e as Crônicas são reconstruídas a partir do que já tinha acontecido (páginas sem data). Testado numa cópia do save real (v3).
 - **Testes**: 92 (13 novos da fase 9) e o roteiro com as etapas 20 a 23 (Crônicas, leitura, mercador e carta, memorial).
 
+## Fase 10 — estações e acontecimentos (versão 1.2)
+
+- **Estações** (`Game/Kingdom/Estacoes.h`, `Data/World/estacoes.json`): o relógio passou a ter estações de 7 dias, para o ano inteiro caber numa partida. Cada estação traz um `ModificadorDia` (hortas, consumo, ouro das construções, felicidade) que `calcularResumo`/`simularDia` aplicam, mais força das criaturas e o intervalo do mercador.
+- **Acontecimentos raros**: `World::eventoDoDia` sorteia pelo número do dia (hash), com requisitos de marco e era; por isso nada disso vai para o save. A Lua de Sangue tinge `luzAmbiente`; aurora, estrelas cadentes e fogos são desenhados na cena (os fogos e as estrelas numa camada de partículas própria, por cima da escuridão da noite). A estrela caída é um `Saqueavel` com `Meteorito`, recriada ao carregar enquanto não for recolhida (o marco `meteorito:<dia>` guarda isso).
+- **Festival**: dia fixo no calendário; os moradores trocam a rotina por um lugar em volta da fogueira (`itemAtual = -2`), aldeões passeiam na praça, os `Enfeite` com `festival` só aparecem na hora da festa. Falas com condição `festival` e `evento`.
+- **Balanceamento**: a simulação mostrou que um bônus de viajantes na primavera virava bola de neve (Renascido no dia 9 em vez de 18); ficou só +1 de ânimo, e o ritmo das eras voltou ao da fase 8.
+- **Testes**: 103 (10 novos da fase 10) e o roteiro com as etapas 24 a 29 (festival de dia e de noite, as três noites raras, a estrela recolhida e o inverno).
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

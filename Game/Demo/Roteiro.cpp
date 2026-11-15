@@ -164,7 +164,7 @@ void Roteiro::noMundo(WorldScene& cena) {
     World& w = cena.mundo();
     ke::Input& in = ctx_.app.input();
     ++quadro_;
-    if (++quadrosTotais_ > 60 * 320) {  // mais de 5 minutos de jogo simulado: algo travou
+    if (++quadrosTotais_ > 60 * 400) {  // mais de 6 minutos de jogo simulado: algo travou
         verificar(false, "roteiro terminou dentro do tempo limite");
         terminar();
         return;
@@ -623,7 +623,103 @@ void Roteiro::noMundo(WorldScene& cena) {
             if (quadro_ == 55) proxima();
             return;
         }
-        case 24:
+        // ---------- Fase 10: festival, acontecimentos raros e inverno ----------
+        case 24: {  // Festival da Colheita: começa às 17:00 e o povo vai para a praça
+            const auto& lugares = ctx_.dados.estacoes.festival.lugares;
+            if (quadro_ == 1) {
+                w.relogio.dia = 21;  // 7º dia do outono
+                w.relogio.minutos = 16 * 60 + 59;
+                w.posicionarMoradores();
+                w.jogador.pos = {33 * 16 + 8, 25 * 16 + 12};
+                w.jogador.dir = Direcao::Cima;
+            }
+            if (quadro_ == 720) {  // uns 12 s: tempo de todo mundo atravessar o vilarejo a pé
+                int naFesta = 0;
+                for (auto [e, m, p] : w.reg.view<const Morador, const Posicao>().each()) {
+                    const glm::ivec2 t{static_cast<int>(p.v.x) / 16, static_cast<int>(p.v.y) / 16};
+                    for (const glm::ivec2 l : lugares) naFesta += glm::length(glm::vec2(t - l)) <= 1.5f;
+                }
+                verificar(w.festivalAgora() && w.marcos.contains(std::format("festival_era{}:1", static_cast<int>(w.reino.eraAlvo()))),
+                          "às 17:00 o Festival da Colheita começa e entra nas Crônicas");
+                verificar(naFesta >= 4, std::format("os moradores foram para a praça ({} perto da fogueira)", naFesta));
+                capturar("38_festival");
+            }
+            if (quadro_ == 722) {
+                w.relogio.minutos = 21 * 60;
+                w.posicionarMoradores();
+            }
+            if (quadro_ == 870) {
+                capturar("39_festival_noite");
+                proxima();
+            }
+            return;
+        }
+        case 25: case 26: case 27: {  // as três noites raras: Lua de Sangue, aurora e chuva de meteoros
+            static const char* ids[] = {"lua_sangue", "aurora", "meteoros"};
+            static const char* fotos[] = {"40_lua_de_sangue", "41_aurora", "42_meteoros"};
+            const std::string id = ids[etapa_ - 25];
+            if (quadro_ == 1) {
+                int dia = -1;
+                for (int d = w.relogio.dia + 1; d < w.relogio.dia + 2000 && dia < 0; ++d)
+                    if (const EventoDef* ev = w.eventoDoDia(d); ev && ev->id == id) dia = d;
+                verificar(dia > 0, "existe uma noite de " + id);
+                if (dia > 0) w.relogio.dia = dia;
+                w.relogio.minutos = 21 * 60 + 30;
+                w.posicionarMoradores();
+                w.jogador.pos = {31 * 16 + 8, 24 * 16 + 12};
+            }
+            if (quadro_ == 120) {
+                verificar(w.eventoAgora(id), "à noite começa: " + id);
+                if (id == "lua_sangue") verificar(w.luzAmbiente().r > w.luzAmbiente().b, "a Lua de Sangue deixa a noite vermelha");
+                capturar(fotos[etapa_ - 25]);
+                proxima();
+            }
+            return;
+        }
+        case 28: {  // a estrela caída: recolher na manhã seguinte
+            if (quadro_ == 1) {
+                diaAntes_ = w.relogio.dia;
+                ouroAntes_ = 0;
+                w.dormir(false);
+            }
+            if (quadro_ == 10) in.simularToque(SDL_SCANCODE_E);  // fecha o relatório da manhã
+            if (quadro_ == 20) {
+                entt::entity estrela = entt::null;
+                for (auto [e, m] : w.reg.view<Meteorito>().each()) estrela = e;
+                verificar(estrela != entt::null, "uma estrela caiu perto do vilarejo");
+                if (estrela != entt::null) {
+                    w.jogador.pos = w.reg.get<Posicao>(estrela).v + glm::vec2(0, 12);
+                    w.jogador.dir = Direcao::Cima;
+                }
+                ouroAntes_ = w.inventario.quantidade("ouro");
+            }
+            if (quadro_ == 24) capturar("43_estrela_caida");
+            if (quadro_ == 26) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 50) {
+                verificar(w.inventario.quantidade("ouro") == ouroAntes_ + 40 && w.marcos.contains(std::format("meteorito:{}", diaAntes_)),
+                          "E recolhe a estrela (+40 de ouro)");
+                proxima();
+            }
+            return;
+        }
+        case 29: {  // inverno: neve, hortas fracas e criaturas mais fortes (painel K mostra)
+            if (quadro_ == 1) {
+                w.relogio.dia = 4 * 7 * ((w.relogio.dia - 1) / 28) + 23;  // 2º dia do inverno deste ano
+                w.relogio.minutos = 11 * 60;
+                w.posicionarMoradores();
+                w.jogador.pos = {31 * 16 + 8, 24 * 16 + 12};
+            }
+            if (quadro_ == 240) {
+                verificar(w.relogio.estacao() == Estacao::Inverno && w.forcaInimigos() > 1.2f, "no inverno as criaturas ficam mais fortes");
+                capturar("44_inverno");
+            }
+            if (quadro_ == 242) in.simularToque(SDL_SCANCODE_K);
+            if (quadro_ == 260) capturar("45_painel_reino_inverno");
+            if (quadro_ == 262) in.simularToque(SDL_SCANCODE_K);
+            if (quadro_ == 270) proxima();
+            return;
+        }
+        case 30:
             w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();

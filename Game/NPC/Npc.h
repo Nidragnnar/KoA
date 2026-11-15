@@ -33,6 +33,9 @@ struct CondicoesFala {
     std::string marco;     // só depois deste acontecimento
     std::string semMarco;  // só antes dele
     int pistasMin = 0;     // fragmentos da Queda já encontrados
+    // Fase 10
+    std::optional<bool> festival;  // dia (e hora) de festival
+    std::string evento;            // acontecimento da noite ("lua_sangue", "aurora"...)
 };
 
 struct EntradaFala {
@@ -106,6 +109,8 @@ struct ContextoFala {
     int era = 0;
     const std::set<std::string>* marcos = nullptr;
     int pistas = 0;
+    bool festival = false;
+    std::string evento;  // acontecimento de hoje ("" = nenhum)
 };
 
 // Primeira entrada cujas condições batem (ou nenhuma)

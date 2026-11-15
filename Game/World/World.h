@@ -52,7 +52,9 @@ struct EventoJogo {
         // Fase 7
         EraMudou,
         // Fase 9
-        Cronica, Titulo, LerPista
+        Cronica, Titulo, LerPista,
+        // Fase 10
+        EventoRaro, Festival
     };
     Tipo tipo;
     glm::vec2 pos{0.0f};
@@ -117,7 +119,7 @@ public:
     int contarConstrucoes(const std::string& def) const;
     // Guia dos primeiros dias: o que fazer agora ("" quando o herdeiro já se virou sozinho)
     std::string proximoPasso() const;
-    ResumoReino resumo() const { return calcularResumo(reino, *dados_, estado); }
+    ResumoReino resumo() const { return calcularResumo(reino, *dados_, estado, estacaoAtual().mod); }
     void sincronizarAldeoes();  // tantos aldeões quanto a população pede
 
     // Regiões (vilarejo, floresta, cripta): só a ativa vive em `mapa`/`reg`
@@ -158,6 +160,16 @@ public:
     bool monumentoLiberado(const BuildingDef& d) const { return d.requer.empty() || marcos.contains(d.requer); }
     std::vector<std::string> inscricao(const BuildingData& b) const;  // o que o monumento registra da história real
     std::vector<EntradaCronica> cronicas;
+
+    // Fase 10: estações, acontecimentos raros e o festival (tudo derivado do dia: não vai para o save)
+    const EstacaoDef& estacaoAtual() const { return dados_->estacoes.de(relogio.estacao()); }
+    const EventoDef* eventoDoDia(int dia) const;  // sorteio fixo por dia ("" nos primeiros dias e no festival)
+    const EventoDef* eventoHoje() const { return eventoDoDia(relogio.dia); }
+    bool eventoAgora(const std::string& id) const;  // o acontecimento de hoje já começou (à noite)?
+    bool festivalNoDia(int dia) const;
+    bool festivalHoje() const { return festivalNoDia(relogio.dia); }
+    bool festivalAgora() const;
+    float forcaInimigos() const;  // dano das criaturas: estação × lua de sangue
 
     std::vector<ke::AABB> obstaculos() const;
     ke::AABB caixaConstrucao(const BuildingData& b) const;
@@ -213,6 +225,10 @@ private:
     void atualizarPistas();       // fragmentos visíveis na região ativa (os já lidos somem)
     void reconstruirCronicas();   // save antigo: páginas do que já tinha acontecido
     int contarObrasProntas(bool tipos) const;
+    // Fase 10
+    void atualizarMeteorito();  // a estrela caída na noite de meteoros (some no dia seguinte)
+    void notasDaManha(int ontem);
+    int avisoEvento_ = 0, avisoFestival_ = 0;  // dia em que já foi anunciado
 
     const GameData* dados_ = nullptr;
     AlvoInteracao alvo_;

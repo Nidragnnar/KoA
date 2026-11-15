@@ -226,7 +226,7 @@ TEST(SaveV5, CronicasEMarcosVoltamIguais) {
     EXPECT_EQ(w2.pistasEncontradas(), 1);
 }
 
-// Monta saves prontos para testar a fase 9 à mão (só roda com KOA_CENARIOS = pasta dos saves)
+// Monta saves prontos para testar as fases 9 e 10 à mão (só roda com KOA_CENARIOS = pasta dos saves)
 TEST(Cenarios, MontarSavesDeTeste) {
     char* pasta = nullptr;
     size_t n = 0;
@@ -235,7 +235,7 @@ TEST(Cenarios, MontarSavesDeTeste) {
     free(pasta);
     auto gravar = [&](World& w, const std::string& slot) {
         DadosSave d = w.capturar();
-        d.versaoJogo = "1.1.0";
+        d.versaoJogo = "1.2.0";
         d.dataHora = "cenário de teste";
         ASSERT_TRUE(s.salvar(d, slot));
     };
@@ -244,30 +244,8 @@ TEST(Cenarios, MontarSavesDeTeste) {
         ASSERT_NE(t.x, -1) << def;
         ASSERT_FALSE(w.construir(def, t).empty()) << def;
     };
-    // Save_002: estrada recém-limpa. Dormindo, amanhã é dia 3 e Corvin aparece; castelo e cemitério têm fragmentos
-    {
-        World w = vilarejo();
-        reconstruirCasa(w);
-        obra(w, "campo", {15, 24});
-        obra(w, "taverna", {40, 24});
-        w.dormir(false);
-        w.abates["sombra"] = 5;
-        w.missoes["limpar_estrada"] = {true, 0};
-        w.visitadas.insert("floresta");
-        w.marcar("visitou:floresta", "Floresta Amaldiçoada", true);
-        w.marcar("missao:limpar_estrada", "Limpar a Estrada", true);
-        w.inventario.definir("madeira", 60);
-        w.inventario.definir("pedra", 60);
-        w.inventario.definir("ouro", 150);
-        w.inventario.definir("comida", 60);
-        w.relogio.dia = 2;
-        w.relogio.minutos = 20 * 60;
-        w.tirarEventos();
-        gravar(w, "Save_002");
-    }
-    // Save_003: depois do Cavaleiro Caído, já no Despertar. Estátua e Jardim liberados; fragmento novo na cripta e no poço
-    {
-        World w = vilarejo();
+    // Reino já de pé: depois do Cavaleiro Caído, no Despertar (Estátua e Jardim liberados; fragmentos na cripta e no poço)
+    auto reinoAvancado = [&](World& w) {
         reconstruirCasa(w);
         for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 600);
         const std::pair<const char*, glm::ivec2> obras[] = {{"campo", {15, 24}}, {"taverna", {40, 24}}, {"moradia", {12, 10}}, {"moradia", {45, 12}},
@@ -288,10 +266,33 @@ TEST(Cenarios, MontarSavesDeTeste) {
         w.inventario.definir("pedra", 120);
         w.inventario.definir("ouro", 300);
         w.inventario.definir("comida", 80);
-        w.relogio.dia = 8;
-        w.relogio.minutos = 9 * 60;
-        w.tirarEventos();
         EXPECT_EQ(static_cast<int>(w.reino.eraAlvo()), 1) << "desenvolvimento " << w.reino.desenvolvimento();
+    };
+    // Save_002: dia do Festival da Colheita (7º do outono), 16:30. Às 17:00 o povo vai para a praça
+    {
+        World w = vilarejo();
+        reinoAvancado(w);
+        w.relogio.dia = 21;
+        w.relogio.minutos = 16 * 60 + 30;
+        ASSERT_TRUE(w.festivalHoje());
+        w.tirarEventos();
+        gravar(w, "Save_002");
+    }
+    // Save_003: noite de Lua de Sangue no inverno, 18:40, com pouca comida guardada
+    {
+        World w = vilarejo();
+        reinoAvancado(w);
+        int dia = -1;
+        for (int d = 22; d < 2000 && dia < 0; ++d)
+            if (const EventoDef* ev = w.eventoDoDia(d); ev && ev->id == "lua_sangue" && Relogio{d}.estacao() == Estacao::Inverno) dia = d;
+        ASSERT_NE(dia, -1);
+        w.relogio.dia = dia;
+        w.relogio.minutos = 18 * 60 + 40;
+        w.inventario.definir("comida", 30);
+        w.equip.possuidos.insert("espada_ferro");
+        w.equip.arma = "espada_ferro";
+        w.tirarEventos();
+        std::printf("[cenário] Lua de Sangue no inverno: dia %d\n", dia);
         gravar(w, "Save_003");
     }
 }

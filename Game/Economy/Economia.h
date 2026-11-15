@@ -37,8 +37,9 @@ struct RelatorioDia {
     std::vector<std::string> notas;
 };
 
-ResumoReino calcularResumo(const Kingdom& k, const GameData& dados, const EstadoReino& e);
+// `mod`: efeito da estação (hortas, consumo, comércio, ânimo, viajantes)
+ResumoReino calcularResumo(const Kingdom& k, const GameData& dados, const EstadoReino& e, const ModificadorDia& mod = {});
 // Uma noite de simulação: impostos, produção, comida, felicidade e população
-RelatorioDia simularDia(const Kingdom& k, const GameData& dados, EstadoReino& e, Inventory& inv);
+RelatorioDia simularDia(const Kingdom& k, const GameData& dados, EstadoReino& e, Inventory& inv, const ModificadorDia& mod = {});
 
 }

@@ -105,7 +105,15 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
             return false;
         }
     }
-    return lerLore(jl[0], jl[1], jl[2], lore, erro);
+    if (!lerLore(jl[0], jl[1], jl[2], lore, erro)) return false;
+    // Fase 10: estações, acontecimentos e festival
+    const auto te = ke::fs::lerTexto(pasta / "World/estacoes.json");
+    const auto je = te ? nlohmann::json::parse(*te, nullptr, false) : nlohmann::json();
+    if (!te || je.is_discarded()) {
+        if (erro) *erro = "Data/World/estacoes.json ausente ou inválido";
+        return false;
+    }
+    return lerEstacoes(je, estacoes, erro);
 }
 
 }

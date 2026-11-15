@@ -24,7 +24,7 @@
     { "sprite": "barraco", "tile": [56, 16], "base": [3, 2] },
     { "sprite": "barraco", "tile": [40, 6], "base": [3, 2] }
   ],
-  "_enfeites": "Aparecem quando a transformação da era chega ao tile deles. luz = [r, g, b, raio].",
+  "_enfeites": "Aparecem quando a transformação da era chega ao tile deles. luz = [r, g, b, raio]. Com festival = true, só aparecem durante o Festival da Colheita: a festa cresce com a era (0 lanternas, 1 barracas, 2 bandeirolas e banquete, 3 fogos).",
   "enfeites": [
     { "sprite": "lampiao", "tile": [24, 18], "era": 1, "luz": [1.0, 0.8, 0.45, 50] },
     { "sprite": "lampiao", "tile": [40, 18], "era": 1, "luz": [1.0, 0.8, 0.45, 50] },
@@ -39,7 +39,13 @@
     { "sprite": "cristal", "tile": [38, 17], "era": 3, "luz": [0.45, 0.75, 1.0, 64] },
     { "sprite": "cristal", "tile": [30, 12], "era": 3, "luz": [0.45, 0.75, 1.0, 64] },
     { "sprite": "cristal", "tile": [20, 23], "era": 3, "luz": [0.45, 0.75, 1.0, 64] },
-    { "sprite": "cristal", "tile": [44, 21], "era": 3, "luz": [0.45, 0.75, 1.0, 64] }
+    { "sprite": "cristal", "tile": [44, 21], "era": 3, "luz": [0.45, 0.75, 1.0, 64] },
+    { "sprite": "lanterna_festa", "tile": [30, 19], "era": 0, "festival": true, "luz": [1.0, 0.7, 0.4, 40] },
+    { "sprite": "lanterna_festa", "tile": [36, 19], "era": 0, "festival": true, "luz": [1.0, 0.7, 0.4, 40] },
+    { "sprite": "barraca_festa", "tile": [29, 23], "era": 1, "festival": true },
+    { "sprite": "barraca_festa", "tile": [37, 23], "era": 1, "festival": true, "luz": [1.0, 0.75, 0.45, 36] },
+    { "sprite": "bandeirolas", "tile": [33, 18], "era": 2, "festival": true },
+    { "sprite": "mesa_banquete", "tile": [34, 24], "era": 2, "festival": true, "luz": [1.0, 0.8, 0.5, 30] }
   ],
   "_locais":"Tiles onde os moradores ficam (rotinas em Data/NPCs/npcs.json). O que estiver em cima é limpo ao carregar.",
   "locais": {

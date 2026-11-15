@@ -113,8 +113,8 @@ TEST(Economia, ImpostosComidaEFelicidade) {
     w.dormir(false);
     EXPECT_EQ(w.inventario.quantidade("ouro"), ouro0 + 16);
     EXPECT_EQ(w.inventario.quantidade("comida"), comida0 - 8) << "cada morador come 1";
-    // Sem nenhuma melhoria o povo desanima devagar: 40 → 38 (o alvo base é 35)
-    EXPECT_NEAR(w.estado.felicidade, 38.0f, 0.01f);
+    // Sem nenhuma melhoria o povo desanima devagar: alvo 35 + 1 da primavera = 36, então 40 → 38,4
+    EXPECT_NEAR(w.estado.felicidade, 38.4f, 0.01f);
 }
 
 TEST(Economia, ImpostoAltoDeixaOPovoInfeliz) {

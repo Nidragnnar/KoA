@@ -1,5 +1,5 @@
 KINGDOM OF ASHES: THE LAST CROWN
-Versão 1.1
+Versão 1.2
 ==========
 
 Você é o último herdeiro de uma linhagem real. Depois de anos de exílio,
@@ -116,6 +116,28 @@ ALÉM DO VILAREJO
   aparece na esquerda da tela e no diário (L); a recompensa vem na hora.
   Equipamento: construa a Forja e escolha "Forjar equipamento" na porta
   dela para fazer espadas e armaduras melhores.
+
+ESTAÇÕES, NOITES RARAS E O FESTIVAL
+-----------------------------------
+  Cada estação dura 7 dias (o ano tem 28) e muda a vida do reino:
+    Primavera ... o povo anda mais animado
+    Verão ....... comércio: mais ouro e o mercador vem a cada 2 dias
+    Outono ...... colheita: as hortas rendem 50% a mais
+    Inverno ..... as hortas quase param e as criaturas ficam mais fortes
+  O painel K mostra o efeito da estação. No fim do outono o relatório
+  da manhã avisa: guarde comida para o inverno!
+
+  Noites raras (o canto da tela avisa de manhã: "Esta noite: ..."):
+    Lua de Sangue .... a noite fica vermelha; criaturas mais fortes,
+                       mas com o dobro de ouro
+    Aurora Mágica .... luzes dançam no céu e o povo acorda feliz
+    Chuva de Meteoros  de manhã, uma estrela caída brilha perto do
+                       vilarejo: recolha com E (vale ouro)
+
+  Festival da Colheita: no último dia do outono, das 17:00 às 23:00,
+  todo mundo vai para a praça. Conversar na festa vale o dobro de
+  amizade, e no dia seguinte o povo está mais feliz. A cada era a festa
+  fica maior: lanternas, barracas, bandeirolas, banquete... e fogos.
 
 AS CRÔNICAS E O MISTÉRIO DA QUEDA
 --------------------------------

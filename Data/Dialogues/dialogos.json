@@ -1,5 +1,5 @@
 {
-  "_como_funciona": "Para cada morador vale a PRIMEIRA entrada cujas condições batem (de cima para baixo). Condições: primeiro_encontro, ja_falou_hoje, periodo (manha/tarde/noite), estacao (primavera/verao/outono/inverno), casa_nivel_min, afinidade_min, era_min, marco (só depois do acontecimento), sem_marco (só antes), pistas_min (fragmentos da Queda achados). 'uma_vez': a entrada vira lembrança e não se repete. {titulo} vira o título atual do herdeiro.",
+  "_como_funciona": "Para cada morador vale a PRIMEIRA entrada cujas condições batem (de cima para baixo). Condições: primeiro_encontro, ja_falou_hoje, periodo (manha/tarde/noite), estacao (primavera/verao/outono/inverno), casa_nivel_min, afinidade_min, era_min, marco (só depois do acontecimento), sem_marco (só antes), pistas_min (fragmentos da Queda achados), festival (na hora da festa), evento (acontecimento do dia: lua_sangue, aurora, meteoros). 'uma_vez': a entrada vira lembrança e não se repete. {titulo} vira o título atual do herdeiro.",
   "dialogos": {
     "bram": [
       { "id": "bram_conhece", "se": { "primeiro_encontro": true }, "falas": [
@@ -9,6 +9,9 @@
       { "id": "bram_casa", "uma_vez": true, "se": { "casa_nivel_min": 2 }, "falas": [
         "Vi a casa que você levantou. Paredes retas, telhado inteiro.",
         "...Não está ruim. Não conte pra ninguém que eu disse isso."] },
+      { "se": { "festival": true }, "falas": [
+        "Festa, é? Trouxe minha caneca. Só não me peça para dançar, {titulo}.",
+        "...Tá bom. Uma música. UMA."] },
       { "id": "bram_titulo", "uma_vez": true, "se": { "marco": "titulo:senhor_cinzas" }, "falas": [
         "Senhor das Cinzas, é? O povo inventa cada coisa.",
         "...Combina. Você tem fuligem até na sobrancelha."] },
@@ -32,6 +35,12 @@
       { "id": "edda_casa", "uma_vez": true, "se": { "casa_nivel_min": 2 }, "falas": [
         "Você viu? Tem fumaça saindo da chaminé da sua casa!",
         "Fumaça de chaminé é sinal de gente viva. Faz anos que eu não via isso aqui."] },
+      { "se": { "festival": true }, "falas": [
+        "Hoje a sopa é de graça e a cerveja é quase de graça!",
+        "Olha essa praça, {titulo}. Eu lembro dela cheia. Está voltando a ser."] },
+      { "se": { "estacao": "inverno", "ja_falou_hoje": false }, "falas": [
+        "Inverno! Sopa quente o dia inteiro.",
+        "Quem tiver comida guardada, agradeça. Quem não tiver, venha falar comigo."] },
       { "id": "edda_mercador", "uma_vez": true, "se": { "marco": "visita:corvin" }, "falas": [
         "Viu o mercador na praça? Corvin. Cobra o olho da cara.",
         "Mas trouxe sal! SAL, {titulo}! A sopa nunca mais será a mesma."] },
@@ -55,6 +64,12 @@
       { "id": "maelis_casa", "uma_vez": true, "se": { "casa_nivel_min": 2 }, "falas": [
         "A terra sentiu quando você ergueu aquelas paredes.",
         "Um reino não renasce de uma vez. Renasce casa por casa."] },
+      { "se": { "festival": true }, "falas": [
+        "Nas festas antigas, acendíamos uma vela para cada nome perdido.",
+        "Hoje acendi duas a mais. Uma para sua mãe. Outra para você, que voltou."] },
+      { "se": { "evento": "aurora", "periodo": "noite" }, "falas": [
+        "Está vendo as luzes? Cada cor é uma lembrança que a terra devolve.",
+        "Faça um pedido, {titulo}. Dizem que a aurora escuta."] },
       { "id": "maelis_ato1", "uma_vez": true, "se": { "marco": "misterio:primeiro_ato" }, "falas": [
         "Então é isso. O rei abriu a Torre do Selo, e a Chama não salvou o reino: consumiu.",
         "Mas uma Chama assim não morre, {titulo}. Apenas muda de lugar.",
@@ -84,6 +99,12 @@
       { "id": "oswin_casa", "uma_vez": true, "se": { "casa_nivel_min": 2 }, "falas": [
         "A casa do herdeiro de pé outra vez. Isso merece uma saudação.",
         "*bate o punho no peito* Pela coroa."] },
+      { "se": { "festival": true }, "falas": [
+        "Estou de folga hoje. Quer dizer... de olho, mas de folga.",
+        "Um brinde ao reino, {titulo}! E à estrada sem sombras."] },
+      { "se": { "evento": "lua_sangue" }, "falas": [
+        "Lua vermelha hoje à noite. Fique perto do fogo, majestade.",
+        "Na floresta, as criaturas ficam loucas. E dizem que carregam mais ouro... não que eu recomende."] },
       { "id": "oswin_soldado", "uma_vez": true, "se": { "marco": "pista:diario_soldado" }, "falas": [
         "Esse diário... a letra é do Tobias, meu sobrinho. Marchou com o capitão Hadrian.",
         "Nunca voltou. Agora sei que viu o fogo sair do castelo. Obrigado por me trazer isso."] },
@@ -103,6 +124,10 @@
         "Herdeiro. Tilda. Planto o que der.",
         "A terra aqui é escura, mas não está morta. Ela só precisa de mãos."] },
       { "id": "tilda_casa", "uma_vez": true, "se": { "casa_nivel_min": 2 }, "falas": ["Casa nova. Bom. Agora falta um campo decente perto dela."] },
+      { "se": { "festival": true }, "falas": ["A colheita foi boa. Trouxe nabo assado. Coma.", "Festa é bom. Amanhã a terra me espera."] },
+      { "se": { "estacao": "outono", "ja_falou_hoje": false }, "falas": [
+        "Outono. Colhe tudo, guarda tudo.",
+        "No inverno a terra dorme. A barriga não."] },
       { "id": "tilda_memorial", "uma_vez": true, "se": { "marco": "construiu:memorial" }, "falas": [
         "Levei flores ao Memorial. Meu pai está naqueles nomes que ninguém sabe.",
         "É bom ter um lugar pra chorar que não seja a cozinha."] },

@@ -17,7 +17,7 @@ struct Relogio {
     static constexpr float SEG_REAIS_POR_MINUTO = 0.7f;
     static constexpr int INICIO_DIA = 6 * 60;
     static constexpr int FIM_DIA = 26 * 60;  // 2:00 da manhã: desmaio
-    static constexpr int DIAS_POR_ESTACAO = 28;
+    static constexpr int DIAS_POR_ESTACAO = 7;  // fase 10: estações curtas, para o ano inteiro caber numa partida
 
     int dia = 1;  // conta desde o começo do jogo
     float minutos = INICIO_DIA;

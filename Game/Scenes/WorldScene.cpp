@@ -360,6 +360,8 @@ void WorldScene::tratarEventos() {
         case EventoJogo::Tipo::HeroiFerido: som.tocar(ke::Som::Dano); break;
         case EventoJogo::Tipo::EraMudou:
         case EventoJogo::Tipo::Titulo:
+        case EventoJogo::Tipo::EventoRaro:
+        case EventoJogo::Tipo::Festival:
         case EventoJogo::Tipo::MissaoConcluida: som.tocar(ke::Som::Magia); break;
         case EventoJogo::Tipo::AbrirConversa:
         case EventoJogo::Tipo::AbrirConstrucao:
@@ -463,6 +465,7 @@ void WorldScene::tratarEventos() {
             cam_.limite = mundo_.tamanhoPixels();
             cam_.posicionar(mundo_.jogador.pos - glm::vec2(0, 10));
             part_.limpar();
+            ceu_.limpar();
             ke::log::info("entrou em {}", e.alvo);
             break;
         case EventoJogo::Tipo::MissaoNova: hud_.aviso("Nova missão: " + e.texto + " (L para ver)", cor::ouro); break;
@@ -510,6 +513,16 @@ void WorldScene::tratarEventos() {
             leitura_ = e.alvo;
             ke::log::info("fragmento lido: {}", e.alvo);
             break;
+        case EventoJogo::Tipo::EventoRaro:
+            hud_.aviso(e.texto, e.alvo == "lua_sangue" ? cor::ruim : cor::ouro);
+            flash_ = std::max(flash_, 0.3f);
+            ke::log::info("acontecimento: {}", e.alvo);
+            break;
+        case EventoJogo::Tipo::Festival:
+            hud_.aviso(e.texto, cor::ouro);
+            flash_ = std::max(flash_, 0.4f);
+            ke::log::info("festival começou (dia {})", mundo_.relogio.dia);
+            break;
         }
     }
 }
@@ -530,6 +543,66 @@ void WorldScene::efeitosAmbiente(float dt) {
         p.vida = p.vidaMax = 14.0f;
         p.tamanho = u(rng_) > 0.8f ? 2.0f : 1.0f;
         part_.emitir(p);
+    }
+    // Fase 10: folhas de outono caindo (no vilarejo e na floresta)
+    if (mundo_.relogio.estacao() == Estacao::Outono && mundo_.regiaoAtual != "cripta") {
+        tempoFolhas_ += dt * 9.0f;
+        while (tempoFolhas_ >= 1.0f) {
+            tempoFolhas_ -= 1.0f;
+            ke::Particula p;
+            p.pos = cam_.canto() + glm::vec2(u(rng_) * 700.0f - 30.0f, -4.0f);
+            p.vel = {12.0f + u(rng_) * 14.0f, 14.0f + u(rng_) * 10.0f};
+            static const glm::vec4 folhas[] = {{0.85f, 0.45f, 0.15f, 0.9f}, {0.75f, 0.3f, 0.12f, 0.9f}, {0.9f, 0.7f, 0.25f, 0.9f}};
+            p.cor = folhas[static_cast<int>(u(rng_) * 2.99f)];
+            p.vida = p.vidaMax = 12.0f;
+            p.tamanho = 2.0f;
+            part_.emitir(p);
+        }
+    }
+    const float escuro = mundo_.escuridao();
+    // Chuva de meteoros: riscos de luz atravessando o céu
+    if (mundo_.eventoAgora("meteoros") && escuro > 0.4f && mundo_.regiaoAtual != "cripta") {
+        tempoMeteoro_ -= dt;
+        if (tempoMeteoro_ <= 0.0f) {
+            tempoMeteoro_ = 0.12f + u(rng_) * 0.45f;
+            const glm::vec2 inicio = cam_.canto() + glm::vec2(u(rng_) * 640.0f - 60.0f, u(rng_) * 140.0f);
+            const glm::vec2 dir = glm::normalize(glm::vec2(1.0f, 0.55f + u(rng_) * 0.3f));
+            for (int i = 0; i < 14; ++i) {
+                ke::Particula p;
+                p.pos = inicio - dir * (i * 3.0f);
+                p.vel = dir * 240.0f;
+                p.cor = {0.75f + 0.25f * (i == 0), 0.85f, 1.0f, 1.0f - i * 0.065f};
+                p.tamanho = i < 6 ? 2.0f : 1.0f;
+                p.vida = p.vidaMax = 0.9f;
+                p.aditiva = true;
+                ceu_.emitir(p);
+            }
+        }
+    }
+    // Festival na era renascida em diante: fogos sobre a praça
+    if (mundo_.festivalAgora() && mundo_.noVilarejo() && mundo_.reino.eraVisual >= 1.5f && escuro > 0.3f) {
+        tempoFogos_ -= dt;
+        if (tempoFogos_ <= 0.0f) {
+            tempoFogos_ = 0.5f + u(rng_) * 0.9f;
+            // No alto da tela, sobre a praça (sem sair do que se vê)
+            const glm::vec2 centro{33.0f * 16 + (u(rng_) - 0.5f) * 260.0f, cam_.canto().y + 55.0f + u(rng_) * 80.0f};
+            static const glm::vec4 cores[] = {{1.0f, 0.4f, 0.4f, 1}, {0.5f, 0.8f, 1.0f, 1}, {1.0f, 0.9f, 0.4f, 1}, {0.7f, 1.0f, 0.6f, 1}, {0.9f, 0.6f, 1.0f, 1}};
+            const glm::vec4 c = cores[static_cast<int>(u(rng_) * 4.99f)];
+            for (int i = 0; i < 40; ++i) {
+                const float ang = i / 40.0f * 6.2832f;
+                ke::Particula p;
+                p.pos = centro;
+                p.vel = glm::vec2(std::cos(ang), std::sin(ang)) * (55.0f + u(rng_) * 35.0f);
+                p.cor = c;
+                p.vida = p.vidaMax = 1.1f + u(rng_) * 0.4f;
+                p.gravidade = 30.0f;
+                p.atrito = 1.2f;
+                p.tamanho = 2.0f;
+                p.aditiva = true;
+                ceu_.emitir(p);
+            }
+            cam_.tremor = std::max(cam_.tremor, 0.6f);
+        }
     }
     // Fumaça das chaminés das casas reconstruídas
     tempoFumaca_ += dt;
@@ -667,6 +740,7 @@ void WorldScene::atualizar(double dtD) {
     tratarEventos();
     efeitosAmbiente(dt);
     part_.atualizar(dt);
+    ceu_.atualizar(dt);
     hud_.atualizar(dt);
     for (auto& f : flutuantes_) {
         f.vida -= dt;
@@ -706,6 +780,14 @@ void WorldScene::renderizar(float) {
         r.quad(luz_.textura(), cam_.canto(), cam_.vista, {0, 1, 1, 0});
         r.definirMistura(ke::Mistura::Normal);
     }
+    // Fogos e estrelas cadentes: por cima da escuridão
+    r.definirMistura(ke::Mistura::Aditiva);
+    for (const auto& p : ceu_.particulas()) {
+        glm::vec4 c = p.cor;
+        c.a *= std::clamp(p.vida / p.vidaMax * 1.5f, 0.0f, 1.0f);
+        r.retangulo(glm::floor(p.pos), glm::vec2(p.tamanho), c);
+    }
+    r.definirMistura(ke::Mistura::Normal);
     if (painel_.empty() && !pausa_ && !conversa_ && transicao_ < 0.0f && colocando_.empty() && !menuObras_ && !painelReino_ &&
         !relatorio_ && !diario_ && !forja_ && !cronicas_ && leitura_.empty() && loja_.empty())
         rend_.desenharAlvo(r, f, mundo_, tempo_);
@@ -739,6 +821,18 @@ void WorldScene::renderizar(float) {
 
     // 3) Interface em coordenadas da tela
     r.comecar(glm::ortho(0.0f, 640.0f, 360.0f, 0.0f, -1.0f, 1.0f));
+    // Aurora mágica: faixas de luz ondulando no alto do céu (fora da cripta)
+    if (const float escuro = mundo_.escuridao(); mundo_.eventoAgora("aurora") && escuro > 0.3f && mundo_.regiaoAtual != "cripta") {
+        r.definirMistura(ke::Mistura::Aditiva);
+        static const glm::vec3 cores[3] = {{0.25f, 0.95f, 0.6f}, {0.3f, 0.7f, 1.0f}, {0.7f, 0.45f, 1.0f}};
+        for (int k = 0; k < 3; ++k)
+            for (int x = 0; x < 640; x += 4) {
+                const float y = 30.0f + k * 26.0f + std::sin(x * 0.018f + tempo_ * 0.5f + k * 1.7f) * 16.0f;
+                const float a = (0.14f + 0.08f * std::sin(x * 0.05f + tempo_ * 1.3f + k)) * escuro;
+                r.retangulo({static_cast<float>(x), y}, {4, 26.0f + 10.0f * std::sin(x * 0.03f + k)}, {cores[k], a});
+            }
+        r.definirMistura(ke::Mistura::Normal);
+    }
     if (flash_ > 0.0f) r.retangulo({0, 0}, {640, 360}, {1.0f, 0.95f, 0.85f, flash_ * 0.6f});
     if (feridoFlash_ > 0.0f) r.retangulo({0, 0}, {640, 360}, {0.7f, 0.05f, 0.05f, feridoFlash_ * 0.45f});
     hud_.desenhar(r, mundo_, tempo_);

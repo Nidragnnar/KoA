@@ -83,6 +83,8 @@ bool lerNpcs(const nlohmann::json& jn, const nlohmann::json& jd, std::map<std::s
                 f.se.marco = se.value("marco", "");
                 f.se.semMarco = se.value("sem_marco", "");
                 f.se.pistasMin = se.value("pistas_min", 0);
+                if (se.contains("festival")) f.se.festival = se["festival"].get<bool>();
+                f.se.evento = se.value("evento", "");
                 f.falas = e.at("falas").get<std::vector<std::string>>();
                 if (f.falas.empty()) throw std::runtime_error("entrada sem falas em " + id);
                 d.dialogos.push_back(std::move(f));
@@ -109,6 +111,8 @@ const EntradaFala* escolherFala(const NpcDef& def, const Relacionamento& rel, co
         if (!c.marco.empty() && (!ctx.marcos || !ctx.marcos->contains(c.marco))) continue;
         if (!c.semMarco.empty() && ctx.marcos && ctx.marcos->contains(c.semMarco)) continue;
         if (ctx.pistas < c.pistasMin) continue;
+        if (c.festival && *c.festival != ctx.festival) continue;
+        if (!c.evento.empty() && c.evento != ctx.evento) continue;
         return &e;
     }
     return nullptr;

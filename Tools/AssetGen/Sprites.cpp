@@ -1467,6 +1467,92 @@ void fase9(Lista& l) {
     l.emplace_back("estatua_n1", estatua());
 }
 
+// ---------- Fase 10: festival e estrela caída ----------
+
+// Lanterna de papel num poste
+Img lanternaFesta() {
+    Img t(10, 24);
+    t.rect(4, 6, 2, 18, hex("#4a3828"));
+    t.rect(1, 2, 8, 2, hex("#5a4632"));
+    t.elipse(5, 9, 3, 4, hex("#e08a3a"));
+    t.elipse(5, 9, 2, 3, hex("#f8c870"));
+    t.rect(4, 13, 2, 1, hex("#a05a2a"));
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Barraca de feira com toldo listrado
+Img barracaFesta() {
+    std::mt19937 r(9300);
+    Img t(32, 32);
+    t.elipse(16, 30, 15, 2, hex("#000000", 90));
+    for (const int x : {3, 27}) t.rect(x, 8, 2, 22, hex("#5a4430"));
+    for (int x = 1; x < 31; ++x) t.rect(x, 4 + (x % 8 < 4 ? 0 : 1), 1, 7, hex(x / 4 % 2 ? "#c83a3a" : "#f0e0c0"));  // toldo
+    t.rect(2, 20, 28, 9, hex("#7a5a3a"));  // balcão
+    t.rect(2, 20, 28, 2, hex("#9a7a52"));
+    const char* coisas[] = {"#e0a040", "#c84030", "#70a040", "#f0d070"};
+    for (int i = 0; i < 6; ++i) t.elipse(6 + i * 4, 18, 1, 1, hex(coisas[r() % 4]));  // frutas e pães
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Cordão de bandeirolas entre dois postes
+Img bandeirolas() {
+    Img t(48, 22);
+    for (const int x : {1, 45}) t.rect(x, 2, 2, 20, hex("#5a4430"));
+    const char* cores[] = {"#c83a3a", "#e8c040", "#3a7ad0", "#4aa050"};
+    for (int x = 3; x < 45; ++x) {
+        const int y = 4 + static_cast<int>(4.0f * std::sin((x - 3) / 42.0f * 3.14159f));
+        t.px(x, y, hex("#d8d0b8"));
+        if ((x - 3) % 6 == 1)
+            for (int k = 0; k < 4; ++k) t.rect(x, y + 1 + k, 4 - k, 1, hex(cores[(x / 6) % 4]));
+    }
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Mesa de banquete com pão, frutas e um leitão
+Img mesaBanquete() {
+    Img t(32, 22);
+    t.elipse(16, 20, 15, 2, hex("#000000", 90));
+    t.rect(1, 8, 30, 6, hex("#8a6a48"));
+    t.rect(1, 8, 30, 1, hex("#a88a62"));
+    t.rect(1, 9, 30, 3, hex("#e8e0d0"));  // toalha
+    for (const int x : {3, 27}) t.rect(x, 14, 2, 6, hex("#5a4430"));
+    t.elipse(16, 6, 5, 3, hex("#c8784a"));  // leitão
+    t.elipse(7, 7, 2, 1, hex("#d8a860"));   // pão
+    t.elipse(25, 7, 2, 1, hex("#c84040"));  // maçãs
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Estrela caída: pedra escura com veios brilhantes; aberta, sobra a cratera
+Img meteorito(bool aberto) {
+    Img t(16, 12);
+    t.elipse(8, 9, 7, 2, hex("#2a2420"));  // cratera
+    if (!aberto) {
+        t.elipse(8, 6, 5, 4, hex("#3a3440"));
+        t.elipse(7, 5, 3, 2, hex("#4e4858"));
+        t.px(6, 6, hex("#8ad0ff"));
+        t.px(9, 5, hex("#c8f0ff"));
+        t.px(10, 7, hex("#8ad0ff"));
+    } else {
+        t.px(6, 9, hex("#5a90b0"));
+        t.px(10, 8, hex("#5a90b0"));
+    }
+    t.contornar(CONTORNO);
+    return t;
+}
+
+void fase10(Lista& l) {
+    l.emplace_back("lanterna_festa", lanternaFesta());
+    l.emplace_back("barraca_festa", barracaFesta());
+    l.emplace_back("bandeirolas", bandeirolas());
+    l.emplace_back("mesa_banquete", mesaBanquete());
+    l.emplace_back("meteorito", meteorito(false));
+    l.emplace_back("meteorito_aberto", meteorito(true));
+}
+
 std::vector<std::pair<std::string, Img>> gerarTodos() {
     Lista l;
     const char* nomes[] = {"grama", "terra", "lama", "agua", "calcada", "muro"};
@@ -1504,6 +1590,7 @@ std::vector<std::pair<std::string, Img>> gerarTodos() {
     fase6(l);
     fase7(l);
     fase9(l);
+    fase10(l);
     return l;
 }
 

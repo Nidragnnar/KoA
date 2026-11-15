@@ -196,6 +196,7 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
     marcos.clear();
     cronicas.clear();
     derrotaPendente_ = false;
+    avisoEvento_ = avisoFestival_ = 0;
 
     InfoRegiao info;
     try {
@@ -261,7 +262,7 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
             const auto e = reg.create();
             reg.emplace<Posicao>(e, baseTile(t.x, t.y));
             reg.emplace<Visual>(e, en.at("sprite").get<std::string>());
-            reg.emplace<Enfeite>(e, en.value("era", 1));
+            reg.emplace<Enfeite>(e, en.value("era", 1), en.value("festival", false));
             if (en.contains("luz")) {
                 const auto& l = en["luz"];
                 reg.emplace<Luz>(e, glm::vec3{l[0].get<float>(), l[1].get<float>(), l[2].get<float>()}, l[3].get<float>(),
@@ -405,9 +406,18 @@ void World::atualizarAldeoes(float dt) {
             const glm::vec2 p = pontoPorta(b);
             pontos.push_back({static_cast<int>(p.x) / LADO, static_cast<int>(p.y) / LADO});
         }
+    // Festival: o povo todo vai para a praça (e só dorme quando a festa acaba)
+    const bool festa = festivalAgora();
+    if (festa) {
+        pontos.clear();
+        for (const char* l : {"praca", "praca_fogueira", "poco", "taverna_ruina"})
+            if (locais.contains(l)) pontos.push_back(locais.at(l));
+        for (const glm::ivec2 l : dados().estacoes.festival.lugares) pontos.push_back(l + glm::ivec2(0, 2));
+    }
+    if (pontos.empty()) return;
     std::uniform_int_distribution<size_t> qual(0, pontos.size() - 1);
     std::uniform_real_distribution<float> espera(3.0f, 10.0f);
-    const bool noite = relogio.minutos >= 21 * 60;
+    const bool noite = relogio.minutos >= 21 * 60 && !festa;
     for (auto [e, p, mv, a] : reg.view<Posicao, Movimento, Aldeao>().each()) {
         a.dormindo = noite;  // de noite todo mundo está em casa
         if (a.dormindo) {
@@ -560,7 +570,8 @@ AlvoInteracao World::procurarAlvo() const {
                    arvore ? "Cortar árvore" : "Quebrar rocha");
     }
     for (auto [e, p, s] : reg.view<const Posicao, const Saqueavel>().each())
-        if (!s.aberto) considerar(e, p.v + glm::vec2(0, -4), 13.0f, TipoInteracao::Saquear, "Abrir baú");
+        if (!s.aberto)
+            considerar(e, p.v + glm::vec2(0, -4), 13.0f, TipoInteracao::Saquear, reg.all_of<Meteorito>(e) ? "Recolher a estrela caída" : "Abrir baú");
     for (auto [e, p, r] : reg.view<const Posicao, const ConstrucaoRef>().each())
         if (const BuildingData* b = reino.construcao(r.id)) considerar(e, pontoPorta(*b), 15.0f, TipoInteracao::Construcao, b->name);
     for (auto [e, p, pi] : reg.view<const Posicao, const Pista>().each())
@@ -612,6 +623,10 @@ void World::executar(const AlvoInteracao& a) {
         reg.get<Visual>(a.entidade).sprite = s.spriteAberto;
         inventario.adicionar(s.recurso, s.quantidade);
         eventos_.push_back({EventoJogo::Tipo::Ganhou, a.ponto, "bau", s.recurso, s.quantidade});
+        if (const auto* m = reg.try_get<Meteorito>(a.entidade)) {
+            marcar(std::format("meteorito:{}", m->dia));  // não volta a aparecer ao carregar
+            marcar("estrela_caida");
+        }
         break;
     }
     case TipoInteracao::Construcao:
@@ -693,6 +708,18 @@ void World::passo(float dt, const EntradaMundo& in) {
         eventos_.push_back({EventoJogo::Tipo::EraMudou, jogador.pos, "", "", alvoEra, nomeEra(reino.eraAlvo())});
         for (int e = 1; e <= alvoEra; ++e) marcar(std::format("era:{}", e), nomeEra(static_cast<KingdomEra>(e)));
     }
+    // Fase 10: o acontecimento da noite e o festival começam (anunciados uma vez por dia)
+    if (const EventoDef* ev = eventoHoje(); ev && eventoAgora(ev->id) && avisoEvento_ != relogio.dia) {
+        avisoEvento_ = relogio.dia;
+        eventos_.push_back({EventoJogo::Tipo::EventoRaro, jogador.pos, ev->id, "", 0, ev->aviso});
+        marcar("evento:" + ev->id, ev->nome);
+    }
+    if (festivalAgora() && avisoFestival_ != relogio.dia) {
+        avisoFestival_ = relogio.dia;
+        const FestivalDef& f = dados().estacoes.festival;
+        eventos_.push_back({EventoJogo::Tipo::Festival, jogador.pos, "", "", 0, f.nome + " começou na praça!"});
+        marcar(std::format("festival_era{}:{}", static_cast<int>(reino.eraAlvo()), relogio.ano()), std::to_string(relogio.ano()));
+    }
     tempoJogado += dt;
 }
 
@@ -758,10 +785,12 @@ int World::eraNoTile(glm::ivec2 t) const {
 
 glm::vec3 World::luzAmbiente() const {
     const InfoRegiao& i = infoAtual();
-    if (i.escuridaoMin <= 0.0f) return relogio.luzAmbiente();
+    glm::vec3 luz = relogio.luzAmbiente();
     // Penumbra da região, que ainda escurece mais à noite
-    const glm::vec3 base = glm::mix(glm::vec3(1.0f), i.ambiente, i.escuridaoMin / 0.9f);
-    return glm::min(base, relogio.luzAmbiente());
+    if (i.escuridaoMin > 0.0f) luz = glm::min(glm::mix(glm::vec3(1.0f), i.ambiente, i.escuridaoMin / 0.9f), luz);
+    // Lua de Sangue: a noite fica vermelha
+    if (eventoAgora("lua_sangue")) luz = glm::mix(luz, glm::vec3(0.62f, 0.16f, 0.16f), 0.6f * relogio.escuridao());
+    return luz;
 }
 
 // ---------- Combate ----------
@@ -836,7 +865,7 @@ void World::criarInimigo(const std::string& tipo, glm::ivec2 tile) {
     reg.emplace<Posicao>(e, p);
     Inimigo& i = reg.emplace<Inimigo>(e);
     i.tipo = tipo;
-    i.vida = i.vidaMax = d.vida;
+    i.vida = i.vidaMax = static_cast<int>(std::round(d.vida * estacaoAtual().inimigos));  // no inverno, mais resistentes
     i.origem = i.destino = p;
     i.espera = 0.5f + (tile.x % 5) * 0.4f;
 }
@@ -891,7 +920,8 @@ void World::golpearComEspada() {
         const InimigoDef& d = dados().inimigos.at(i.tipo);
         const glm::vec2 p = reg.get<Posicao>(e).v;
         std::uniform_int_distribution<int> ouro(d.ouroMin, std::max(d.ouroMin, d.ouroMax));
-        const int o = ouro(rng_);
+        int o = ouro(rng_);
+        if (const EventoDef* ev = eventoHoje(); ev && eventoAgora(ev->id)) o = static_cast<int>(std::round(o * ev->ouroInimigos));
         inventario.adicionar("ouro", o);
         ++abates[i.tipo];
         eventos_.push_back({EventoJogo::Tipo::InimigoDerrotado, p, i.tipo, "ouro", o, d.nome});
@@ -972,7 +1002,7 @@ void World::atualizarInimigos(float dt, const std::vector<ke::AABB>& obst) {
         // Encostou no herói: fere (e espera para ferir de novo)
         const float alcance = d.tamanho.x * 0.45f + 6.0f;
         if (dist < alcance && i.recarga <= 0.0f) {
-            ferirHeroi(d.dano, p.v);
+            ferirHeroi(static_cast<int>(std::round(d.dano * forcaInimigos())), p.v);
             i.recarga = 1.0f;
         }
     }
@@ -1123,7 +1153,15 @@ void World::posicionarMoradores() {
         mv.dir = Direcao::Baixo;
     }
     // Segunda passada: destinoDe consulta o item atual dos outros
+    const auto& lugaresFesta = dados().estacoes.festival.lugares;
     for (auto [e, m, p, a] : reg.view<const Morador, Posicao, Agenda>().each()) {
+        if (festivalAgora() && !dados().npcs.at(m.id).visitante()) {  // dia de festa: todos em volta da fogueira
+            const glm::ivec2 t = lugaresFesta[m.indice % lugaresFesta.size()];
+            a.itemAtual = -2;
+            a.dormindo = false;
+            p.v = {t.x * LADO + LADO / 2.0f, t.y * LADO + 12.0f};
+            continue;
+        }
         if (a.itemAtual < 0) continue;
         const ItemRotina& item = dados().npcs.at(m.id).rotina[a.itemAtual];
         const glm::ivec2 t = destinoDe(e, item);
@@ -1135,7 +1173,9 @@ void World::posicionarMoradores() {
 
 bool World::visitanteHoje(const NpcDef& d) const {
     if (!d.visitante()) return true;
-    return (d.visitaRequer.empty() || marcos.contains(d.visitaRequer)) && relogio.dia % d.visitaACada == 0;
+    // No verão o comércio esquenta: o mercador vem mais vezes
+    const int intervalo = estacaoAtual().mercadorACada > 0 ? estacaoAtual().mercadorACada : d.visitaACada;
+    return (d.visitaRequer.empty() || marcos.contains(d.visitaRequer)) && relogio.dia % intervalo == 0;
 }
 
 void World::atualizarMoradores(float dt) {
@@ -1146,6 +1186,28 @@ void World::atualizarMoradores(float dt) {
         if (def.visitante() && !visitanteHoje(def)) {
             a.dormindo = true;
             mv.andando = false;
+            continue;
+        }
+        // Festival: larga a rotina e vai para a praça
+        const bool festa = festivalAgora() && !def.visitante();
+        if (festa && a.itemAtual != -2) {
+            const auto& lugares = dados().estacoes.festival.lugares;
+            a.itemAtual = -2;
+            a.dormindo = false;
+            a.conversando = false;
+            caminharPara(e, lugares[m.indice % lugares.size()]);
+        }
+        if (festa) {
+            if (!a.conversando) seguirCaminho(p.v, mv, dt);
+            else mv.andando = false;
+            if (mv.caminho.empty() && !a.conversando) {  // parado, olhando para o centro da festa
+                glm::vec2 centro{0.0f};
+                for (const glm::ivec2 l : dados().estacoes.festival.lugares) centro += glm::vec2(l);
+                centro = centro / static_cast<float>(dados().estacoes.festival.lugares.size()) * static_cast<float>(LADO) + 8.0f;
+                const glm::vec2 d = centro - p.v;
+                if (std::abs(d.x) > std::abs(d.y)) mv.dir = d.x < 0 ? Direcao::Esquerda : Direcao::Direita;
+                else mv.dir = d.y < 0 ? Direcao::Cima : Direcao::Baixo;
+            }
             continue;
         }
         const int idx = static_cast<int>(item - def.rotina.data());
@@ -1208,7 +1270,8 @@ Conversa World::conversar(const std::string& id) {
     if (e == entt::null) return c;
     const NpcDef& def = dados().npcs.at(id);
     auto& rel = reg.get<Relacionamento>(e);
-    ContextoFala ctx{relogio.periodo(), relogio.estacao(), 1, static_cast<int>(reino.eraAtual()), &marcos, pistasEncontradas()};
+    ContextoFala ctx{relogio.periodo(), relogio.estacao(), 1, static_cast<int>(reino.eraAtual()), &marcos, pistasEncontradas(),
+                     festivalAgora(), eventoHoje() ? eventoHoje()->id : ""};
     if (const BuildingData* casa = reino.construcao("casa_herdeiro")) ctx.nivelCasa = casa->level;
     const EntradaFala* fala = escolherFala(def, rel, ctx);
     c.npc = id;
@@ -1220,7 +1283,7 @@ Conversa World::conversar(const std::string& id) {
     c.loja = !def.loja.empty();
     // Amizade cresce uma vez por dia de conversa
     if (!rel.falouHoje) {
-        rel.afinidade = std::min(1000, rel.afinidade + 25);
+        rel.afinidade = std::min(1000, rel.afinidade + (festivalAgora() ? 50 : 25));  // no festival, vale o dobro
         c.ganhouAmizade = true;
     }
     rel.falouHoje = true;
@@ -1252,6 +1315,7 @@ void World::dormir(bool desmaio) {
         perda = std::min(50, inventario.quantidade("ouro") / 10);
         inventario.remover("ouro", perda);
     }
+    const int ontem = relogio.dia;
     relogio.novoDia();
     desmaioPendente_ = false;
     derrotaPendente_ = false;
@@ -1297,7 +1361,9 @@ void World::dormir(bool desmaio) {
             novas.emplace_back(b.defId, b.name);
         }
     // A noite do reino: impostos, produção, comida, felicidade e população
-    ultimoRelatorio = simularDia(reino, dados(), estado, inventario);
+    // (a noite foi da estação de ontem: a primeira noite do inverno ainda é de outono)
+    ultimoRelatorio = simularDia(reino, dados(), estado, inventario, dados().estacoes.de(Relogio{ontem}.estacao()).mod);
+    notasDaManha(ontem);
     for (const auto& [defId, nome] : novas) marcar("construiu:" + defId, nome);
     for (const int n : {15, 25, 40})
         if (estado.populacao >= n) marcar(std::format("povo:{}", n), std::to_string(n));
@@ -1317,6 +1383,7 @@ void World::dormir(bool desmaio) {
         mv.caminho.clear();
     }
     if (renasceram > 0) ultimoRelatorio.notas.push_back(std::format("{} árvores e rochas voltaram a crescer.", renasceram));
+    atualizarMeteorito();
     atualizarMissoes();  // ex.: "junte comida" pode ter se cumprido com a produção da noite
     eventos_.push_back({EventoJogo::Tipo::NovoDia, jogador.pos, desmaio ? "desmaio" : "", "ouro", perda, relogio.textoData()});
 }
@@ -1471,6 +1538,8 @@ void World::aplicar(const DadosSave& d) {
     posicionarMoradores();
     sincronizarAldeoes();
     atualizarPistas();
+    atualizarMeteorito();
+    avisoEvento_ = avisoFestival_ = 0;
     // Salvou fora do vilarejo: volta para a mesma região e lugar
     if (foraDaVila) {
         const glm::vec2 p = d.posJogador;
@@ -1617,6 +1686,109 @@ bool World::comprar(const std::string& npc, const std::string& itemId) {
         marcar("pista:" + item->pista, dados().lore.pista(item->pista) ? dados().lore.pista(item->pista)->titulo : item->nome);
     }
     return true;
+}
+
+// ---------- Fase 10: estações, acontecimentos e festival ----------
+
+bool World::festivalNoDia(int dia) const {
+    const FestivalDef& f = dados().estacoes.festival;
+    const Relogio r{dia};
+    return r.estacao() == f.estacao && r.diaDaEstacao() == f.diaDaEstacao;
+}
+
+bool World::festivalAgora() const {
+    const FestivalDef& f = dados().estacoes.festival;
+    return festivalHoje() && relogio.minutos >= f.inicio && relogio.minutos < f.fim;
+}
+
+const EventoDef* World::eventoDoDia(int dia) const {
+    const DadosEstacoes& de = dados().estacoes;
+    if (dia <= de.diasSemEventos || festivalNoDia(dia)) return nullptr;
+    // Sorteio fixo: o mesmo dia sempre dá o mesmo acontecimento (não precisa ir para o save)
+    const float sorte = static_cast<float>(hashTile(dia, 7919) % 10000) / 10000.0f;
+    float acumulado = 0.0f;
+    for (const EventoDef& ev : de.eventos) {
+        if (!ev.requer.empty() && !marcos.contains(ev.requer)) continue;
+        if (static_cast<int>(reino.eraAlvo()) < ev.eraMin) continue;
+        acumulado += ev.chance;
+        if (sorte < acumulado) return &ev;
+    }
+    return nullptr;
+}
+
+bool World::eventoAgora(const std::string& id) const {
+    const EventoDef* ev = eventoHoje();
+    return ev && ev->id == id && relogio.minutos >= 19 * 60;
+}
+
+float World::forcaInimigos() const {
+    float f = estacaoAtual().inimigos;
+    if (const EventoDef* ev = eventoHoje(); ev && eventoAgora(ev->id)) f *= ev->inimigos;
+    return f;
+}
+
+void World::notasDaManha(int ontem) {
+    auto& notas = ultimoRelatorio.notas;
+    const DadosEstacoes& de = dados().estacoes;
+    // O que a noite de ontem deixou
+    if (festivalNoDia(ontem)) {
+        estado.felicidade = std::min(100.0f, estado.felicidade + de.festival.felicidade);
+        ultimoRelatorio.felicidadeDepois = estado.felicidade;
+        notas.push_back(std::format("O {} ainda alegra o povo (+{:.0f} de felicidade).", de.festival.nome, de.festival.felicidade));
+    }
+    if (const EventoDef* ev = eventoDoDia(ontem); ev && ev->felicidade > 0.0f) {
+        estado.felicidade = std::min(100.0f, estado.felicidade + ev->felicidade);
+        ultimoRelatorio.felicidadeDepois = estado.felicidade;
+        notas.push_back(std::format("A {} deixou todos sonhadores (+{:.0f} de felicidade).", ev->nome, ev->felicidade));
+    }
+    if (const EventoDef* ev = eventoDoDia(ontem); ev && ev->ouroMeteorito > 0) notas.push_back("Uma estrela caiu perto do vilarejo durante a noite!");
+    // Estação nova, aviso do inverno, festival e o que os velhos dizem de hoje
+    const EstacaoDef& hoje = estacaoAtual();
+    if (relogio.diaDaEstacao() == 1) {
+        notas.push_back(hoje.chegada);
+        marcar("estacao:" + hoje.id, hoje.nome);
+        if (relogio.estacao() == Estacao::Primavera && relogio.ano() > 1) marcar(std::format("ano:{}", relogio.ano()), std::to_string(relogio.ano()));
+    }
+    if (relogio.estacao() == Estacao::Outono && relogio.diaDaEstacao() >= 4) {
+        const int faltam = Relogio::DIAS_POR_ESTACAO - relogio.diaDaEstacao() + 1;
+        notas.push_back(std::format("O inverno chega em {} dia{}: as hortas quase param no frio. Guarde comida.", faltam, faltam > 1 ? "s" : ""));
+    }
+    if (festivalHoje()) notas.push_back(std::format("Hoje é dia de {}! O povo se reúne na praça às {}:00.", de.festival.nome, de.festival.inicio / 60));
+    if (const EventoDef* ev = eventoHoje()) notas.push_back(ev->anuncio);
+}
+
+void World::atualizarMeteorito() {
+    if (!noVilarejo()) return;
+    // A estrela da noite de ontem fica no chão até ser recolhida (ou até o dia seguinte)
+    const int noite = relogio.dia - 1;
+    const EventoDef* ev = eventoDoDia(noite);
+    const bool deveExistir = ev && ev->ouroMeteorito > 0 && !marcos.contains(std::format("meteorito:{}", noite));
+    std::vector<entt::entity> remover;
+    bool existe = false;
+    for (auto [e, m] : reg.view<const Meteorito>().each()) {
+        if (deveExistir && m.dia == noite) existe = true;
+        else remover.push_back(e);
+    }
+    reg.destroy(remover.begin(), remover.end());
+    if (!deveExistir || existe || dados().estacoes.meteoritos.empty()) return;
+    // Um dos lugares possíveis, sorteado pelo dia (pulando os que viraram construção)
+    const auto& lugares = dados().estacoes.meteoritos;
+    const auto obst = obstaculos();
+    for (size_t k = 0; k < lugares.size(); ++k) {
+        const glm::ivec2 t = lugares[(hashTile(noite, 31) + k) % lugares.size()];
+        const glm::vec2 p = baseTile(t.x, t.y);
+        const ke::AABB caixa{p - glm::vec2(8, 10), p + glm::vec2(8, 2)};
+        if (std::ranges::any_of(obst, [&](const ke::AABB& o) { return caixa.intersecta(o); })) continue;
+        const auto e = reg.create();
+        reg.emplace<Posicao>(e, p);
+        reg.emplace<Visual>(e, "meteorito");
+        reg.emplace<Colisor>(e, glm::vec2{6, 4}, glm::vec2{0, -4});
+        reg.emplace<Saqueavel>(e, "ouro", ev->ouroMeteorito, false, "meteorito_aberto");
+        reg.emplace<Luz>(e, glm::vec3{0.55f, 0.75f, 1.0f}, 34.0f, glm::vec2{0.0f, -5.0f});
+        reg.emplace<Meteorito>(e, noite);
+        bloqueio_.clear();
+        return;
+    }
 }
 
 std::vector<std::string> World::inscricao(const BuildingData& b) const {

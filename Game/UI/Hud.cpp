@@ -82,8 +82,17 @@ void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
     const std::string era = nomeEra(w.reino.eraAtual());
     const std::string data = w.relogio.textoData();
     const std::string titulo = w.titulo().nome;
-    const float l = static_cast<float>(std::max({f_.largura(era), f_.largura(data) + 50, f_.largura(titulo)})) + 12.0f;
-    desenharPainel(r, {634 - l, 6}, {l, 41});
+    // Fase 10: o que o dia reserva (festival ou acontecimento da noite)
+    std::string hoje;
+    glm::vec4 corHoje = cor::ouro;
+    if (w.festivalHoje()) hoje = "Hoje: " + dados_.estacoes.festival.nome;
+    else if (const EventoDef* ev = w.eventoHoje()) {
+        hoje = "Esta noite: " + ev->nome;
+        if (ev->id == "lua_sangue") corHoje = cor::ruim;
+    }
+    const float l = static_cast<float>(std::max({f_.largura(era), f_.largura(data) + 50, f_.largura(titulo), f_.largura(hoje)})) + 12.0f;
+    desenharPainel(r, {634 - l, 6}, {l, hoje.empty() ? 41.0f : 52.0f});
+    if (!hoje.empty()) f_.desenhar(r, hoje, {634 - l + 6, 44}, corHoje);
     f_.desenhar(r, data, {634 - l + 6, 11}, cor::texto);
     const std::string hora = w.relogio.textoHora();
     f_.desenhar(r, hora, {628.0f - f_.largura(hora), 11}, w.relogio.escuridao() > 0.5f ? glm::vec4(0.6f, 0.7f, 1.0f, 1) : cor::ouro);
@@ -95,7 +104,7 @@ void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
         const Aviso& a = avisos_[i];
         glm::vec4 c = a.cor;
         c.a = std::min(1.0f, a.vida * 2.0f);
-        const float y = 44.0f + i * 12.0f;
+        const float y = 86.0f + i * 12.0f;  // abaixo dos painéis do HUD (recursos e data)
         const float lt = static_cast<float>(f_.largura(a.texto));
         r.retangulo({320 - lt / 2 - 6, y - 2}, {lt + 12, 12}, {0.05f, 0.04f, 0.04f, 0.7f * c.a});
         f_.desenharCentralizado(r, a.texto, {320, y + 4}, c);
@@ -241,7 +250,7 @@ void Hud::dicaColocacao(ke::Renderer2D& r, const std::string& nome, bool valido,
 void Hud::painelReino(ke::Renderer2D& r, const World& w) {
     r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.45f});
     const ResumoReino rr = w.resumo();
-    const glm::vec2 p{140, 52}, s{360, 256};
+    const glm::vec2 p{140, 36}, s{360, 288};
     desenharPainel(r, p, s);
     f_.desenharCentralizado(r, "Reino de Valdren", {320, p.y + 12}, cor::ouro);
     f_.desenharCentralizado(r, std::string(nomeEra(w.reino.eraAtual())) + "  -  " + w.titulo().nome, {320, p.y + 24}, cor::apagado);
@@ -269,6 +278,13 @@ void Hud::painelReino(ke::Renderer2D& r, const World& w) {
     y += 11;
     f_.desenhar(r, efeito[static_cast<int>(w.estado.imposto)], {xV, y}, cor::apagado);
     y += 17;
+    // Fase 10: o efeito da estação na noite do reino
+    const EstacaoDef& est = w.estacaoAtual();
+    f_.desenhar(r, "Estação", {xR, y}, cor::apagado);
+    f_.desenhar(r, est.nome, {xV, y}, est.id == "inverno" ? cor::ruim : cor::ouro);
+    y += 11;
+    for (const auto& l : quebrarLinhas(f_, est.resumo, static_cast<int>(s.x) - 150 - 14)) f_.desenhar(r, l, {xV, y}, cor::apagado), y += 10;
+    y += 6;
     const int dev = w.reino.desenvolvimento();
     static const int limites[] = {8, 22, 40};
     const int era = static_cast<int>(w.reino.eraAlvo());

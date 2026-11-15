@@ -66,8 +66,8 @@ captura: 18_painel_reino
 [OK] comida: 117 (esperado 117 = 120 + 5 do campo - 8 comidos)
 captura: 19_relatorio_manha
 [OK] E fecha o relatório
-[OK] a população cresceu: 8 -> 13
-[OK] 8 aldeões andando pelo vilarejo
+[OK] a população cresceu: 8 -> 14
+[OK] 9 aldeões andando pelo vilarejo
 captura: 20_vilarejo_crescendo
 [OK] Oswin entrega a missão Limpar a Estrada
 captura: 21_missao_aceita
@@ -95,7 +95,7 @@ captura: 29_era_3
 captura: 30_era_3_noite_dragao
 [OK] a transformação avança em onda a partir da casa
 captura: 31_onda_de_transformacao
-[OK] as Crônicas registraram a jornada (14 páginas)
+[OK] as Crônicas registraram a jornada (16 páginas)
 [OK] o herdeiro virou Libertador da Magia
 [OK] C abre as Crônicas
 captura: 32_cronicas
@@ -114,4 +114,24 @@ captura: 36_carta_selada
 [OK] o Memorial ficou pronto durante a noite
 [OK] E no Memorial mostra a inscrição
 captura: 37_memorial
+[OK] às 17:00 o Festival da Colheita começa e entra nas Crônicas
+[OK] os moradores foram para a praça (10 perto da fogueira)
+captura: 38_festival
+captura: 39_festival_noite
+[OK] existe uma noite de lua_sangue
+[OK] à noite começa: lua_sangue
+[OK] a Lua de Sangue deixa a noite vermelha
+captura: 40_lua_de_sangue
+[OK] existe uma noite de aurora
+[OK] à noite começa: aurora
+captura: 41_aurora
+[OK] existe uma noite de meteoros
+[OK] à noite começa: meteoros
+captura: 42_meteoros
+[OK] uma estrela caiu perto do vilarejo
+captura: 43_estrela_caida
+[OK] E recolhe a estrela (+40 de ouro)
+[OK] no inverno as criaturas ficam mais fortes
+captura: 44_inverno
+captura: 45_painel_reino_inverno
 RESULTADO: 0 falha(s)

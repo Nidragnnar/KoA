@@ -52,6 +52,8 @@ private:
     // Fase 9
     int etapaLoja_ = 0;     // quadro em que a banca do mercador abriu
     std::string memorial_;  // id do memorial construído
+    // Fase 10
+    int ouroAntes_ = 0;
 };
 
 }

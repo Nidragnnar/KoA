@@ -53,12 +53,13 @@ TEST(Relogio, DiaVaiDas6As2DaManha) {
 TEST(Relogio, EstacoesESemana) {
     Relogio r;
     EXPECT_EQ(r.textoData(), "Primavera, dia 1 (Segunda)");
-    r.dia = 29;
+    // Fase 10: estações de 7 dias (o ano tem 28)
+    r.dia = 8;
     EXPECT_EQ(r.estacao(), Estacao::Verao);
     EXPECT_EQ(r.diaDaEstacao(), 1);
-    r.dia = 3 * 28 + 5;
+    r.dia = 3 * 7 + 5;
     EXPECT_EQ(r.estacao(), Estacao::Inverno);
-    r.dia = 4 * 28 + 1;
+    r.dia = 4 * 7 + 1;
     EXPECT_EQ(r.estacao(), Estacao::Primavera);
     EXPECT_EQ(r.ano(), 2);
 }
