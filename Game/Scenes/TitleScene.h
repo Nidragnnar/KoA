@@ -55,6 +55,7 @@ private:
     enum class Slots { Fechado, Novo, Carregar } slots_ = Slots::Fechado;
     int selSlot_ = 0;
     bool confirmarSubstituir_ = false;
+    Cliques cliques_;  // onde as opções apareceram no último quadro (mouse)
 };
 
 }

@@ -11,6 +11,7 @@ add_library(KingdomGame STATIC
     Buildings/Building.cpp
     Player/Player.cpp
     World/World.cpp
+    World/Regioes.cpp
     Save/SaveSystem.cpp
     Lore/Lore.cpp)
 target_link_libraries(KingdomGame PUBLIC KingdomEngineCore)

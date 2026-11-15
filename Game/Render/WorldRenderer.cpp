@@ -187,6 +187,7 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     const ke::SpriteRegion& luz = rec_.regiao("luz");
     for (auto [e, p, l] : w.reg.view<const Posicao, const Luz>().each()) {
         if (!visivel(p.v) || escondido(e, p.v)) continue;
+        if (const auto* c = w.reg.try_get<Coletavel>(e); c && c->esgotado) continue;  // veio minerado não brilha
         const float cint = 0.85f + 0.15f * std::sin(tempo * 9.0f + p.v.x) * std::sin(tempo * 5.3f + p.v.y);
         const float raio = l.raio * cint;
         r.sprite(luz, p.v + l.desloc - raio, glm::vec4(l.cor, 0.38f * cint), false, raio * 2.0f / 64.0f);
@@ -243,6 +244,7 @@ void WorldRenderer::desenharLuzes(ke::Renderer2D& r, const World& w, const ke::C
         if (p.v.x < canto.x - 200 || p.v.x > canto.x + cam.vista.x + 200 || p.v.y < canto.y - 200 || p.v.y > canto.y + cam.vista.y + 200)
             continue;
         if (const auto* en = w.reg.try_get<Enfeite>(e); en && (w.eraEm(p.v) < en->eraMin || (en->festival && !w.festivalAgora()))) continue;
+        if (const auto* c = w.reg.try_get<Coletavel>(e); c && c->esgotado) continue;
         const float cint = 0.9f + 0.1f * std::sin(tempo * 8.0f + p.v.x) * std::sin(tempo * 4.7f + p.v.y);
         const float raio = l.raio * 1.8f * cint;
         // Na Alta Fantasia as tochas viram chama mágica azul
@@ -257,6 +259,12 @@ void WorldRenderer::desenharLuzes(ke::Renderer2D& r, const World& w, const ke::C
         else if (i.tipo == "cavaleiro_caido") {
             const float pulso = 0.8f + 0.2f * std::sin(tempo * 3.0f);
             r.sprite(luz, p.v - glm::vec2(0, 20) - 48.0f * pulso, {0.9f, 0.2f, 0.15f, 0.9f}, false, 96.0f * pulso / 64.0f);
+        } else if (i.tipo == "golem_cinzas") {
+            // Brasa no peito: mais fraca quando ele se rende
+            const float pulso = (i.rendido ? 0.55f : 0.85f) + 0.15f * std::sin(tempo * (i.rendido ? 1.5f : 4.0f));
+            r.sprite(luz, p.v - glm::vec2(0, 22) - 52.0f * pulso, {1.0f, 0.45f, 0.15f, 0.9f}, false, 104.0f * pulso / 64.0f);
+        } else if (i.tipo == "aranha") {
+            r.sprite(luz, p.v - glm::vec2(0, 6) - 10.0f, {0.4f, 0.9f, 0.6f, 0.7f}, false, 20.0f / 64.0f);
         }
     }
     // Janelas acesas das casas reconstruídas
@@ -269,7 +277,8 @@ void WorldRenderer::desenharLuzes(ke::Renderer2D& r, const World& w, const ke::C
         }
     }
     // O herói carrega uma luz fraquinha (para não andar no breu total); mais forte nas regiões escuras
-    const float raioHeroi = w.infoAtual().escuridaoMin > 0.7f ? 84.0f : w.infoAtual().escuridaoMin > 0.3f ? 60.0f : 40.0f;
+    const float minimo = w.escuridaoMinAtual();
+    const float raioHeroi = minimo > 0.7f ? 84.0f : minimo > 0.3f ? 60.0f : 40.0f;
     r.sprite(luz, w.jogador.pos - glm::vec2(0, 10) - raioHeroi, {0.6f, 0.58f, 0.66f, 0.7f}, false, raioHeroi * 2.0f / 64.0f);
     r.definirMistura(ke::Mistura::Normal);
 }

@@ -1553,6 +1553,148 @@ void fase10(Lista& l) {
     l.emplace_back("meteorito_aberto", meteorito(true));
 }
 
+// ---------- Fase 11: minas, cristais, o Coração da Floresta e o Golem de Cinzas ----------
+
+// Aranha das minas: corpo escuro com lascas de cristal nas costas; as pernas alternam a cada quadro
+Img aranha(int q) {
+    Img t(20, 14);
+    const Cor corpo = hex("#2c2832"), perna = hex("#1e1a22");
+    for (int i = 0; i < 4; ++i) {  // 4 pernas de cada lado
+        const int y = 5 + i * 2, d = (i + q) % 2;
+        t.linha(7, y, 1 + d, y + 3 - d, perna);
+        t.linha(13, y, 19 - d, y + 3 - d, perna);
+    }
+    t.elipse(10, 8, 5, 4, corpo);          // abdômen
+    t.elipse(10, 4, 3, 2, hex("#3a3442"));  // cabeça
+    t.px(9, 3, hex("#70f0a0"));             // olhos verdes
+    t.px(11, 3, hex("#70f0a0"));
+    t.px(8, 7, hex("#8ad8ff"));             // lascas de cristal
+    t.px(11, 6, hex("#c8f0ff"));
+    t.px(12, 9, hex("#6ac8f0"));
+    t.contornar(hex("#0a080c"));
+    return t;
+}
+
+// Golem de cinzas (q = quadro) ou o guardião de cristal (depois do rito)
+Img golem(int q, bool guardiao) {
+    std::mt19937 r(guardiao ? 6300 : 6200 + q);
+    Img t(32, 40);
+    const Cor pedra = guardiao ? hex("#7a8a98") : hex("#4a4642"), clara = guardiao ? hex("#a8c0d0") : hex("#625d57");
+    const Cor brilho = guardiao ? hex("#8ad8ff") : hex("#ff8a30"), nucleo = guardiao ? hex("#e0f8ff") : hex("#ffd070");
+    const int a = guardiao ? 0 : q;  // os braços balançam
+    t.rect(10, 26, 5, 12, pedra);            // pernas
+    t.rect(18, 26, 5, 12, pedra);
+    t.rect(8, 10, 17, 18, pedra);            // tronco
+    t.rect(8, 10, 17, 2, clara);
+    t.rect(2, 12 + a, 6, 16, pedra);         // braços grandes
+    t.rect(25, 12 - a, 6, 16, pedra);
+    t.rect(1, 26 + a, 7, 5, clara);          // punhos
+    t.rect(25, 26 - a, 7, 5, clara);
+    t.rect(11, 3, 11, 8, pedra);             // cabeça
+    t.rect(13, 6, 2, 2, brilho);             // olhos
+    t.rect(18, 6, 2, 2, brilho);
+    t.salpicar(r, 30, clarear(pedra, -0.25f), 2, 3, 31, 38);
+    // Rachaduras com a brasa (ou a luz do cristal) aparecendo
+    t.linha(12, 13, 15, 20, brilho);
+    t.linha(21, 12, 19, 18, brilho);
+    t.linha(4, 16 + a, 6, 22 + a, brilho);
+    t.elipse(16, 18, 3, 3, brilho);          // o coração no peito
+    t.elipse(16, 18, 1, 1, nucleo);
+    if (guardiao)
+        for (const int x : {9, 23}) t.rect(x, 7, 2, 4, hex("#c8f0ff")), t.px(x, 6, hex("#ffffff"));  // cristais nos ombros
+    t.contornar(hex("#0a080c"));
+    return t;
+}
+
+// Coração da Floresta: altar de pedra tomado por raízes de cinza, ou limpo, com musgo e luz verde
+Img altar(bool puro) {
+    std::mt19937 r(puro ? 6500 : 6400);
+    Img t(24, 22);
+    t.elipse(12, 20, 11, 2, hex("#000000", 90));
+    const Cor pedra = puro ? hex("#8a8678") : hex("#57534d");
+    t.rect(3, 13, 18, 7, pedra);             // base
+    t.rect(3, 13, 18, 1, clarear(pedra, 0.2f));
+    t.rect(7, 5, 10, 9, pedra);              // pedra de cima
+    t.rect(7, 5, 10, 1, clarear(pedra, 0.2f));
+    t.elipse(12, 9, 3, 3, puro ? hex("#7af0a0") : hex("#3a1010"));  // o coração
+    t.elipse(12, 9, 1, 1, puro ? hex("#f0fff0") : hex("#e04020"));
+    if (puro) {
+        t.salpicar(r, 26, hex("#4a7a3a"), 3, 5, 21, 20);  // musgo
+        const char* flores[] = {"#f0f0f0", "#f0d060", "#e8a0c0"};
+        for (int i = 0; i < 6; ++i) t.px(3 + static_cast<int>(r() % 18), 18 + static_cast<int>(r() % 2), hex(flores[i % 3]));
+    } else {
+        // Raízes de cinza abraçando a pedra
+        for (int i = 0; i < 5; ++i) {
+            const int x = 4 + i * 4;
+            t.linha(x, 20, 12 + (i - 2), 6 + i % 2, hex("#2a2420"));
+            t.linha(x + 1, 20, 12 + (i - 2), 7 + i % 2, hex("#3a322c"));
+        }
+        t.salpicar(r, 16, hex("#6a625a"), 3, 5, 21, 20);  // cinza
+    }
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Entulho que fecha a passagem das minas: pedras e vigas quebradas
+Img entulho() {
+    std::mt19937 r(6600);
+    Img t(16, 16);
+    t.elipse(8, 13, 7, 3, hex("#5a5650"));
+    t.elipse(5, 10, 4, 3, hex("#6a665f"));
+    t.elipse(11, 9, 4, 4, hex("#625e57"));
+    t.linha(1, 6, 14, 12, hex("#5a3f2a"));   // vigas
+    t.linha(2, 5, 15, 11, hex("#74563c"));
+    t.linha(3, 13, 13, 4, hex("#5a3f2a"));
+    t.salpicar(r, 10, hex("#45423e"));
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Veio de cristal na rocha; minerado, sobram os buracos
+Img veio(bool cheio) {
+    std::mt19937 r(6700);
+    Img t(16, 16);
+    t.elipse(8, 10, 7, 5, hex("#4e4a52"));
+    t.elipse(7, 8, 5, 3, hex("#5e5a62"));
+    t.salpicar(r, 8, hex("#3c3842"));
+    if (cheio) {
+        for (const auto& [x, y, h] : {std::tuple{4, 9, 5}, {8, 7, 7}, {11, 9, 4}}) {
+            t.rect(x, y - h + 3, 2, h, hex("#6ac8f0"));
+            t.px(x, y - h + 3, hex("#e0f8ff"));
+            t.px(x + 1, y - h + 4, hex("#8ad8ff"));
+        }
+    } else {
+        for (const int x : {4, 8, 11}) t.rect(x, 9, 2, 2, hex("#26222a"));
+    }
+    t.contornar(CONTORNO);
+    return t;
+}
+
+Img iconeCristal() {
+    Img t(10, 10);
+    for (int y = 0; y < 8; ++y) {
+        const int meia = y < 3 ? y + 1 : (8 - y) / 2 + 1;
+        t.rect(5 - meia, 1 + y, meia * 2, 1, y % 2 ? hex("#6ac8f0") : hex("#8ad8ff"));
+    }
+    t.px(4, 3, hex("#e0f8ff"));
+    t.contornar(hex("#1a3a5a"));
+    return t;
+}
+
+void fase11(Lista& l) {
+    for (int q = 0; q < 2; ++q) {
+        l.emplace_back(std::format("inimigo_aranha_{}", q), aranha(q));
+        l.emplace_back(std::format("inimigo_golem_cinzas_{}", q), golem(q, false));
+    }
+    l.emplace_back("guardiao_cristal", golem(0, true));
+    l.emplace_back("altar_corrompido", altar(false));
+    l.emplace_back("altar_purificado", altar(true));
+    l.emplace_back("entulho", entulho());
+    l.emplace_back("veio_cristal", veio(true));
+    l.emplace_back("veio_vazio", veio(false));
+    l.emplace_back("icone_cristal", iconeCristal());
+}
+
 std::vector<std::pair<std::string, Img>> gerarTodos() {
     Lista l;
     const char* nomes[] = {"grama", "terra", "lama", "agua", "calcada", "muro"};
@@ -1591,6 +1733,7 @@ std::vector<std::pair<std::string, Img>> gerarTodos() {
     fase7(l);
     fase9(l);
     fase10(l);
+    fase11(l);
     return l;
 }
 

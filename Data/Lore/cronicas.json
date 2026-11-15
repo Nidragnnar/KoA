@@ -52,6 +52,16 @@
     "evento:meteoros": "Estrelas riscaram o céu de Valdren numa chuva de meteoros.",
     "estrela_caida": "O herdeiro recolheu uma estrela caída. Ainda estava morna.",
 
+    "visitou:minas": "Ao sul da floresta, o herdeiro desceu às Minas Abandonadas. Lá embaixo, algo enorme respirava.",
+    "minas_abertas": "A passagem desabada para as minas foi escorada com madeira nova. O caminho para o subsolo estava aberto.",
+    "primeiro_cristal": "O herdeiro arrancou o primeiro cristal das minas. Brilhava como se lembrasse do sol.",
+    "purificou:floresta": "O herdeiro purificou o Coração da Floresta. As árvores voltaram a respirar, e o povo passou a chamá-la de Floresta Encantada.",
+    "escolha:golem_cinzas:derrotar": "O herdeiro despedaçou o Golem de Cinzas. As minas reabriram para o povo de Valdren, frias e silenciosas.",
+    "escolha:golem_cinzas:purificar": "O herdeiro devolveu a luz ao Golem de Cinzas. O gigante agora guarda as Minas Arcanas, e os cristais cantam no escuro.",
+    "escolha:golem_cinzas:pacto": "O herdeiro aceitou o pacto da Chama. Recebeu uma lâmina ardente, e algo no fundo das minas sorriu.",
+    "tomada:floresta": "Sem o herdeiro por perto, as criaturas tomaram a floresta de novo.",
+    "tomada:minas": "Sem o herdeiro por perto, as criaturas tomaram as minas de novo.",
+
     "misterio:primeiro_ato": "As peças se juntaram: a Queda das Cinzas começou dentro do castelo, pelas mãos do próprio rei. Resta saber para onde foi a Chama."
   }
 }

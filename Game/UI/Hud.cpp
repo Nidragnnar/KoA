@@ -10,8 +10,8 @@ namespace koa {
 
 namespace {
 
-// Recursos sempre na mesma ordem na interface
-const char* ORDEM_RECURSOS[] = {"madeira", "pedra", "ouro", "comida"};
+// Recursos sempre na mesma ordem na interface (o cristal só depois das minas)
+const char* ORDEM_RECURSOS[] = {"madeira", "pedra", "ouro", "comida", "cristal"};
 
 // Quebra o texto em linhas que caibam em `largura` pixels
 std::vector<std::string> quebrarLinhas(const ke::BitmapFont& f, const std::string& texto, int largura) {
@@ -57,17 +57,21 @@ void Hud::aviso(std::string texto, glm::vec4 c) {
     if (avisos_.size() > 4) avisos_.erase(avisos_.begin());
 }
 
+bool Hud::mostraCristal(const World& w) { return w.inventario.quantidade("cristal") > 0 || w.visitadas.contains("minas"); }
+
 void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
     // Recursos (canto superior esquerdo)
-    desenharPainel(r, {6, 6}, {116, 72});
+    const int linhas = mostraCristal(w) ? 5 : 4;
+    const float extra = (linhas - 4) * 13.0f;
+    desenharPainel(r, {6, 6}, {116, 72 + extra});
     {
         const ResumoReino rr = w.resumo();
         const std::string povo = std::format("{}/{}", w.estado.populacao, rr.populacaoMax);
-        f_.desenhar(r, "Povo", {12, 63}, cor::apagado);
+        f_.desenhar(r, "Povo", {12, 63 + extra}, cor::apagado);
         const glm::vec4 c = w.estado.felicidade >= 50 ? cor::bom : w.estado.felicidade < 25 ? cor::ruim : cor::texto;
-        f_.desenhar(r, povo, {116.0f - f_.largura(povo), 63}, c);
+        f_.desenhar(r, povo, {116.0f - f_.largura(povo), 63 + extra}, c);
     }
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < linhas; ++i) {
         const std::string id = ORDEM_RECURSOS[i];
         const float y = 11.0f + i * 13.0f;
         const float p = pulso_.contains(id) ? pulso_[id] : 0.0f;
@@ -113,7 +117,7 @@ void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
     // Dica de controles nos primeiros segundos
     if (tempoDica_ > 0.0f) {
         const float a = std::min(1.0f, tempoDica_);
-        const std::string dica = "WASD andar  E interagir  J atacar  B obras  K reino  L diário  C crônicas";
+        const std::string dica = "WASD andar  E interagir  clique atacar  B obras  K reino  R terras  L diário  C crônicas";
         f_.desenharCentralizado(r, dica, {320, 348}, {0.85f, 0.82f, 0.75f, a});
     }
     (void)tempo;
@@ -141,6 +145,7 @@ void Hud::painelConstrucao(ke::Renderer2D& r, const World& w, const std::string&
                       (m.proximo ? m.custo.size() * 12.0f + 26.0f : 14.0f) + opcoes.size() * 13.0f;
     const glm::vec2 s{328, alt}, p{320 - s.x / 2, std::floor(180 - alt / 2)};
     desenharPainel(r, p, s);
+    painelClicavel(p, s);
     f_.desenharCentralizado(r, b->name, {320, p.y + 12}, cor::ouro, true, 1);
     f_.desenharCentralizado(r, std::format("Nível {} de {}", b->level, d->nivelMax()), {320, p.y + 24}, cor::apagado);
     float y = p.y + 38;
@@ -156,6 +161,7 @@ void Hud::painelConstrucao(ke::Renderer2D& r, const World& w, const std::string&
             const float yy = y0 + i * 13.0f + 6.0f;
             const bool indisponivel = opcoes[i] == "Reconstruir" && !m.possivel;
             if (s1) r.retangulo({p.x + 90, yy - 6}, {s.x - 180, 12}, {0.45f, 0.36f, 0.22f, 0.45f});
+            cliques.area({p.x + 40, yy - 6}, {s.x - 80, 13}, static_cast<int>(i));
             const float brilho = s1 ? 0.85f + 0.15f * std::sin(tempo * 4.0f) : 1.0f;
             glm::vec4 c = indisponivel ? cor::apagado : s1 ? cor::ouro * glm::vec4(brilho, brilho, brilho, 1) : cor::texto;
             f_.desenharCentralizado(r, indisponivel ? opcoes[i] + " (faltam recursos)" : opcoes[i], {320, yy}, c);
@@ -214,6 +220,7 @@ void Hud::menuObras(ke::Renderer2D& r, const World& w, const std::vector<std::st
     const float alt = 48.0f + defs.size() * 26.0f;
     const glm::vec2 p{100, std::floor(180 - alt / 2)}, s{440, alt};
     desenharPainel(r, p, s);
+    painelClicavel(p, s);
     f_.desenharCentralizado(r, "Obras do Reino", {320, p.y + 12}, cor::ouro);
     for (size_t i = 0; i < defs.size(); ++i) {
         const BuildingDef& d = dados_.construcoes.at(defs[i]);
@@ -224,6 +231,7 @@ void Hud::menuObras(ke::Renderer2D& r, const World& w, const std::vector<std::st
         const bool esgotada = d.limite > 0 && tem >= d.limite;
         const bool bloqueada = !w.monumentoLiberado(d);
         if (s1) r.retangulo({p.x + 8, y - 3}, {s.x - 16, 25}, {0.45f, 0.36f, 0.22f, 0.45f});
+        cliques.area({p.x + 8, y - 3}, {s.x - 16, 25}, static_cast<int>(i));
         f_.desenhar(r, n1.nome, {p.x + 14, y}, esgotada || bloqueada ? cor::apagado : s1 ? cor::ouro : cor::texto);
         if (d.monumento) f_.desenhar(r, "monumento", {p.x + 22.0f + f_.largura(n1.nome), y}, cor::apagado);
         const std::string qtd = d.limite > 0 ? std::format("{}/{}", tem, d.limite) : std::to_string(tem);
@@ -235,12 +243,12 @@ void Hud::menuObras(ke::Renderer2D& r, const World& w, const std::vector<std::st
     // Descrição da selecionada
     const NivelConstrucao& n1 = *dados_.construcoes.at(defs[sel]).nivel(1);
     f_.desenharCentralizado(r, n1.descricao, {320, p.y + s.y - 14}, cor::apagado);
-    f_.desenharCentralizado(r, "W/S escolher   E posicionar   Esc fechar", {320, p.y + s.y + 10}, cor::texto);
+    f_.desenharCentralizado(r, "W/S ou mouse escolher   E ou clique posicionar   Esc fechar", {320, p.y + s.y + 10}, cor::texto);
 }
 
 void Hud::dicaColocacao(ke::Renderer2D& r, const std::string& nome, bool valido, const std::string& motivo) {
     const std::string l1 = "Construir: " + nome;
-    const std::string l2 = valido ? "E confirmar   Esc cancelar   (ande para escolher o lugar)" : motivo;
+    const std::string l2 = valido ? "E ou clique confirmar   Esc cancelar   (ande para escolher o lugar)" : motivo;
     const float l = static_cast<float>(std::max(f_.largura(l1), f_.largura(l2))) + 16;
     desenharPainel(r, {320 - l / 2, 300}, {l, 30});
     f_.desenharCentralizado(r, l1, {320, 309}, cor::ouro);
@@ -252,6 +260,7 @@ void Hud::painelReino(ke::Renderer2D& r, const World& w) {
     const ResumoReino rr = w.resumo();
     const glm::vec2 p{140, 36}, s{360, 288};
     desenharPainel(r, p, s);
+    painelClicavel(p, s);
     f_.desenharCentralizado(r, "Reino de Valdren", {320, p.y + 12}, cor::ouro);
     f_.desenharCentralizado(r, std::string(nomeEra(w.reino.eraAtual())) + "  -  " + w.titulo().nome, {320, p.y + 24}, cor::apagado);
     float y = p.y + 42;
@@ -273,7 +282,11 @@ void Hud::painelReino(ke::Renderer2D& r, const World& w) {
     linha("Ouro por dia", std::format("{} impostos + {} construções", rr.impostos, rr.ouroProducao));
     y += 4;
     f_.desenhar(r, "Impostos", {xR, y}, cor::apagado);
-    f_.desenhar(r, std::string("< ") + nomeImposto(w.estado.imposto) + " >", {xV, y}, cor::ouro);
+    const std::string imposto = std::string("< ") + nomeImposto(w.estado.imposto) + " >";
+    f_.desenhar(r, imposto, {xV, y}, cor::ouro);
+    // As setas também se clicam (200 = menos, 201 = mais)
+    cliques.area({xV - 4, y - 3}, {14, 13}, 200);
+    cliques.area({xV + f_.largura(imposto) - 10.0f, y - 3}, {14, 13}, 201);
     static const char* efeito[] = {"1 ouro/morador, +10 feliz", "2 ouro/morador", "3 ouro/morador, -12 feliz"};
     y += 11;
     f_.desenhar(r, efeito[static_cast<int>(w.estado.imposto)], {xV, y}, cor::apagado);
@@ -300,20 +313,22 @@ void Hud::painelReino(ke::Renderer2D& r, const World& w) {
     }
     float yl = y;
     for (const auto& l : quebrarLinhas(f_, lista, static_cast<int>(s.x) - 150 - 14)) f_.desenhar(r, l, {xV, yl}, cor::texto), yl += 10;
-    f_.desenharCentralizado(r, "A/D mudar impostos   K ou Esc fechar", {320, p.y + s.y - 12}, cor::apagado);
+    f_.desenharCentralizado(r, "A/D ou < > mudar impostos   K ou Esc fechar", {320, p.y + s.y - 12}, cor::apagado);
+    rodapeFechar("K ou Esc fechar", {320 + f_.largura("A/D ou < > mudar impostos   ") / 2.0f, p.y + s.y - 12});
 }
 
 void Hud::combate(ke::Renderer2D& r, const World& w, float tempo) {
     const Jogador& j = w.jogador;
+    const float dy = mostraCristal(w) ? 13.0f : 0.0f;  // o painel de recursos cresceu com a linha do cristal
     // Vida do herói: aparece em região hostil ou quando ferido
-    if (w.infoAtual().hostil || j.vida < j.vidaMax) {
-        desenharPainel(r, {6, 82}, {116, 22});
-        f_.desenhar(r, "Vida", {12, 89}, cor::apagado);
+    if (w.regiaoHostil() || j.vida < j.vidaMax) {
+        desenharPainel(r, {6, 82 + dy}, {116, 22});
+        f_.desenhar(r, "Vida", {12, 89 + dy}, cor::apagado);
         const float fr = static_cast<float>(j.vida) / j.vidaMax;
         const glm::vec4 c = fr > 0.5f ? cor::bom : fr > 0.25f ? cor::ouro : cor::ruim;
         const float pulso = fr <= 0.25f ? 0.75f + 0.25f * std::sin(tempo * 10.0f) : 1.0f;
-        barra(r, {46, 90}, 70, fr, c * glm::vec4(pulso, pulso, pulso, 1));
-        if (w.inventario.quantidade("comida") >= 3 && j.vida < j.vidaMax) f_.desenhar(r, "H: comer", {128, 89}, cor::apagado);
+        barra(r, {46, 90 + dy}, 70, fr, c * glm::vec4(pulso, pulso, pulso, 1));
+        if (w.inventario.quantidade("comida") >= 3 && j.vida < j.vidaMax) f_.desenhar(r, "H: comer", {128, 89 + dy}, cor::apagado);
     }
     // Chefe: barra grande no alto enquanto ele persegue
     for (auto [e, i] : w.reg.view<const Inimigo>().each()) {
@@ -327,12 +342,12 @@ void Hud::combate(ke::Renderer2D& r, const World& w, float tempo) {
     if (const std::string passo = w.proximoPasso(); !passo.empty()) {
         const std::string texto = "Próximo passo: " + passo;
         const float a = 0.8f + 0.2f * std::sin(tempo * 3.0f);
-        r.retangulo({6, 108}, {static_cast<float>(f_.largura(texto)) + 10, 11}, {0.05f, 0.04f, 0.04f, 0.7f});
-        f_.desenhar(r, texto, {11, 110}, cor::ouro * glm::vec4(a, a, a, 1));
+        r.retangulo({6, 108 + dy}, {static_cast<float>(f_.largura(texto)) + 10, 11}, {0.05f, 0.04f, 0.04f, 0.7f});
+        f_.desenhar(r, texto, {11, 110 + dy}, cor::ouro * glm::vec4(a, a, a, 1));
     }
     // Missões ativas (até 3), na coluna da esquerda
     const auto ativas = w.missoesAtivas();
-    float y = 124;
+    float y = 124 + dy;
     for (size_t k = 0; k < ativas.size() && k < 3; ++k) {
         const MissaoDef& m = *ativas[k];
         const std::string prog = std::format("{}/{}", std::min(w.progressoMissao(m), m.objetivo.quantidade), m.objetivo.quantidade);
@@ -349,6 +364,7 @@ void Hud::lojaForja(ke::Renderer2D& r, const World& w, const std::vector<std::st
     const float alt = 70.0f + itens.size() * 26.0f;
     const glm::vec2 p{100, std::floor(180 - alt / 2)}, s{440, alt};
     desenharPainel(r, p, s);
+    painelClicavel(p, s);
     f_.desenharCentralizado(r, std::format("Forja de Bram (nível {})", w.nivelForja()), {320, p.y + 12}, cor::ouro);
     f_.desenharCentralizado(r, std::format("Espada: {} de dano   Armadura: {} de defesa", w.danoArma(), w.defesaArmadura()), {320, p.y + 24},
                             cor::apagado);
@@ -359,6 +375,7 @@ void Hud::lojaForja(ke::Renderer2D& r, const World& w, const std::vector<std::st
         const bool tem = w.equip.possuidos.contains(d.id);
         const bool bloqueado = w.nivelForja() < d.forja;
         if (s1) r.retangulo({p.x + 8, y - 3}, {s.x - 16, 25}, {0.45f, 0.36f, 0.22f, 0.45f});
+        cliques.area({p.x + 8, y - 3}, {s.x - 16, 25}, static_cast<int>(i));
         const std::string atributo = d.tipo == "arma" ? std::format("dano {}", d.dano) : std::format("defesa {}", d.defesa);
         f_.desenhar(r, d.nome, {p.x + 14, y}, tem || bloqueado ? cor::apagado : s1 ? cor::ouro : cor::texto);
         f_.desenhar(r, atributo, {p.x + 200, y}, cor::texto);
@@ -368,13 +385,14 @@ void Hud::lojaForja(ke::Renderer2D& r, const World& w, const std::vector<std::st
     }
     const std::string desc = dados_.equipamentos.at(itens[sel]).descricao;
     f_.desenharCentralizado(r, desc, {320, p.y + s.y - 14}, cor::apagado);
-    f_.desenharCentralizado(r, "W/S escolher   E forjar   Esc fechar", {320, p.y + s.y + 10}, cor::texto);
+    f_.desenharCentralizado(r, "W/S ou mouse escolher   E ou clique forjar   Esc fechar", {320, p.y + s.y + 10}, cor::texto);
 }
 
 void Hud::diario(ke::Renderer2D& r, const World& w) {
     r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.5f});
     const glm::vec2 p{90, 40}, s{460, 280};
     desenharPainel(r, p, s);
+    painelClicavel(p, s);
     f_.desenharCentralizado(r, "Diário do Herdeiro", {320, p.y + 12}, cor::ouro);
     float y = p.y + 30;
     f_.desenhar(r, "Missões", {p.x + 14, y}, cor::ouro);
@@ -405,13 +423,15 @@ void Hud::diario(ke::Renderer2D& r, const World& w) {
     std::string abates;
     for (const auto& [tipo, n] : w.abates) abates += (abates.empty() ? "" : ",  ") + dados_.inimigos.at(tipo).nome + " " + std::to_string(n);
     f_.desenhar(r, abates.empty() ? "Nenhuma ainda." : abates, {p.x + 20, y}, abates.empty() ? cor::apagado : cor::texto);
-    f_.desenharCentralizado(r, "J atacar   H comer   L ou Esc fechar", {320, p.y + s.y - 12}, cor::apagado);
+    f_.desenharCentralizado(r, "J ou clique atacar   H comer   L ou Esc fechar", {320, p.y + s.y - 12}, cor::apagado);
+    rodapeFechar("L ou Esc fechar", {320 + f_.largura("J ou clique atacar   H comer   ") / 2.0f, p.y + s.y - 12});
 }
 
 void Hud::cronicas(ke::Renderer2D& r, const World& w, int aba, int rolagem, int selFragmento) {
     r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.55f});
     const glm::vec2 p{60, 24}, s{520, 312};
     desenharPainel(r, p, s);
+    painelClicavel(p, s);
     f_.desenharCentralizado(r, "Crônicas de Valdren", {320, p.y + 12}, cor::ouro, true, 1);
     const TituloDef& t = w.titulo();
     const std::string sub = t.nome + ": " + t.descricao;
@@ -423,6 +443,7 @@ void Hud::cronicas(ke::Renderer2D& r, const World& w, int aba, int rolagem, int 
     for (int i = 0; i < 2; ++i) {
         const float la = static_cast<float>(f_.largura(abas[i]));
         if (i == aba) r.retangulo({xa - 5, p.y + 36}, {la + 10, 12}, {0.45f, 0.36f, 0.22f, 0.5f});
+        cliques.area({xa - 5, p.y + 34}, {la + 10, 15}, 100 + i);  // abas: 100 e 101
         f_.desenhar(r, abas[i], {xa, p.y + 38}, i == aba ? cor::ouro : cor::apagado);
         xa += la + 30;
     }
@@ -441,7 +462,7 @@ void Hud::cronicas(ke::Renderer2D& r, const World& w, int aba, int rolagem, int 
             y += 6;
         }
         if (c.empty()) f_.desenhar(r, "Nada foi escrito ainda.", {p.x + 20, y}, cor::apagado);
-        f_.desenharCentralizado(r, std::format("A/D abas   W/S folhear   C ou Esc fechar   ({} páginas)", c.size()), {320, p.y + s.y - 14},
+        f_.desenharCentralizado(r, std::format("A/D abas   W/S ou roda folhear   C ou Esc fechar   ({} páginas)", c.size()), {320, p.y + s.y - 14},
                                 cor::apagado);
     } else {
         // Fragmentos: os achados podem ser relidos; os outros ficam em branco
@@ -450,6 +471,7 @@ void Hud::cronicas(ke::Renderer2D& r, const World& w, int aba, int rolagem, int 
             const bool achou = w.marcos.contains("pista:" + pd.id);
             const bool sel = i == selFragmento;
             if (sel) r.retangulo({p.x + 14, y - 3}, {s.x - 28, 13}, {0.45f, 0.36f, 0.22f, 0.45f});
+            cliques.area({p.x + 14, y - 3}, {s.x - 28, 14}, i);
             f_.desenhar(r, achou ? pd.titulo : "? ? ?", {p.x + 24, y}, achou ? (sel ? cor::ouro : cor::texto) : cor::apagado);
             y += 15;
         }
@@ -458,7 +480,7 @@ void Hud::cronicas(ke::Renderer2D& r, const World& w, int aba, int rolagem, int 
         const std::string nota = completo ? "Todas as peças reunidas. Mas para onde foi a Chama?"
                                           : "Procure no castelo, nos túmulos, na floresta... e escute os viajantes.";
         for (const auto& l : quebrarLinhas(f_, nota, largura)) f_.desenhar(r, l, {p.x + 24, y}, completo ? cor::ouro : cor::apagado), y += 11;
-        f_.desenharCentralizado(r, "A/D abas   W/S escolher   E ler   C ou Esc fechar", {320, p.y + s.y - 14}, cor::apagado);
+        f_.desenharCentralizado(r, "A/D abas   W/S escolher   E ou clique ler   C ou Esc fechar", {320, p.y + s.y - 14}, cor::apagado);
     }
 }
 
@@ -491,6 +513,7 @@ void Hud::lojaMercador(ke::Renderer2D& r, const World& w, const NpcDef& npc, int
     const float alt = 64.0f + npc.loja.size() * 26.0f;
     const glm::vec2 p{110, std::floor(180 - alt / 2)}, s{420, alt};
     desenharPainel(r, p, s);
+    painelClicavel(p, s);
     f_.desenharCentralizado(r, "Banca de " + npc.nome, {320, p.y + 12}, cor::ouro);
     f_.desenharCentralizado(r, std::format("Seu ouro: {}", w.inventario.quantidade("ouro")), {320, p.y + 24}, cor::apagado);
     for (size_t i = 0; i < npc.loja.size(); ++i) {
@@ -499,11 +522,12 @@ void Hud::lojaMercador(ke::Renderer2D& r, const World& w, const NpcDef& npc, int
         const bool s1 = static_cast<int>(i) == sel;
         const bool esgotado = w.itemEsgotado(it);
         if (s1) r.retangulo({p.x + 8, y - 3}, {s.x - 16, 25}, {0.45f, 0.36f, 0.22f, 0.45f});
+        cliques.area({p.x + 8, y - 3}, {s.x - 16, 25}, static_cast<int>(i));
         f_.desenhar(r, it.nome, {p.x + 14, y}, esgotado ? cor::apagado : s1 ? cor::ouro : cor::texto);
         if (esgotado) f_.desenhar(r, "vendido", {p.x + 24, y + 11}, cor::apagado);
         else custoEmLinha(r, it.custo, w.inventario, {p.x + 24, y + 11});
     }
-    f_.desenharCentralizado(r, "W/S escolher   E comprar   Esc fechar", {320, p.y + s.y + 10}, cor::texto);
+    f_.desenharCentralizado(r, "W/S ou mouse escolher   E ou clique comprar   Esc fechar", {320, p.y + s.y + 10}, cor::texto);
 }
 
 void Hud::relatorioManha(ke::Renderer2D& r, const World& w) {
@@ -519,7 +543,11 @@ void Hud::relatorioManha(ke::Renderer2D& r, const World& w) {
     f_.desenharCentralizado(r, w.relogio.textoData(), {320, p.y + 24}, cor::apagado);
     float y = p.y + 40;
     for (const auto& [rid, v] : rel.variacoes) {
-        const std::string nome = rid == "ouro (desmaio)" ? "Ouro (desmaio)" : dados_.nomeRecurso(rid);
+        // "madeira|Floresta Encantada": o que uma região rendeu
+        const auto sep = rid.find('|');
+        const std::string nome = rid == "ouro (desmaio)" ? "Ouro (desmaio)"
+                                 : sep != std::string::npos ? dados_.nomeRecurso(rid.substr(0, sep)) + " (" + rid.substr(sep + 1) + ")"
+                                                            : dados_.nomeRecurso(rid);
         f_.desenhar(r, nome, {p.x + 40, y}, cor::texto);
         const std::string val = std::format("{:+}", v);
         f_.desenhar(r, val, {p.x + s.x - 40 - f_.largura(val), y}, v > 0 ? cor::bom : v < 0 ? cor::ruim : cor::apagado);
@@ -600,8 +628,107 @@ void Hud::menuPausa(ke::Renderer2D& r, const std::vector<std::string>& opcoes, i
         const bool s = static_cast<int>(i) == sel;
         const float y = p.y + 32 + i * 16.0f;
         if (s) r.retangulo({p.x + 10, y - 5}, {140, 12}, {0.45f, 0.36f, 0.22f, 0.45f});
+        cliques.area({p.x + 10, y - 7}, {140, 16}, static_cast<int>(i));
         f_.desenharCentralizado(r, opcoes[i], {320, y}, s ? cor::ouro : cor::texto);
     }
+}
+
+// ---------- Fase 11: terras do reino e chefes com escolha ----------
+
+void Hud::painelRegioes(ke::Renderer2D& r, const World& w) {
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.45f});
+    const glm::vec2 p{110, 30}, s{420, 300};
+    desenharPainel(r, p, s);
+    painelClicavel(p, s);
+    f_.desenharCentralizado(r, "Terras do Reino", {320, p.y + 12}, cor::ouro);
+    f_.desenharCentralizado(r, "O que as cinzas ainda dominam fora do vilarejo", {320, p.y + 24}, cor::apagado);
+    float y = p.y + 42;
+    const float xR = p.x + 16, xV = p.x + 130;
+    int mostradas = 0;
+    for (const auto& id : w.regioesComVida()) {
+        if (!w.visitadas.contains(id)) continue;  // terra que o herdeiro ainda não pisou não aparece
+        ++mostradas;
+        const EstadoRegiao& e = w.estadoRegioes.at(id);
+        const TransformacaoRegiao* t = w.transformacao(id);
+        const VidaRegiaoDef& v = w.regioes.at(id).vida;
+        // Nome e situação, em palavras
+        std::string sit;
+        glm::vec4 cs = cor::bom;
+        if (e.corrupcao >= regra::INVASAO) sit = "Tomada pelas criaturas", cs = cor::ruim;
+        else if (e.corrupcao >= 60.0f) sit = t ? "Ameaçada" : "Dominada pelas cinzas", cs = cor::ruim;
+        else if (e.corrupcao >= 30.0f) sit = "Disputada", cs = cor::ouro;
+        else sit = t ? "Em paz" : "Calma";
+        if (abandonada(e, w.relogio.dia)) sit += std::format(", sem visita há {} dias", w.relogio.dia - e.ultimaVisita);
+        // Nome e, ao lado (ou embaixo, se não couber), a situação
+        const std::string nome = w.nomeRegiao(id);
+        f_.desenhar(r, nome, {xR, y}, cor::ouro);
+        if (f_.largura(nome) + f_.largura(sit) + 20 > s.x - 32) {
+            y += 12;
+            f_.desenhar(r, sit, {xR + 6, y}, cs);
+        } else {
+            f_.desenhar(r, sit, {p.x + s.x - 16 - f_.largura(sit), y}, cs);
+        }
+        y += 14;
+        auto linhaBarra = [&](const char* rotulo, float valor, glm::vec4 c) {
+            f_.desenhar(r, rotulo, {xR + 6, y}, cor::apagado);
+            barra(r, {xV, y + 1}, 160, valor / 100.0f, c);
+            f_.desenhar(r, std::format("{:.0f}", valor), {xV + 168, y}, cor::texto);
+            y += 12;
+        };
+        linhaBarra("Corrupção", e.corrupcao, e.corrupcao >= 60.0f ? cor::ruim : e.corrupcao >= 30.0f ? cor::ouro : cor::bom);
+        linhaBarra("Segurança", e.seguranca, cor::bom);
+        linhaBarra("Prosperidade", e.prosperidade, cor::ouro);
+        std::string rende;
+        for (const auto& [rec, n] : producaoRegiao(e, v, t)) rende += (rende.empty() ? "" : ", ") + std::format("+{} {}", n, dados_.nomeRecurso(rec));
+        f_.desenhar(r, "Por noite", {xR + 6, y}, cor::apagado);
+        f_.desenhar(r, rende.empty() ? "nada ainda" : rende, {xV, y}, rende.empty() ? cor::apagado : cor::texto);
+        y += 12;
+        for (const auto& l : quebrarLinhas(f_, t ? t->dica : v.dica, static_cast<int>(s.x) - 44)) f_.desenhar(r, l, {xR + 6, y}, cor::apagado), y += 10;
+        y += 10;
+    }
+    if (mostradas == 0)
+        for (const auto& l : quebrarLinhas(f_, "Nenhuma terra explorada ainda. A estrada leste leva à floresta.", static_cast<int>(s.x) - 40))
+            f_.desenhar(r, l, {xR, y}, cor::apagado), y += 11;
+    f_.desenharCentralizado(r, "Vencer criaturas baixa a corrupção. Terra abandonada piora a cada noite.", {320, p.y + s.y - 26}, cor::apagado);
+    f_.desenharCentralizado(r, "R ou Esc fechar", {320, p.y + s.y - 12}, cor::texto);
+    rodapeFechar("R ou Esc fechar", {320, p.y + s.y - 12});
+}
+
+void Hud::painelEscolha(ke::Renderer2D& r, const World& w, const EscolhaDef& d, int sel, float tempo) {
+    r.retangulo({0, 0}, {640, 360}, {0.08f, 0.02f, 0.02f, 0.55f});
+    const int largura = 392;
+    std::vector<std::string> texto;
+    for (const auto& par : d.texto)
+        for (const auto& l : quebrarLinhas(f_, par, largura)) texto.push_back(l);
+    std::vector<std::vector<std::string>> descricoes;
+    float altOpcoes = 0.0f;
+    for (const auto& o : d.opcoes) {
+        descricoes.push_back(quebrarLinhas(f_, o.descricao, largura - 20));
+        altOpcoes += 16.0f + descricoes.back().size() * 10.0f + (w.opcaoDisponivel(o) ? 0.0f : 10.0f) + 6.0f;
+    }
+    const float alt = 46.0f + texto.size() * 11.0f + 10.0f + altOpcoes + 22.0f;
+    const glm::vec2 p{100, std::floor(180 - alt / 2)}, s{440, alt};
+    desenharPainel(r, p, s);
+    painelClicavel(p, s);
+    const float pulso = 0.85f + 0.15f * std::sin(tempo * 4.0f);
+    f_.desenharCentralizado(r, d.titulo, {320, p.y + 14}, cor::ruim * glm::vec4(pulso, pulso, pulso, 1), true, 1);
+    float y = p.y + 34;
+    for (const auto& l : texto) f_.desenhar(r, l, {p.x + 24, y}, cor::texto), y += 11;
+    y += 10;
+    for (size_t i = 0; i < d.opcoes.size(); ++i) {
+        const OpcaoEscolha& o = d.opcoes[i];
+        const bool marcada = static_cast<int>(i) == sel;
+        const bool pode = w.opcaoDisponivel(o);
+        const float h = 16.0f + descricoes[i].size() * 10.0f + (pode ? 0.0f : 10.0f);
+        if (marcada) r.retangulo({p.x + 10, y - 4}, {s.x - 20, h + 2}, {0.45f, 0.36f, 0.22f, 0.45f});
+        cliques.area({p.x + 10, y - 4}, {s.x - 20, h + 2}, static_cast<int>(i));
+        f_.desenhar(r, o.nome, {p.x + 20, y}, !pode ? cor::apagado : marcada ? cor::ouro : cor::texto);
+        y += 13;
+        for (const auto& l : descricoes[i]) f_.desenhar(r, l, {p.x + 30, y}, cor::apagado), y += 10;
+        if (!pode) f_.desenhar(r, o.requerTexto, {p.x + 30, y}, cor::ruim), y += 10;
+        y += 9;
+    }
+    f_.desenharCentralizado(r, "W/S ou mouse escolher   E ou clique decidir   Esc pensar mais um pouco", {320, p.y + s.y - 12}, cor::apagado);
 }
 
 }

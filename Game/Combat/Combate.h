@@ -22,6 +22,7 @@ struct InimigoDef {
     int ouroMin = 0, ouroMax = 0;
     glm::ivec2 tamanho{16, 16};
     bool chefe = false;
+    std::string escolha;  // fase 11: chefe que se rende e deixa o herdeiro decidir (Data/Lore/escolhas.json)
 };
 
 struct EquipDef {
@@ -65,6 +66,7 @@ struct Inimigo {
     int ultimoGolpe = -1;         // cada golpe do herói acerta uma vez só
     bool perseguindo = false;
     bool andando = false;
+    bool rendido = false;         // chefe de joelhos, esperando a decisão do herdeiro
 };
 
 // ---------- Estado do herói e das missões ----------

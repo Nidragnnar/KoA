@@ -134,4 +134,31 @@ captura: 43_estrela_caida
 [OK] no inverno as criaturas ficam mais fortes
 captura: 44_inverno
 captura: 45_painel_reino_inverno
+[OK] R abre as Terras do Reino
+captura: 46_painel_regioes
+[OK] R fecha o painel
+[OK] o altar aparece como alvo: Coração da Floresta
+captura: 47_coracao_corrompido
+[OK] E no Coração purifica: Floresta Encantada
+[OK] a floresta purificada fica clara e em paz
+captura: 48_floresta_encantada
+captura: 49_passagem_minas
+[OK] 15 de madeira escoram a passagem
+[OK] a trilha desce às Minas Abandonadas
+captura: 50_minas
+captura: 51_veio_cristal
+[OK] o veio rendeu cristal (1)
+[OK] o Golem de Cinzas guarda o fundo das minas
+captura: 52_golem
+[OK] com 30% da vida o golem se rende e pede uma decisão
+captura: 53_escolha_golem
+[OK] E decide: o golem é purificado
+[OK] as Minas Arcanas ganham o Guardião de Cristal
+captura: 54_minas_arcanas
+[OK] R mostra as duas terras
+captura: 55_terras_do_reino
+[OK] Esc abre a pausa
+captura: 56_pausa_mouse
+[OK] clicar em Continuar fecha a pausa
+[OK] o clique esquerdo ataca virado para o cursor
 RESULTADO: 0 falha(s)

@@ -1,0 +1,26 @@
+{
+  "_como_funciona": "Um chefe com 'escolha' (Data/Enemies/inimigos.json) se rende com 30% da vida. O herdeiro escolhe uma opção: ela vira o marco 'escolha:<id>:<opção>' (página nas Crônicas), dá a recompensa e o item, muda a corrupção da região e ativa a transformação da região que tem esse marco (Data/World/<região>.json). 'requer' = marco necessário para a opção (requer_texto explica o que falta).",
+  "escolhas": {
+    "golem_cinzas": {
+      "titulo": "O Golem de Cinzas se rende",
+      "inimigo": "golem_cinzas",
+      "regiao": "minas",
+      "texto": [
+        "O gigante de pedra cai de joelhos. No peito rachado, uma brasa da Chama ainda pulsa, presa no cristal.",
+        "Uma voz de cinza ecoa pela mina: \"Herdeiro de Aldric... o que fará de mim?\""
+      ],
+      "opcoes": [
+        { "id": "derrotar", "nome": "Despedaçar o golem",
+          "descricao": "Acaba com a ameaça de vez. As minas reabrem e rendem pedra, mas a luz do cristal se apaga com ele.",
+          "recompensa": { "ouro": 120, "pedra": 30 }, "corrupcao": 30 },
+        { "id": "purificar", "nome": "Devolver a luz ao cristal",
+          "descricao": "O rito do Coração da Floresta limpa a brasa. O golem vira guardião e as minas ficam arcanas, ricas em cristal. Nada de ouro hoje.",
+          "requer": "purificou:floresta", "requer_texto": "Só quem purificou o Coração da Floresta conhece o rito.",
+          "recompensa": { "cristal": 3 }, "corrupcao": 0 },
+        { "id": "pacto", "nome": "Aceitar o pacto da Chama",
+          "descricao": "A brasa oferece poder: uma lâmina ardente e minas que dão cristal e ouro. Mas a Chama cobra: o povo fica inquieto e a Lua de Sangue vem mais vezes.",
+          "item": "lamina_chama", "recompensa": { "ouro": 60 }, "corrupcao": 50 }
+      ]
+    }
+  }
+}

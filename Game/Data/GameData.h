@@ -12,6 +12,7 @@
 #include "Game/Kingdom/Estacoes.h"
 #include "Game/Lore/Lore.h"
 #include "Game/NPC/Npc.h"
+#include "Game/World/Regioes.h"
 
 namespace koa {
 
@@ -59,6 +60,7 @@ struct GameData {
     std::vector<MissaoDef> missoes;
     Lore lore;  // Crônicas, títulos e pistas da Queda
     DadosEstacoes estacoes;  // estações, acontecimentos raros e o festival
+    std::map<std::string, EscolhaDef> escolhas;  // fase 11: chefes que se rendem
 
     const InimigoDef* inimigoPorLetra(char c) const {
         for (const auto& [id, d] : inimigos)

@@ -226,7 +226,7 @@ TEST(SaveV5, CronicasEMarcosVoltamIguais) {
     EXPECT_EQ(w2.pistasEncontradas(), 1);
 }
 
-// Monta saves prontos para testar as fases 9 e 10 à mão (só roda com KOA_CENARIOS = pasta dos saves)
+// Monta saves prontos para testar a fase 11 à mão (só roda com KOA_CENARIOS = pasta dos saves)
 TEST(Cenarios, MontarSavesDeTeste) {
     char* pasta = nullptr;
     size_t n = 0;
@@ -235,7 +235,7 @@ TEST(Cenarios, MontarSavesDeTeste) {
     free(pasta);
     auto gravar = [&](World& w, const std::string& slot) {
         DadosSave d = w.capturar();
-        d.versaoJogo = "1.2.0";
+        d.versaoJogo = "1.3.0";
         d.dataHora = "cenário de teste";
         ASSERT_TRUE(s.salvar(d, slot));
     };
@@ -252,8 +252,19 @@ TEST(Cenarios, MontarSavesDeTeste) {
                                                              {"mercado", {44, 26}}, {"forja", {36, 12}}, {"capela", {50, 22}}};
         for (const auto& [def, perto] : obras) obra(w, def, perto);
         w.dormir(false);
+        // Forja grande (nível 3): dá para forjar a Lâmina e a Couraça de Cristal
+        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 2000);
+        for (const auto& b : w.reino.construcoes)
+            if (b.defId == "forja") {
+                const std::string id = b.id;
+                ASSERT_TRUE(w.melhorarConstrucao(id));
+                ASSERT_TRUE(w.melhorarConstrucao(id));
+                break;
+            }
         w.abates = {{"sombra", 12}, {"lobo", 6}, {"esqueleto", 6}, {"cavaleiro_caido", 1}};
-        for (const MissaoDef& m : dados().missoes) w.missoes[m.id] = {true, 0};
+        // As missões até a fase 10 cumpridas; as da fase 11 os moradores oferecem conversando
+        for (const MissaoDef& m : dados().missoes)
+            if (m.id != "coracao_floresta" && m.id != "minas_valdren" && m.id != "golem_cinzas") w.missoes[m.id] = {true, 0};
         for (const char* r : {"floresta", "cripta"}) w.visitadas.insert(r);
         w.marcar("visitou:floresta", "Floresta Amaldiçoada", true);
         w.marcar("visitou:cripta", "Cripta do Cavaleiro", true);
@@ -268,31 +279,44 @@ TEST(Cenarios, MontarSavesDeTeste) {
         w.inventario.definir("comida", 80);
         EXPECT_EQ(static_cast<int>(w.reino.eraAlvo()), 1) << "desenvolvimento " << w.reino.desenvolvimento();
     };
-    // Save_002: dia do Festival da Colheita (7º do outono), 16:30. Às 17:00 o povo vai para a praça
+    auto equipar = [](World& w) {
+        for (const char* e : {"espada_linhagem", "cota_malha"}) w.equip.possuidos.insert(e);
+        w.equip.arma = "espada_linhagem";
+        w.equip.armadura = "cota_malha";
+    };
+    // Save_002: a floresta quase limpa (corrupção 31). Vencer umas criaturas, purificar o Coração, abrir as minas
+    // e enfrentar o golem com o rito já aprendido (a opção "purificar" fica disponível)
     {
         World w = vilarejo();
         reinoAvancado(w);
-        w.relogio.dia = 21;
-        w.relogio.minutos = 16 * 60 + 30;
-        ASSERT_TRUE(w.festivalHoje());
+        equipar(w);
+        w.relogio.dia = 9;
+        w.relogio.minutos = 9 * 60;
+        w.inventario.definir("madeira", 40);  // 15 escoram a passagem das minas
+        w.inventario.definir("ouro", 300);
+        w.estadoRegioes.at("floresta") = {31.0f, 20.0f, 25.0f, 8};
+        w.entrarRegiao("floresta", {3, 17}, Direcao::Direita);
         w.tirarEventos();
         gravar(w, "Save_002");
     }
-    // Save_003: noite de Lua de Sangue no inverno, 18:40, com pouca comida guardada
+    // Save_003: diante do golem, nas minas já abertas, sem a floresta purificada ("purificar" bloqueada).
+    // A floresta está abandonada há 5 dias (corrupção 83): dormir hoje a deixa tomada pelas criaturas.
+    // 10 cristais e 300 de ouro para testar a forja (nível 3) no vilarejo.
     {
         World w = vilarejo();
         reinoAvancado(w);
-        int dia = -1;
-        for (int d = 22; d < 2000 && dia < 0; ++d)
-            if (const EventoDef* ev = w.eventoDoDia(d); ev && ev->id == "lua_sangue" && Relogio{d}.estacao() == Estacao::Inverno) dia = d;
-        ASSERT_NE(dia, -1);
-        w.relogio.dia = dia;
-        w.relogio.minutos = 18 * 60 + 40;
-        w.inventario.definir("comida", 30);
-        w.equip.possuidos.insert("espada_ferro");
-        w.equip.arma = "espada_ferro";
+        equipar(w);
+        w.relogio.dia = 12;
+        w.relogio.minutos = 18 * 60 + 30;
+        w.inventario.definir("ouro", 300);
+        w.inventario.definir("cristal", 10);
+        w.marcar("minas_abertas", "", true);
+        w.visitadas.insert("minas");
+        w.marcar("visitou:minas", "Minas Abandonadas", true);
+        w.estadoRegioes.at("floresta") = {83.0f, 0.0f, 8.0f, 7};
+        w.estadoRegioes.at("minas") = {80.0f, 0.0f, 0.0f, 12};
+        w.entrarRegiao("minas", {25, 2}, Direcao::Baixo);
         w.tirarEventos();
-        std::printf("[cenário] Lua de Sangue no inverno: dia %d\n", dia);
         gravar(w, "Save_003");
     }
 }

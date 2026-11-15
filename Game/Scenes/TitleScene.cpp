@@ -97,13 +97,16 @@ void TitleScene::escolherMenu(const std::string& o) {
 
 void TitleScene::entradaSlots() {
     ke::Input& in = ctx_.app.input();
-    if (in.pressionou(SDL_SCANCODE_ESCAPE)) {
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || cliqueFecha(in, cliques_)) {
         slots_ = Slots::Fechado;
         return;
     }
     if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selSlot_ = (selSlot_ + 2) % 3, confirmarSubstituir_ = false;
     if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selSlot_ = (selSlot_ + 1) % 3, confirmarSubstituir_ = false;
-    if (!(in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE))) return;
+    const int antes = selSlot_;
+    const bool clique = listaComMouse(in, cliques_, selSlot_, 3);
+    if (selSlot_ != antes) confirmarSubstituir_ = false;  // trocou de espaço: a confirmação era do outro
+    if (!(in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique)) return;
     const ResumoSlot& r = resumos_[selSlot_];
     if (slots_ == Slots::Carregar) {
         if (r.existe) carregarSlot(SLOTS[selSlot_]);
@@ -131,7 +134,9 @@ void TitleScene::atualizar(double dtD) {
         sel_ = std::clamp(sel_, 0, n - 1);
         if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) sel_ = (sel_ + n - 1) % n;
         if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) sel_ = (sel_ + 1) % n;
-        if (in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_SPACE)) escolherMenu(ops[sel_]);
+        const bool clique = listaComMouse(in, cliques_, sel_, n);
+        if (in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_SPACE) || clique)
+            escolherMenu(ops[sel_]);
         if (in.pressionou(SDL_SCANCODE_ESCAPE)) ctx_.app.parar();
     }
 
@@ -176,12 +181,14 @@ void TitleScene::renderizar(float) {
 
     // Uma camada por vez: opções/controles, espaços de save ou o menu principal
     const bool menu = slots_ == Slots::Fechado && !telaOpcoes_.aberta();
+    cliques_.limpar();
     if (telaOpcoes_.aberta()) telaOpcoes_.desenhar(r, f, ctx_);
     else if (menu) {
         const auto ops = opcoes();
         for (size_t i = 0; i < ops.size(); ++i) {
             const bool s = static_cast<int>(i) == sel_;
             const float y = 186.0f + i * 20.0f;
+            cliques_.area({250, y - 9}, {140, 18}, static_cast<int>(i));
             if (s) {
                 r.retangulo({250, y - 8}, {140, 16}, {0.45f, 0.36f, 0.22f, 0.45f});
                 r.contorno({250, y - 8}, {140, 16}, cor::borda);
@@ -191,19 +198,21 @@ void TitleScene::renderizar(float) {
     } else {
         const glm::vec2 p{150, 170}, s{340, 130};
         desenharPainel(r, p, s);
+        cliques_.area(p, s, Cliques::PAINEL);
         f.desenharCentralizado(r, slots_ == Slots::Novo ? "Novo jogo: escolha um espaço" : "Carregar: escolha um espaço", {320, p.y + 12},
                                cor::ouro);
         for (int i = 0; i < 3; ++i) {
             const float y = p.y + 32 + i * 28.0f;
             const bool sel = i == selSlot_;
             if (sel) r.retangulo({p.x + 8, y - 4}, {s.x - 16, 25}, {0.45f, 0.36f, 0.22f, 0.45f});
+            cliques_.area({p.x + 8, y - 4}, {s.x - 16, 26}, i);
             const ResumoSlot& rs = resumos_[i];
             f.desenhar(r, std::format("Espaço {}", i + 1), {p.x + 16, y}, sel ? cor::ouro : cor::texto);
             f.desenhar(r, rs.existe ? rs.texto : "Vazio", {p.x + 96, y}, rs.existe ? cor::texto : cor::apagado);
             if (rs.existe) f.desenhar(r, rs.data, {p.x + 96, y + 10}, cor::apagado);
         }
-        const std::string dica = confirmarSubstituir_ ? "Este espaço tem um jogo salvo. E de novo para substituir."
-                                                      : "W/S escolher   E confirmar   Esc voltar";
+        const std::string dica = confirmarSubstituir_ ? "Este espaço tem um jogo salvo. E ou clique de novo para substituir."
+                                                      : "W/S ou mouse escolher   E ou clique confirmar   Esc voltar";
         const float ld = static_cast<float>(f.largura(dica));
         r.retangulo({320 - ld / 2 - 6, p.y + s.y + 4}, {ld + 12, 12}, {0.03f, 0.03f, 0.04f, 0.8f});
         f.desenharCentralizado(r, dica, {320, p.y + s.y + 10}, confirmarSubstituir_ ? cor::ruim : cor::apagado);
@@ -211,7 +220,7 @@ void TitleScene::renderizar(float) {
     if (!erro_.empty()) f.desenharCentralizado(r, erro_, {320, 318}, cor::ruim);
     f.desenhar(r, std::string("v") + VERSAO_JOGO, {6, 348}, cor::apagado);
     if (menu) {
-        const std::string ajuda = "W/S escolher   Enter confirmar";
+        const std::string ajuda = "W/S ou mouse escolher   Enter ou clique confirmar";
         f.desenhar(r, ajuda, {634.0f - f.largura(ajuda), 348}, cor::apagado);
     }
     r.terminar();

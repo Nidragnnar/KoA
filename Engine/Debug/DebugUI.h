@@ -17,6 +17,7 @@ public:
 
     bool visivel = false;
     bool querTeclado() const;
+    bool querMouse() const;  // o mouse está sobre uma janela de depuração
 
 private:
     bool iniciado_ = false;

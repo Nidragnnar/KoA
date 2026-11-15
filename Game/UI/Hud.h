@@ -6,6 +6,7 @@
 #include "Engine/Renderer/Renderer2D.h"
 #include "Engine/Resources/ResourceManager.h"
 #include "Engine/UI/BitmapFont.h"
+#include "Game/UI/Cliques.h"
 #include "Game/World/World.h"
 
 namespace koa {
@@ -40,8 +41,20 @@ public:
     void leitura(ke::Renderer2D& r, const PistaDef& p);
     void lojaMercador(ke::Renderer2D& r, const World& w, const NpcDef& npc, int sel);
     static int paginasVisiveis() { return 5; }  // quantas páginas das Crônicas cabem de uma vez
+    // Fase 11
+    void painelRegioes(ke::Renderer2D& r, const World& w);
+    void painelEscolha(ke::Renderer2D& r, const World& w, const EscolhaDef& d, int sel, float tempo);
+    static bool mostraCristal(const World& w);  // a linha de cristal aparece depois das minas
+
+    // Onde cada opção dos painéis apareceu no último quadro (a cena limpa antes de desenhar)
+    Cliques cliques;
 
 private:
+    void painelClicavel(glm::vec2 p, glm::vec2 s) { cliques.area(p, s, Cliques::PAINEL); }
+    void rodapeFechar(const std::string& texto, glm::vec2 centro) {
+        const float l = static_cast<float>(f_.largura(texto));
+        cliques.area(centro - glm::vec2(l / 2 + 4, 7), {l + 8, 14}, Cliques::FECHAR);
+    }
     void custoEmLinha(ke::Renderer2D& r, const Custo& c, const Inventory& inv, glm::vec2 pos);
     void barra(ke::Renderer2D& r, glm::vec2 pos, float largura, float fracao, glm::vec4 cor);
 

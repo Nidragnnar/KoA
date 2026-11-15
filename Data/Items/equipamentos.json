@@ -16,6 +16,12 @@
     { "id": "cota_malha", "nome": "Cota de Malha", "tipo": "armadura", "defesa": 5, "forja": 2, "custo": { "ouro": 100, "pedra": 30 },
       "descricao": "Milhares de elos de ferro." },
     { "id": "armadura_cavaleiro", "nome": "Armadura do Cavaleiro", "tipo": "armadura", "defesa": 8, "forja": 3,
-      "custo": { "ouro": 250, "pedra": 80 }, "descricao": "Placas polidas, digna da Academia." }
+      "custo": { "ouro": 250, "pedra": 80 }, "descricao": "Placas polidas, digna da Academia." },
+    { "id": "espada_cristal", "nome": "Lâmina de Cristal", "tipo": "arma", "dano": 15, "forja": 3, "custo": { "ouro": 150, "cristal": 8 },
+      "descricao": "Cristal das minas temperado no fogo de Bram. Brilha no escuro." },
+    { "id": "couraca_cristal", "nome": "Couraça de Cristal", "tipo": "armadura", "defesa": 10, "forja": 3,
+      "custo": { "ouro": 200, "pedra": 40, "cristal": 10 }, "descricao": "Leve como couro, dura como rocha." },
+    { "id": "lamina_chama", "nome": "Lâmina da Chama", "tipo": "arma", "dano": 18, "forja": 0,
+      "descricao": "Presente do pacto. Quente ao toque. Às vezes, sussurra." }
   ]
 }

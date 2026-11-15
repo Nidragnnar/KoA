@@ -93,6 +93,15 @@ O plano da 2.0 está em `docs/VISAO_2.0.md`.
 - **Balanceamento**: a simulação mostrou que um bônus de viajantes na primavera virava bola de neve (Renascido no dia 9 em vez de 18); ficou só +1 de ânimo, e o ritmo das eras voltou ao da fase 8.
 - **Testes**: 103 (10 novos da fase 10) e o roteiro com as etapas 24 a 29 (festival de dia e de noite, as três noites raras, a estrela recolhida e o inverno).
 
+## Fase 11 — regiões vivas (versão 1.3)
+
+- **Regiões vivas** (`Game/World/Regioes.h`): regras puras e testáveis (`registrarAbate`, `noiteDaRegiao`, `fracaoCriaturas`, `producaoRegiao`) separadas do `World`. Só regiões com `vida` no JSON têm `EstadoRegiao` (corrupção, segurança, prosperidade, última visita). A noite das regiões roda em `World::dormir` antes do renascimento das criaturas, e só para regiões já visitadas. A produção vai para o relatório com a chave `recurso|região`.
+- **Transformações**: lista no JSON da região. Vale a primeira cujo marco existe (`purificou:floresta`, `escolha:golem_cinzas:purificar`...). Ela troca nome, penumbra, hostilidade, era visual (`eraNoTile` fora do vilarejo), criaturas afastadas, piso de corrupção, efeito na felicidade (`World::modificadorReino`), chance da Lua de Sangue, rendimento dos veios, produção e enfeites próprios (componente `EnfeiteRegiao`, recriado em `atualizarEspeciais`). Como tudo deriva dos marcos, nada disso precisa de campo novo no save além do estado numérico.
+- **Interações novas**: `TipoInteracao::Usar` (componente `Interativo`: o altar e o entulho) e `TipoInteracao::Decidir` (chefe rendido). Saídas podem exigir um marco (`requer`).
+- **Chefe com escolha**: `InimigoDef::escolha` aponta para `Data/Lore/escolhas.json`. Com 30% da vida o chefe fica `rendido` (não anda, não fere, não morre) e a cena abre o painel de decisão. Esc adia; E perto dele reabre. `World::escolher` aplica recompensa, item, corrupção da região, os marcos `chefe_<tipo>` (não volta) e `escolha:<id>:<opção>`, e anuncia a transformação.
+- **Save v6**: arquivo novo `regions.json`. Saves v1 a v5 são migrados: as regiões começam como no mapa e visitadas no dia carregado (sem abandono acumulado). Testado numa cópia do save real (v3).
+- **Testes**: 119 (16 novos da fase 11) e o roteiro com as etapas 30 a 35 (painel R, o rito no Coração, a passagem, as minas, o veio, o golem que se rende, a escolha e as Minas Arcanas).
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

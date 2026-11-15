@@ -54,6 +54,8 @@ private:
     std::string memorial_;  // id do memorial construído
     // Fase 10
     int ouroAntes_ = 0;
+    // Fase 11
+    bool escolhaAbriu_ = false;
 };
 
 }

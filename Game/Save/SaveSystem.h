@@ -9,12 +9,13 @@
 #include <nlohmann/json_fwd.hpp>
 
 #include "Game/Lore/Lore.h"
+#include "Game/World/Regioes.h"
 
 namespace koa {
 
 // Sobe quando o formato muda (com migração). v2: relógio e moradores; v3: obras e povo; v4: regiões, combate e missões;
-// v5: Crônicas do Reino
-constexpr int VERSAO_SAVE = 5;
+// v5: Crônicas do Reino; v6: regiões vivas (corrupção, segurança, prosperidade)
+constexpr int VERSAO_SAVE = 6;
 
 struct EstadoConstrucao {
     std::string id, def;
@@ -78,6 +79,9 @@ struct DadosSave {
     // chronicles.json (v5). Saves antigos não têm: as Crônicas são refeitas pelo que já aconteceu
     bool temCronicas = false;
     std::vector<EntradaCronica> cronicas;
+    // regions.json (v6). Saves antigos não têm: cada região começa como no mapa, visitada hoje
+    bool temRegioes = false;
+    std::map<std::string, EstadoRegiao> regioes;
 };
 
 // Saves em pastas (Saves/Save_001/*.json) com backup antes de sobrescrever

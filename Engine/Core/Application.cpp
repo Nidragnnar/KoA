@@ -56,6 +56,9 @@ void Application::executar() {
         Scene* cena = cenas_.atual();
         if (!cena) break;
 
+        // Onde a tela interna está na janela (o letterbox é centralizado: a faixa de cima tem a altura da de baixo)
+        const Retangulo& a = tela_.ultimaArea();
+        input_.definirTela(a.x, a.y, a.largura, a.altura, cfg_.baseL, cfg_.baseA, SDL_GetWindowPixelDensity(janela_.sdl()));
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
             if (e.type == SDL_EVENT_QUIT) rodando_ = false;
@@ -64,6 +67,7 @@ void Application::executar() {
             if (e.type == SDL_EVENT_KEY_DOWN && e.key.scancode == SDL_SCANCODE_F11 && !e.key.repeat) janela_.alternarTelaCheia();
             if (e.type == SDL_EVENT_KEY_DOWN && e.key.scancode == SDL_SCANCODE_M && !e.key.repeat) audio_.alternarMudo();
             if (debug_.querTeclado() && (e.type == SDL_EVENT_KEY_DOWN || e.type == SDL_EVENT_KEY_UP)) continue;
+            if (debug_.querMouse() && (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN || e.type == SDL_EVENT_MOUSE_WHEEL)) continue;
             input_.processar(e);
         }
 

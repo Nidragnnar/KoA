@@ -164,7 +164,7 @@ void Roteiro::noMundo(WorldScene& cena) {
     World& w = cena.mundo();
     ke::Input& in = ctx_.app.input();
     ++quadro_;
-    if (++quadrosTotais_ > 60 * 400) {  // mais de 6 minutos de jogo simulado: algo travou
+    if (++quadrosTotais_ > 60 * 480) {  // mais de 8 minutos de jogo simulado: algo travou
         verificar(false, "roteiro terminou dentro do tempo limite");
         terminar();
         return;
@@ -719,7 +719,179 @@ void Roteiro::noMundo(WorldScene& cena) {
             if (quadro_ == 270) proxima();
             return;
         }
-        case 30:
+        // ---------- Fase 11: regiões vivas, a floresta purificada, as minas e o golem ----------
+        case 30: {  // painel R: as terras de fora do vilarejo
+            if (quadro_ == 1) {
+                w.relogio.dia = 30;  // primavera do ano 2 (sem neve nas capturas)
+                w.relogio.minutos = 10 * 60;
+                w.posicionarMoradores();
+                w.jogador.pos = {31 * 16 + 8, 24 * 16 + 12};
+            }
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_R);
+            if (quadro_ == 20) {
+                verificar(cena.painelRegioesAberto(), "R abre as Terras do Reino");
+                capturar("46_painel_regioes");
+            }
+            if (quadro_ == 22) in.simularToque(SDL_SCANCODE_R);
+            if (quadro_ == 30) {
+                verificar(!cena.painelRegioesAberto(), "R fecha o painel");
+                proxima();
+            }
+            return;
+        }
+        case 31: {  // o Coração da Floresta: com pouca corrupção, E purifica a floresta
+            w.jogador.vida = w.jogador.vidaMax;
+            if (quadro_ == 1) {
+                w.entrarRegiao("floresta", {27, 12}, Direcao::Cima);
+                // Equivale a uns dias caçando criaturas na floresta (cada uma tira 1,5 de corrupção)
+                w.estadoRegioes.at("floresta").corrupcao = 20.0f;
+                std::vector<entt::entity> perto;  // as das ruínas já tinham sido vencidas
+                for (auto [e, p, i] : w.reg.view<Posicao, Inimigo>().each())
+                    if (glm::distance(p.v, glm::vec2(27 * 16 + 8, 11 * 16)) < 170.0f) perto.push_back(e);
+                w.reg.destroy(perto.begin(), perto.end());
+            }
+            if (quadro_ <= 172) {  // parado diante do altar, meio de lado (para o altar aparecer na captura)
+                w.jogador.pos = {27 * 16 - 7, 11 * 16 + 14};
+                w.jogador.dir = Direcao::Cima;
+            }
+            if (quadro_ == 170) {
+                verificar(w.alvo().tipo == TipoInteracao::Usar, "o altar aparece como alvo: " + w.alvo().rotulo);
+                capturar("47_coracao_corrompido");
+            }
+            if (quadro_ == 172) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 190) {
+                verificar(w.marcos.contains("purificou:floresta") && w.nomeRegiao("floresta") == "Floresta Encantada",
+                          "E no Coração purifica: Floresta Encantada");
+                verificar(w.eraNoTile({20, 20}) == 3 && !w.regiaoHostil(), "a floresta purificada fica clara e em paz");
+            }
+            if (quadro_ == 191) w.jogador.pos = {24 * 16 + 8, 18 * 16 + 12};  // um passo atrás, para ver o altar
+            if (quadro_ == 360) {
+                capturar("48_floresta_encantada");
+                proxima();
+            }
+            return;
+        }
+        case 32: {  // a passagem desabada: escorar com madeira e descer às minas
+            w.jogador.vida = w.jogador.vidaMax;
+            if (quadro_ == 1) {
+                w.jogador.pos = {29 * 16 + 8, 33 * 16 + 12};
+                w.jogador.dir = Direcao::Baixo;
+                w.inventario.definir("madeira", World::MADEIRA_ENTULHO);
+            }
+            if (quadro_ == 20) capturar("49_passagem_minas");
+            if (quadro_ == 22) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 40) {
+                verificar(w.marcos.contains("minas_abertas") && w.inventario.quantidade("madeira") == 0, "15 de madeira escoram a passagem");
+                in.simularSegurar(SDL_SCANCODE_S, true);
+            }
+            if (w.regiaoAtual == "minas" && quadro_ < 1000) {
+                in.limparSimulacao();
+                quadro_ = 1000;
+            }
+            if (quadro_ == 1060) {
+                verificar(w.nomeRegiao("minas") == "Minas Abandonadas", "a trilha desce às Minas Abandonadas");
+                capturar("50_minas");
+                proxima();
+            }
+            if (quadro_ == 400) verificar(false, "chegou às minas"), terminar();
+            return;
+        }
+        case 33: {  // um veio de cristal e o Golem de Cinzas, que se rende
+            w.jogador.vida = w.jogador.vidaMax;
+            if (quadro_ == 1) {
+                w.jogador.pos = {20 * 16 + 8, 19 * 16 + 12};
+                w.jogador.dir = Direcao::Cima;
+                for (auto [e, i] : w.reg.view<Inimigo>().each())
+                    if (i.tipo == "aranha") i.perseguindo = false, i.origem = i.destino = w.reg.get<Posicao>(e).v;
+            }
+            if (quadro_ % 24 == 0 && quadro_ <= 120) {
+                w.jogador.pos = {20 * 16 + 8, 19 * 16 + 12};
+                w.jogador.dir = Direcao::Cima;
+                in.simularToque(SDL_SCANCODE_E);
+            }
+            if (quadro_ == 60) capturar("51_veio_cristal");
+            if (quadro_ == 140) {
+                verificar(w.inventario.quantidade("cristal") >= 1, std::format("o veio rendeu cristal ({})", w.inventario.quantidade("cristal")));
+                alvo_ = inimigoMaisPerto(w, "golem_cinzas");
+                verificar(alvo_ != entt::null, "o Golem de Cinzas guarda o fundo das minas");
+                if (alvo_ != entt::null) w.reg.get<Inimigo>(alvo_).vida = 70;  // a luta inteira levaria minutos
+            }
+            if (quadro_ > 140 && cena.escolhaAberta().empty()) {
+                if (alvo_ == entt::null || !w.reg.valid(alvo_)) verificar(false, "o golem existe até a decisão"), terminar();
+                else if (quadro_ % 18 == 0) {
+                    w.jogador.pos = w.reg.get<Posicao>(alvo_).v + glm::vec2(0, 16);
+                    w.jogador.dir = Direcao::Cima;
+                    in.simularToque(SDL_SCANCODE_J);
+                }
+                if (quadro_ == 170) capturar("52_golem");
+            }
+            if (!cena.escolhaAberta().empty() && !escolhaAbriu_) {
+                escolhaAbriu_ = true;
+                quadro_ = 2000;
+            }
+            if (quadro_ == 2030) {
+                verificar(cena.escolhaAberta() == "golem_cinzas" && w.reg.get<Inimigo>(alvo_).rendido, "com 30% da vida o golem se rende e pede uma decisão");
+                capturar("53_escolha_golem");
+                proxima();
+            }
+            if (quadro_ == 1500) verificar(false, "o golem se rendeu a tempo"), terminar();
+            return;
+        }
+        case 34: {  // devolver a luz ao cristal (o rito aprendido na floresta): Minas Arcanas
+            w.jogador.vida = w.jogador.vidaMax;
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_S);  // 2ª opção: purificar
+            if (quadro_ == 10) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 30) {
+                verificar(cena.escolhaAberta().empty() && w.marcos.contains("escolha:golem_cinzas:purificar"), "E decide: o golem é purificado");
+                bool guardiao = false;
+                for (auto [e, v] : w.reg.view<const EnfeiteRegiao, const Visual>().each()) guardiao = guardiao || v.sprite == "guardiao_cristal";
+                verificar(w.nomeRegiao("minas") == "Minas Arcanas" && guardiao, "as Minas Arcanas ganham o Guardião de Cristal");
+                w.jogador.pos = {25 * 16 + 8, 27 * 16 + 4};
+                w.jogador.dir = Direcao::Cima;
+            }
+            if (quadro_ == 260) {
+                capturar("54_minas_arcanas");
+                proxima();
+            }
+            return;
+        }
+        case 35: {  // as terras depois de tudo: duas regiões no painel R
+            if (quadro_ == 1) {
+                w.dormir(false);
+                w.relogio.minutos = 10 * 60;
+            }
+            if (quadro_ == 10) in.simularToque(SDL_SCANCODE_E);  // fecha o relatório da manhã
+            if (quadro_ == 20) in.simularToque(SDL_SCANCODE_R);
+            if (quadro_ == 40) {
+                verificar(cena.painelRegioesAberto(), "R mostra as duas terras");
+                capturar("55_terras_do_reino");
+            }
+            if (quadro_ == 42) in.simularToque(SDL_SCANCODE_R);
+            if (quadro_ == 50) proxima();
+            return;
+        }
+        case 36: {  // mouse: clique numa opção do menu de pausa e ataque virado para o cursor
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 15) in.simularMouse({320, 160});  // passa por cima de "Salvar" (2ª opção)
+            if (quadro_ == 25) {
+                verificar(cena.pausado(), "Esc abre a pausa");
+                capturar("56_pausa_mouse");
+            }
+            if (quadro_ == 27) in.simularClique(ke::BotaoMouse::Esquerdo, {320, 144});  // "Continuar"
+            if (quadro_ == 35) {
+                verificar(!cena.pausado(), "clicar em Continuar fecha a pausa");
+                w.jogador.pos = {31 * 16 + 8, 24 * 16 + 12};
+                w.jogador.dir = Direcao::Direita;
+                w.jogador.acao = 0.0f;
+            }
+            if (quadro_ == 45) in.simularClique(ke::BotaoMouse::Esquerdo, {20, 180});  // bem à esquerda do herói
+            if (quadro_ == 47) {
+                verificar(w.jogador.dir == Direcao::Esquerda && w.jogador.atacando, "o clique esquerdo ataca virado para o cursor");
+                proxima();
+            }
+            return;
+        }
+        case 37:
             w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();

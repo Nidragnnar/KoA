@@ -94,8 +94,10 @@ InfoRegiao World::lerInfoRegiao(const std::string& id, const nlohmann::json& j) 
         x.chegada = {s.at("chegada")[0].get<int>(), s.at("chegada")[1].get<int>()};
         const std::string d = s.value("dir", "baixo");
         x.dir = d == "cima" ? Direcao::Cima : d == "esquerda" ? Direcao::Esquerda : d == "direita" ? Direcao::Direita : Direcao::Baixo;
+        x.requer = s.value("requer", "");
         info.saidas.push_back(x);
     }
+    lerVidaRegiao(j, info.vida);
     return info;
 }
 
@@ -119,6 +121,16 @@ bool World::adicionarRegiao(const std::string& id, const std::string& texto, con
     std::swap(mapa, r.mapa);
     std::swap(reg, r.reg);
     if (!ok) return false;
+    if (info.vida.ativa) {
+        for (const auto& [tipo, t] : info.vida.invasao)
+            if (!dados().inimigos.contains(tipo)) {
+                if (erro) *erro = "região " + id + ": invasão com inimigo inexistente: " + tipo;
+                return false;
+            }
+        EstadoRegiao e;
+        e.corrupcao = info.vida.corrupcaoInicial;
+        estadoRegioes[id] = e;
+    }
     regioes[id] = std::move(info);
     guardadas_[id] = std::move(r);
     return true;
@@ -197,6 +209,7 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
     cronicas.clear();
     derrotaPendente_ = false;
     avisoEvento_ = avisoFestival_ = 0;
+    estadoRegioes.clear();
 
     InfoRegiao info;
     try {
@@ -516,6 +529,31 @@ void World::criarObjeto(char c, int x, int y) {
         reg.emplace<Decoracao>(e, glm::ivec2{1});
         break;
     }
+    case 'K': {  // veio de cristal (minas)
+        const auto e = novo("veio");
+        reg.emplace<Visual>(e, "veio_cristal");
+        reg.emplace<Colisor>(e, glm::vec2{6, 4}, glm::vec2{0, -4});
+        reg.emplace<Coletavel>(e, "veio", "cristal", 5, 5, 1, false, "veio_vazio", glm::vec2{6, 4}, "veio_cristal");
+        reg.emplace<Luz>(e, glm::vec3{0.45f, 0.8f, 1.0f}, 26.0f, glm::vec2{0.0f, -6.0f});
+        break;
+    }
+    case 'A': {  // Coração da Floresta: altar tomado por raízes de cinza
+        const auto e = reg.create();
+        reg.emplace<Posicao>(e, base);
+        reg.emplace<Visual>(e, "altar_corrompido");
+        reg.emplace<Colisor>(e, glm::vec2{10, 5}, glm::vec2{0, -5});
+        reg.emplace<Interativo>(e, "altar");
+        reg.emplace<Luz>(e, glm::vec3{0.8f, 0.25f, 0.2f}, 30.0f, glm::vec2{0.0f, -10.0f});
+        break;
+    }
+    case 'Z': {  // entulho que fecha a passagem das minas
+        const auto e = reg.create();
+        reg.emplace<Posicao>(e, base);
+        reg.emplace<Visual>(e, "entulho");
+        reg.emplace<Colisor>(e, glm::vec2{8, 6}, glm::vec2{0, -6});
+        reg.emplace<Interativo>(e, "entulho");
+        break;
+    }
     case 'P': spawn = base; break;
     default: break;
     }
@@ -567,8 +605,14 @@ AlvoInteracao World::procurarAlvo() const {
         if (c.esgotado) continue;
         const bool arvore = c.tipo == "arvore";
         considerar(e, p.v + glm::vec2(0, -4), 13.0f, arvore ? TipoInteracao::Cortar : TipoInteracao::Quebrar,
-                   arvore ? "Cortar árvore" : "Quebrar rocha");
+                   arvore ? "Cortar árvore" : c.tipo == "veio" ? "Minerar cristal" : "Quebrar rocha");
     }
+    // Fase 11: o altar, o entulho e o chefe rendido
+    for (auto [e, p, it] : reg.view<const Posicao, const Interativo>().each())
+        considerar(e, p.v + glm::vec2(0, -5), 19.0f, TipoInteracao::Usar,
+                   it.acao == "altar" ? "Coração da Floresta" : std::format("Escorar a passagem ({} madeira)", MADEIRA_ENTULHO));
+    for (auto [e, p, i] : reg.view<const Posicao, const Inimigo>().each())
+        if (i.rendido) considerar(e, p.v + glm::vec2(0, -10), 26.0f, TipoInteracao::Decidir, "Decidir o destino de " + dados().inimigos.at(i.tipo).nome);
     for (auto [e, p, s] : reg.view<const Posicao, const Saqueavel>().each())
         if (!s.aberto)
             considerar(e, p.v + glm::vec2(0, -4), 13.0f, TipoInteracao::Saquear, reg.all_of<Meteorito>(e) ? "Recolher a estrela caída" : "Abrir baú");
@@ -610,9 +654,13 @@ void World::executar(const AlvoInteracao& a) {
             c.diaEsgotado = relogio.dia;
             v.sprite = c.spriteEsgotado;
             bloqueio_.clear();  // o caminho dos moradores pode ter mudado
-            inventario.adicionar(c.recurso, c.rendimento);
+            // Veios das minas rendem conforme o destino do golem (as Minas Arcanas dão mais)
+            int rende = c.rendimento;
+            if (const TransformacaoRegiao* t = transformacao(regiaoAtual); c.tipo == "veio" && t && t->rendimentoVeio > 0) rende = t->rendimentoVeio;
+            inventario.adicionar(c.recurso, rende);
             eventos_.push_back({EventoJogo::Tipo::Esgotou, a.ponto, c.tipo});
-            eventos_.push_back({EventoJogo::Tipo::Ganhou, a.ponto, c.tipo, c.recurso, c.rendimento});
+            eventos_.push_back({EventoJogo::Tipo::Ganhou, a.ponto, c.tipo, c.recurso, rende});
+            if (c.tipo == "veio") marcar("primeiro_cristal");
         }
         break;
     }
@@ -651,6 +699,14 @@ void World::executar(const AlvoInteracao& a) {
         marcar("pista:" + id, dados().lore.pista(id)->titulo);
         break;
     }
+    case TipoInteracao::Usar:
+        jogador.acao = 0.2f;
+        if (reg.get<Interativo>(a.entidade).acao == "altar") usarCoracao();
+        else escorarEntulho();
+        break;
+    case TipoInteracao::Decidir:
+        if (const EscolhaDef* d = escolhaDe(a.entidade)) eventos_.push_back({EventoJogo::Tipo::AbrirEscolha, a.ponto, d->id});
+        break;
     case TipoInteracao::Nenhuma: break;
     }
 }
@@ -749,8 +805,10 @@ void World::entrarRegiao(const std::string& id, glm::ivec2 chegada, Direcao dir)
     jogador.empurrao = {0, 0};
     jogador.acao = 0.0f;
     visitadas.insert(id);
-    eventos_.push_back({EventoJogo::Tipo::MudouRegiao, jogador.pos, id, "", 0, regioes.at(id).nome});
+    if (const auto it = estadoRegioes.find(id); it != estadoRegioes.end()) it->second.ultimaVisita = relogio.dia;
+    eventos_.push_back({EventoJogo::Tipo::MudouRegiao, jogador.pos, id, "", 0, nomeRegiao(id)});
     atualizarPistas();
+    atualizarEspeciais();
     if (id != "vilarejo") marcar("visitou:" + id, regioes.at(id).nome);
     atualizarMissoes();
 }
@@ -758,6 +816,7 @@ void World::entrarRegiao(const std::string& id, glm::ivec2 chegada, Direcao dir)
 void World::verificarSaidas() {
     const glm::ivec2 t{static_cast<int>(jogador.pos.x) / LADO, static_cast<int>(jogador.pos.y - 1) / LADO};
     for (const Saida& s : infoAtual().saidas) {
+        if (!s.requer.empty() && !marcos.contains(s.requer)) continue;  // passagem ainda fechada
         if (t.x >= s.tile.x && t.y >= s.tile.y && t.x < s.tile.x + s.tam.x && t.y < s.tile.y + s.tam.y) {
             const Saida copia = s;  // entrarRegiao troca a região (e a lista de saídas)
             entrarRegiao(copia.destino, copia.chegada, copia.dir);
@@ -766,14 +825,24 @@ void World::verificarSaidas() {
     }
 }
 
-float World::escuridao() const {
+float World::escuridaoMinAtual() const {
+    if (const TransformacaoRegiao* t = transformacao(regiaoAtual)) return t->escuridaoMin;
     float minimo = infoAtual().escuridaoMin;
     if (infoAtual().curaComEra) minimo *= 1.0f - 0.2f * reino.eraVisual;  // a floresta clareia com o reino
-    return std::max(relogio.escuridao(), minimo);
+    return minimo;
 }
 
+float World::escuridao() const { return std::max(relogio.escuridao(), escuridaoMinAtual()); }
+
 int World::eraNoTile(glm::ivec2 t) const {
-    if (!noVilarejo()) return 0;  // as terras fora do vilarejo seguem amaldiçoadas
+    if (!noVilarejo()) {
+        // Fora do vilarejo a terra segue amaldiçoada, a não ser que tenha sido transformada
+        const TransformacaoRegiao* tr = transformacao(regiaoAtual);
+        if (!tr) return 0;
+        const auto it = estadoRegioes.find(regiaoAtual);
+        // Abandonada de novo, a cor vai embora antes das criaturas voltarem
+        return it != estadoRegioes.end() && it->second.corrupcao >= tr->voltamAcima ? std::min(tr->era, 1) : tr->era;
+    }
     const float s = reino.eraVisual;
     if (s <= 0.0f) return 0;
     // Atraso de cada tile: mais longe da casa do herdeiro = muda depois (com um pouco de acaso nas bordas)
@@ -785,9 +854,12 @@ int World::eraNoTile(glm::ivec2 t) const {
 
 glm::vec3 World::luzAmbiente() const {
     const InfoRegiao& i = infoAtual();
+    const TransformacaoRegiao* t = transformacao(regiaoAtual);
+    const float minimo = t ? t->escuridaoMin : i.escuridaoMin;
+    const glm::vec3 ambiente = t ? t->ambiente : i.ambiente;
     glm::vec3 luz = relogio.luzAmbiente();
     // Penumbra da região, que ainda escurece mais à noite
-    if (i.escuridaoMin > 0.0f) luz = glm::min(glm::mix(glm::vec3(1.0f), i.ambiente, i.escuridaoMin / 0.9f), luz);
+    if (minimo > 0.0f) luz = glm::min(glm::mix(glm::vec3(1.0f), ambiente, minimo / 0.9f), luz);
     // Lua de Sangue: a noite fica vermelha
     if (eventoAgora("lua_sangue")) luz = glm::mix(luz, glm::vec3(0.62f, 0.16f, 0.16f), 0.6f * relogio.escuridao());
     return luz;
@@ -877,10 +949,22 @@ void World::renascerInimigos() {
         std::vector<entt::entity> velhos;
         for (auto [e, i] : reg.view<Inimigo>().each()) velhos.push_back(e);
         reg.destroy(velhos.begin(), velhos.end());
+        // Fase 11: quanto mais corrompida a região, mais criaturas voltam (sempre as mesmas, pelo lugar)
+        const auto est = estadoRegioes.find(info.id);
+        const bool viva = est != estadoRegioes.end();
+        const float corrupcao = viva ? est->second.corrupcao : 100.0f;
+        const TransformacaoRegiao* tr = viva ? transformacao(info.id) : nullptr;
+        const int fracao = static_cast<int>(std::round(fracaoCriaturas(corrupcao) * 100.0f));
         for (const auto& [tipo, tile] : info.spawns) {
-            if (dados().inimigos.at(tipo).chefe && marcos.contains("chefe_" + tipo)) continue;  // o chefe não volta
+            const InimigoDef& d = dados().inimigos.at(tipo);
+            if (d.chefe && marcos.contains("chefe_" + tipo)) continue;  // o chefe não volta
+            if (tr && tr->semInimigos.contains(tipo) && corrupcao < tr->voltamAcima) continue;  // a terra purificada as afastou
+            if (!d.chefe && static_cast<int>(hashTile(tile.x, tile.y) % 100) >= fracao) continue;
             criarInimigo(tipo, tile);
         }
+        // Região tomada: chegam mais criaturas pelas bordas
+        if (viva && corrupcao >= regra::INVASAO)
+            for (const auto& [tipo, tile] : info.vida.invasao) criarInimigo(tipo, tile);
     };
     refazerAtivo(infoAtual());
     for (auto& [id, g] : guardadas_) {
@@ -901,7 +985,7 @@ void World::golpearComEspada() {
     eventos_.push_back({EventoJogo::Tipo::Ataque, centro});
     std::vector<entt::entity> mortos;
     for (auto [e, p, i] : reg.view<Posicao, Inimigo>().each()) {
-        if (i.ultimoGolpe == jogador.golpeId || i.vida <= 0) continue;
+        if (i.ultimoGolpe == jogador.golpeId || i.vida <= 0 || i.rendido) continue;
         const InimigoDef& d = dados().inimigos.at(i.tipo);
         const glm::vec2 meiaIni = glm::vec2(d.tamanho) * glm::vec2(0.35f, 0.4f);
         const glm::vec2 ci = p.v - glm::vec2(0, d.tamanho.y * 0.4f);
@@ -913,6 +997,15 @@ void World::golpearComEspada() {
         i.empurrao = frente * (d.chefe ? 60.0f : 160.0f);
         i.perseguindo = true;
         eventos_.push_back({EventoJogo::Tipo::AcertouInimigo, ci, i.tipo, "", dano});
+        // Fase 11: chefe com escolha se rende com 30% da vida e espera a decisão do herdeiro
+        if (!d.escolha.empty() && i.vida <= i.vidaMax * 3 / 10) {
+            i.vida = std::max(1, i.vida);
+            i.rendido = true;
+            i.perseguindo = false;
+            i.empurrao = {0, 0};
+            eventos_.push_back({EventoJogo::Tipo::AbrirEscolha, ci, d.escolha});
+            continue;
+        }
         if (i.vida <= 0) mortos.push_back(e);
     }
     for (const entt::entity e : mortos) {
@@ -924,6 +1017,8 @@ void World::golpearComEspada() {
         if (const EventoDef* ev = eventoHoje(); ev && eventoAgora(ev->id)) o = static_cast<int>(std::round(o * ev->ouroInimigos));
         inventario.adicionar("ouro", o);
         ++abates[i.tipo];
+        // Cada criatura vencida enfraquece a corrupção da região
+        if (const auto it = estadoRegioes.find(regiaoAtual); it != estadoRegioes.end()) registrarAbate(it->second, transformacao(regiaoAtual));
         eventos_.push_back({EventoJogo::Tipo::InimigoDerrotado, p, i.tipo, "ouro", o, d.nome});
         if (d.chefe) {
             reino.magiaLiberta = true;  // com o Cavaleiro Caído derrotado, a magia pode voltar ao reino
@@ -954,6 +1049,10 @@ void World::atualizarInimigos(float dt, const std::vector<ke::AABB>& obst) {
         const InimigoDef& d = dados().inimigos.at(i.tipo);
         i.piscar = std::max(0.0f, i.piscar - dt);
         i.recarga = std::max(0.0f, i.recarga - dt);
+        if (i.rendido) {  // de joelhos: não anda nem fere
+            i.andando = false;
+            continue;
+        }
         const ke::AABB caixa{p.v - glm::vec2(5, 5), p.v + glm::vec2(5, 1)};
         // Recuo do golpe tem prioridade sobre andar
         if (glm::length(i.empurrao) > 1.0f) {
@@ -1031,6 +1130,7 @@ int World::progressoMissao(const MissaoDef& m) const {
     }
     if (o.tipo == "ter") return inventario.quantidade(o.alvo);
     if (o.tipo == "visitar") return visitadas.contains(o.alvo) ? 1 : 0;
+    if (o.tipo == "marco") return marcos.contains(o.alvo) ? 1 : 0;  // fase 11: purificar, abrir as minas...
     return 0;
 }
 
@@ -1059,12 +1159,7 @@ void World::atualizarMissoes() {
         if (progressoMissao(m) < m.objetivo.quantidade) continue;
         it->second.concluida = true;
         for (const auto& [r, q] : m.recompensa) inventario.adicionar(r, q);
-        if (!m.item.empty() && dados().equipamentos.contains(m.item)) {
-            equip.possuidos.insert(m.item);
-            const EquipDef& d = dados().equipamentos.at(m.item);
-            if (d.tipo == "arma" && d.dano > danoArma()) equip.arma = m.item;
-            if (d.tipo == "armadura" && d.defesa > defesaArmadura()) equip.armadura = m.item;
-        }
+        if (!m.item.empty()) receberItem(m.item);
         if (m.amizade > 0) {
             // O morador pode estar em outra região (guardada): procura em todas
             auto dar = [&](entt::registry& r) {
@@ -1330,6 +1425,10 @@ void World::dormir(bool desmaio) {
     jogador.atacando = false;
     jogador.vida = jogador.vidaMax;  // uma noite de sono cura tudo
     jogador.empurrao = {0, 0};
+    // Fase 11: a noite nas terras de fora (antes das criaturas voltarem: quantas voltam depende da corrupção)
+    std::vector<std::pair<std::string, int>> producaoRegioes;
+    std::vector<std::string> notasRegioes;
+    noiteDasRegioes(producaoRegioes, notasRegioes);
     renascerInimigos();
     // Tocos voltam a ser árvores e rochas reaparecem depois de alguns dias (em todas as regiões)
     int renasceram = 0;
@@ -1362,7 +1461,12 @@ void World::dormir(bool desmaio) {
         }
     // A noite do reino: impostos, produção, comida, felicidade e população
     // (a noite foi da estação de ontem: a primeira noite do inverno ainda é de outono)
-    ultimoRelatorio = simularDia(reino, dados(), estado, inventario, dados().estacoes.de(Relogio{ontem}.estacao()).mod);
+    ultimoRelatorio = simularDia(reino, dados(), estado, inventario, modificadorReino(Relogio{ontem}.estacao()));
+    for (const auto& [chave, n] : producaoRegioes) {
+        inventario.adicionar(chave.substr(0, chave.find('|')), n);
+        ultimoRelatorio.variacoes.push_back({chave, n});  // "madeira|Floresta Encantada"
+    }
+    for (const auto& n : notasRegioes) ultimoRelatorio.notas.push_back(n);
     notasDaManha(ontem);
     for (const auto& [defId, nome] : novas) marcar("construiu:" + defId, nome);
     for (const int n : {15, 25, 40})
@@ -1443,6 +1547,8 @@ DadosSave World::capturar() const {
     d.marcos = {marcos.begin(), marcos.end()};
     d.temCronicas = true;
     d.cronicas = cronicas;
+    d.temRegioes = true;
+    d.regioes = estadoRegioes;
     return d;
 }
 
@@ -1522,10 +1628,16 @@ void World::aplicar(const DadosSave& d) {
     if (!d.temCronicas) reconstruirCronicas();
     verificarTitulos(true);  // títulos novos desta versão valem para o que já foi feito
     jogador.vida = std::clamp(d.vida, 1, jogador.vidaMax);
-    renascerInimigos();  // o chefe derrotado não volta
-    bloqueio_.clear();
     relogio.dia = std::max(1, d.dia);
     relogio.minutos = std::clamp(d.minutos, static_cast<float>(Relogio::INICIO_DIA), static_cast<float>(Relogio::FIM_DIA) - 1.0f);
+    // Fase 11: estado das regiões vivas (save antigo: como no mapa, visitadas hoje para não contar abandono)
+    for (auto& [id, e] : estadoRegioes) {
+        if (const auto it = d.regioes.find(id); d.temRegioes && it != d.regioes.end()) e = it->second;
+        else e.ultimaVisita = relogio.dia;
+        e.ultimaVisita = std::min(e.ultimaVisita, relogio.dia);
+    }
+    renascerInimigos();  // o chefe derrotado não volta (e a corrupção salva decide quantas criaturas há)
+    bloqueio_.clear();
     for (const auto& m : d.moradores) {
         const entt::entity e = morador(m.id);
         if (e == entt::null) continue;  // morador que não existe mais nesta versão
@@ -1538,6 +1650,7 @@ void World::aplicar(const DadosSave& d) {
     posicionarMoradores();
     sincronizarAldeoes();
     atualizarPistas();
+    atualizarEspeciais();
     atualizarMeteorito();
     avisoEvento_ = avisoFestival_ = 0;
     // Salvou fora do vilarejo: volta para a mesma região e lugar
@@ -1570,6 +1683,7 @@ bool World::marcar(const std::string& marco, const std::string& nome, bool silen
         marcar("misterio:primeiro_ato", "", silencioso);  // todas as peças: a primeira verdade sobre a Queda
     if (!marco.starts_with("titulo:")) verificarTitulos(silencioso);
     atualizarPistas();  // um acontecimento pode revelar (ou recolher) fragmentos
+    atualizarEspeciais();  // ... ou abrir uma passagem e transformar uma região
     return true;
 }
 
@@ -1707,10 +1821,14 @@ const EventoDef* World::eventoDoDia(int dia) const {
     // Sorteio fixo: o mesmo dia sempre dá o mesmo acontecimento (não precisa ir para o save)
     const float sorte = static_cast<float>(hashTile(dia, 7919) % 10000) / 10000.0f;
     float acumulado = 0.0f;
+    // Fase 11: o pacto com a Chama atrai a Lua de Sangue
+    float luaSangue = 1.0f;
+    for (const auto& id : regioesComVida())
+        if (const TransformacaoRegiao* t = transformacao(id)) luaSangue *= t->luaSangue;
     for (const EventoDef& ev : de.eventos) {
         if (!ev.requer.empty() && !marcos.contains(ev.requer)) continue;
         if (static_cast<int>(reino.eraAlvo()) < ev.eraMin) continue;
-        acumulado += ev.chance;
+        acumulado += ev.chance * (ev.id == "lua_sangue" ? luaSangue : 1.0f);
         if (sorte < acumulado) return &ev;
     }
     return nullptr;
@@ -1821,6 +1939,193 @@ std::vector<std::string> World::inscricao(const BuildingData& b) const {
         if (l.size() == 1) l.push_back("Ainda há canteiros vazios. Faça amigos e ajude o povo.");
     }
     return l;
+}
+
+// ---------- Fase 11: regiões vivas, transformações e chefes com escolha ----------
+
+const TransformacaoRegiao* World::transformacao(const std::string& id) const {
+    const auto it = regioes.find(id);
+    if (it == regioes.end()) return nullptr;
+    for (const auto& t : it->second.vida.transformacoes)
+        if (marcos.contains(t.marco)) return &t;
+    return nullptr;
+}
+
+std::string World::nomeRegiao(const std::string& id) const {
+    if (const TransformacaoRegiao* t = transformacao(id)) return t->nome;
+    const auto it = regioes.find(id);
+    return it == regioes.end() ? id : it->second.nome;
+}
+
+bool World::regiaoHostil() const {
+    if (const TransformacaoRegiao* t = transformacao(regiaoAtual)) return t->hostil;
+    return infoAtual().hostil;
+}
+
+std::vector<std::string> World::regioesComVida() const {
+    std::vector<std::string> v;
+    for (const auto& [id, e] : estadoRegioes) v.push_back(id);
+    return v;
+}
+
+ModificadorDia World::modificadorReino(Estacao e) const {
+    ModificadorDia m = dados().estacoes.de(e).mod;
+    for (const auto& id : regioesComVida())
+        if (const TransformacaoRegiao* t = transformacao(id)) m.felicidade += t->felicidade;  // o povo sente o pacto
+    return m;
+}
+
+void World::noiteDasRegioes(std::vector<std::pair<std::string, int>>& producao, std::vector<std::string>& notas) {
+    for (auto& [id, e] : estadoRegioes) {
+        if (!visitadas.contains(id)) continue;  // terra que o herdeiro ainda não pisou fica como está
+        const std::string nome = nomeRegiao(id);
+        const ResultadoNoite r = noiteDaRegiao(e, regioes.at(id).vida, transformacao(id), relogio.dia);
+        for (const auto& [recurso, n] : r.producao) producao.push_back({recurso + "|" + nome, n});
+        if (r.tomada) {
+            notas.push_back(nome + ": as criaturas estão tomando conta. Volte lá para expulsá-las.");
+            marcar("tomada:" + id, nome);
+        }
+        if (r.voltaram) notas.push_back(nome + ": sem visitas, a terra voltou a escurecer e as criaturas estão voltando.");
+    }
+}
+
+void World::receberItem(const std::string& item) {
+    const auto it = dados().equipamentos.find(item);
+    if (it == dados().equipamentos.end()) return;
+    equip.possuidos.insert(item);
+    // Equipa na hora se for melhor que o atual
+    const EquipDef& d = it->second;
+    if (d.tipo == "arma" && d.dano > danoArma()) equip.arma = item;
+    if (d.tipo == "armadura" && d.defesa > defesaArmadura()) equip.armadura = item;
+}
+
+void World::anunciarTransformacao(const std::string& regiao) {
+    eventos_.push_back({EventoJogo::Tipo::Transformou, jogador.pos, regiao, "", 0, nomeRegiao(regiao)});
+    // As criaturas que a terra transformada afasta somem na hora (não só na manhã seguinte)
+    const TransformacaoRegiao* t = transformacao(regiao);
+    const auto est = estadoRegioes.find(regiao);
+    if (t && regiao == regiaoAtual && (est == estadoRegioes.end() || est->second.corrupcao < t->voltamAcima)) {
+        std::vector<entt::entity> remover;
+        for (auto [e, p, i] : reg.view<const Posicao, const Inimigo>().each())
+            if (t->semInimigos.contains(i.tipo)) {
+                remover.push_back(e);
+                eventos_.push_back({EventoJogo::Tipo::Esgotou, p.v, "purificou"});  // somem num sopro de luz
+            }
+        reg.destroy(remover.begin(), remover.end());
+    }
+    atualizarEspeciais();
+    bloqueio_.clear();
+}
+
+bool World::usarCoracao() {
+    const std::string marco = "purificou:" + regiaoAtual;
+    if (marcos.contains(marco)) {
+        eventos_.push_back({EventoJogo::Tipo::Aviso, jogador.pos, "bom", "", 0, "O Coração da Floresta pulsa em paz. A floresta lembra de você."});
+        return false;
+    }
+    const auto it = estadoRegioes.find(regiaoAtual);
+    if (it == estadoRegioes.end()) return false;
+    EstadoRegiao& e = it->second;
+    if (e.corrupcao > regra::PURIFICAR) {
+        eventos_.push_back({EventoJogo::Tipo::Aviso, jogador.pos, "", "", 0,
+                            std::format("Raízes de cinza sufocam o altar (corrupção {:.0f}). Derrote criaturas aqui até ficar abaixo de {:.0f}.",
+                                        e.corrupcao, regra::PURIFICAR)});
+        return false;
+    }
+    marcar(marco, nomeRegiao(regiaoAtual));
+    e.corrupcao = 0.0f;
+    e.seguranca = 100.0f;
+    anunciarTransformacao(regiaoAtual);
+    atualizarMissoes();
+    return true;
+}
+
+bool World::escorarEntulho() {
+    if (!inventario.remover("madeira", MADEIRA_ENTULHO)) {
+        eventos_.push_back({EventoJogo::Tipo::Aviso, jogador.pos, "", "", 0, std::format("Escorar a passagem pede {} de madeira.", MADEIRA_ENTULHO)});
+        return false;
+    }
+    for (auto [e, p, it] : reg.view<const Posicao, const Interativo>().each())
+        if (it.acao == "entulho") eventos_.push_back({EventoJogo::Tipo::Esgotou, p.v, "entulho"});
+    eventos_.push_back({EventoJogo::Tipo::Aviso, jogador.pos, "bom", "", 0, "Passagem escorada: o caminho para as minas está aberto."});
+    marcar("minas_abertas");  // o entulho some (atualizarEspeciais)
+    atualizarMissoes();
+    return true;
+}
+
+const EscolhaDef* World::escolhaDe(entt::entity e) const {
+    const auto* i = reg.try_get<Inimigo>(e);
+    if (!i || !i->rendido) return nullptr;
+    const auto it = dados().escolhas.find(dados().inimigos.at(i->tipo).escolha);
+    return it == dados().escolhas.end() ? nullptr : &it->second;
+}
+
+bool World::escolher(const std::string& id, const std::string& opcao) {
+    const auto it = dados().escolhas.find(id);
+    if (it == dados().escolhas.end()) return false;
+    const EscolhaDef& d = it->second;
+    const OpcaoEscolha* o = d.opcao(opcao);
+    if (!o) return false;
+    if (!opcaoDisponivel(*o)) {
+        eventos_.push_back({EventoJogo::Tipo::Aviso, jogador.pos, "", "", 0, o->requerTexto.empty() ? "Ainda não é possível." : o->requerTexto});
+        return false;
+    }
+    // O chefe rendido sai de cena: despedaçado, devolvido à luz (vira guardião) ou fundido à Chama
+    std::vector<entt::entity> remover;
+    glm::vec2 onde = jogador.pos;
+    for (auto [e, p, i] : reg.view<const Posicao, const Inimigo>().each())
+        if (i.tipo == d.inimigo) {
+            onde = p.v;
+            remover.push_back(e);
+        }
+    reg.destroy(remover.begin(), remover.end());
+    eventos_.push_back({EventoJogo::Tipo::Esgotou, onde - glm::vec2(0, 10), opcao});
+    for (const auto& [r, q] : o->recompensa) {
+        inventario.adicionar(r, q);
+        eventos_.push_back({EventoJogo::Tipo::Ganhou, onde - glm::vec2(0, 20), "escolha", r, q});
+    }
+    if (!o->item.empty()) {
+        receberItem(o->item);
+        eventos_.push_back({EventoJogo::Tipo::Forjou, jogador.pos, o->item, "", 0, dados().equipamentos.at(o->item).nome});
+    }
+    if (opcao == "derrotar") ++abates[d.inimigo];  // só despedaçar conta como criatura vencida
+    if (const auto er = estadoRegioes.find(d.regiao); er != estadoRegioes.end() && o->corrupcao >= 0.0f) {
+        er->second.corrupcao = o->corrupcao;
+        er->second.seguranca = 100.0f;
+    }
+    if (!d.inimigo.empty()) marcar("chefe_" + d.inimigo, dados().inimigos.at(d.inimigo).nome);  // não volta mais
+    marcar("escolha:" + id + ":" + opcao, o->nome);
+    anunciarTransformacao(d.regiao);
+    atualizarMissoes();
+    return true;
+}
+
+void World::atualizarEspeciais() {
+    if (!dados_) return;
+    std::vector<entt::entity> remover;
+    for (auto [e, it] : reg.view<const Interativo>().each())
+        if (it.acao == "entulho" && marcos.contains("minas_abertas")) remover.push_back(e);
+    for (auto [e] : reg.view<EnfeiteRegiao>().each()) remover.push_back(e);
+    if (!remover.empty()) bloqueio_.clear();
+    reg.destroy(remover.begin(), remover.end());
+    // O altar mostra se a região já foi purificada
+    const bool puro = marcos.contains("purificou:" + regiaoAtual);
+    for (auto [e, it, v, l] : reg.view<const Interativo, Visual, Luz>().each())
+        if (it.acao == "altar") {
+            v.sprite = puro ? "altar_purificado" : "altar_corrompido";
+            l = puro ? Luz{{0.55f, 1.0f, 0.7f}, 48.0f, {0.0f, -12.0f}} : Luz{{0.8f, 0.25f, 0.2f}, 30.0f, {0.0f, -10.0f}};
+        }
+    // Enfeites da região transformada (o guardião das minas, flores e cristais)
+    if (const TransformacaoRegiao* t = transformacao(regiaoAtual))
+        for (const EnfeiteRegiaoDef& en : t->enfeites) {
+            const auto e = reg.create();
+            reg.emplace<Posicao>(e, baseTile(en.tile.x, en.tile.y));
+            reg.emplace<Visual>(e, en.sprite);
+            reg.emplace<EnfeiteRegiao>(e);
+            if (en.solido) reg.emplace<Colisor>(e, glm::vec2{10, 6}, glm::vec2{0, -6});
+            if (en.temLuz) reg.emplace<Luz>(e, en.corLuz, en.raioLuz, glm::vec2{0.0f, -10.0f});
+            bloqueio_.clear();
+        }
 }
 
 }

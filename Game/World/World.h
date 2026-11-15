@@ -18,13 +18,15 @@
 #include "Game/NPC/Npc.h"
 #include "Game/Player/Player.h"
 #include "Game/Save/SaveSystem.h"
+#include "Game/World/Regioes.h"
 
 namespace koa {
 
 // Tipos de terreno do tilemap
 enum Terreno : uint16_t { T_GRAMA = 0, T_TERRA, T_LAMA, T_AGUA, T_CALCADA, T_MURO, T_QTD };
 
-enum class TipoInteracao { Nenhuma, Cortar, Quebrar, Saquear, Construcao, Conversar, Ler };
+// Usar: altar e entulho (fase 11); Decidir: chefe rendido
+enum class TipoInteracao { Nenhuma, Cortar, Quebrar, Saquear, Construcao, Conversar, Ler, Usar, Decidir };
 
 // Uma conversa pronta para a caixa de diálogo
 struct Conversa {
@@ -54,7 +56,9 @@ struct EventoJogo {
         // Fase 9
         Cronica, Titulo, LerPista,
         // Fase 10
-        EventoRaro, Festival
+        EventoRaro, Festival,
+        // Fase 11
+        AbrirEscolha, Transformou
     };
     Tipo tipo;
     glm::vec2 pos{0.0f};
@@ -78,6 +82,7 @@ struct Saida {
     std::string destino;
     glm::ivec2 chegada{0};
     Direcao dir = Direcao::Baixo;
+    std::string requer;  // marco para a passagem estar aberta ("" = sempre)
 };
 
 struct InfoRegiao {
@@ -88,6 +93,7 @@ struct InfoRegiao {
     std::vector<Saida> saidas;
     std::vector<std::pair<std::string, glm::ivec2>> spawns;  // inimigos (renascem a cada manhã)
     bool curaComEra = false;        // a floresta clareia conforme o reino prospera
+    VidaRegiaoDef vida;             // fase 11: corrupção, segurança, prosperidade e transformações
 };
 
 // A partida em si: mapa, objetos (ECS), reino, herói e inventário. Sem janela nem OpenGL.
@@ -119,7 +125,7 @@ public:
     int contarConstrucoes(const std::string& def) const;
     // Guia dos primeiros dias: o que fazer agora ("" quando o herdeiro já se virou sozinho)
     std::string proximoPasso() const;
-    ResumoReino resumo() const { return calcularResumo(reino, *dados_, estado, estacaoAtual().mod); }
+    ResumoReino resumo() const { return calcularResumo(reino, *dados_, estado, modificadorReino(relogio.estacao())); }
     void sincronizarAldeoes();  // tantos aldeões quanto a população pede
 
     // Regiões (vilarejo, floresta, cripta): só a ativa vive em `mapa`/`reg`
@@ -170,6 +176,21 @@ public:
     bool festivalHoje() const { return festivalNoDia(relogio.dia); }
     bool festivalAgora() const;
     float forcaInimigos() const;  // dano das criaturas: estação × lua de sangue
+
+    // Fase 11: regiões vivas, regiões que se transformam e chefes com escolha
+    std::map<std::string, EstadoRegiao> estadoRegioes;  // só as regiões com "vida"
+    const TransformacaoRegiao* transformacao(const std::string& regiao) const;  // a que vale agora (nullptr = original)
+    std::string nomeRegiao(const std::string& regiao) const;
+    bool regiaoHostil() const;    // a região ativa (a floresta purificada deixa de ser)
+    float escuridaoMinAtual() const;
+    ModificadorDia modificadorReino(Estacao e) const;  // estação + efeitos das regiões (o pacto pesa no povo)
+    std::vector<std::string> regioesComVida() const;   // na ordem do mapa
+    bool usarCoracao();           // o rito do Coração da Floresta
+    bool escorarEntulho();        // abre a passagem das minas
+    const EscolhaDef* escolhaDe(entt::entity e) const;
+    bool opcaoDisponivel(const OpcaoEscolha& o) const { return o.requer.empty() || marcos.contains(o.requer); }
+    bool escolher(const std::string& escolha, const std::string& opcao);
+    static constexpr int MADEIRA_ENTULHO = 15;
 
     std::vector<ke::AABB> obstaculos() const;
     ke::AABB caixaConstrucao(const BuildingData& b) const;
@@ -229,6 +250,11 @@ private:
     void atualizarMeteorito();  // a estrela caída na noite de meteoros (some no dia seguinte)
     void notasDaManha(int ontem);
     int avisoEvento_ = 0, avisoFestival_ = 0;  // dia em que já foi anunciado
+    // Fase 11
+    void atualizarEspeciais();    // altar (cara de corrompido ou purificado), entulho e enfeites da região transformada
+    void noiteDasRegioes(std::vector<std::pair<std::string, int>>& producao, std::vector<std::string>& notas);
+    void receberItem(const std::string& item);
+    void anunciarTransformacao(const std::string& regiao);
 
     const GameData* dados_ = nullptr;
     AlvoInteracao alvo_;

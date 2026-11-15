@@ -3,6 +3,7 @@
     "madeira": { "nome": "Madeira", "icone": "icone_madeira" },
     "pedra":   { "nome": "Pedra",   "icone": "icone_pedra" },
     "ouro":    { "nome": "Ouro",    "icone": "icone_ouro" },
-    "comida":  { "nome": "Comida",  "icone": "icone_comida" }
+    "comida":  { "nome": "Comida",  "icone": "icone_comida" },
+    "cristal": { "nome": "Cristal", "icone": "icone_cristal" }
   }
 }

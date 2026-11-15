@@ -44,5 +44,6 @@ void DebugUI::renderizar() {
 }
 
 bool DebugUI::querTeclado() const { return iniciado_ && visivel && ImGui::GetIO().WantCaptureKeyboard; }
+bool DebugUI::querMouse() const { return iniciado_ && visivel && ImGui::GetIO().WantCaptureMouse; }
 
 }

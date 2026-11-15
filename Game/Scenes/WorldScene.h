@@ -50,8 +50,12 @@ public:
     bool cronicasAbertas() const { return cronicas_; }
     const std::string& lendo() const { return leitura_; }
     const std::string& lojaAberta() const { return loja_; }
+    // Fase 11
+    bool painelRegioesAberto() const { return painelRegioes_; }
+    const std::string& escolhaAberta() const { return escolha_; }
 
 private:
+    void entradaEscolha();
     std::vector<std::string> opcoesObras() const;
     void entradaMenuObras();
     void entradaColocacao();
@@ -117,6 +121,11 @@ private:
     // Fase 10
     float tempoFolhas_ = 0.0f, tempoMeteoro_ = 0.0f, tempoFogos_ = 0.0f;
     ke::ParticleSystem ceu_;  // fogos e estrelas cadentes: desenhados depois da escuridão da noite (brilham de verdade)
+    // Fase 11
+    bool painelRegioes_ = false;
+    std::string escolha_;  // chefe rendido esperando a decisão ("" = nenhuma)
+    int selEscolha_ = 0;
+    float tempoEncanto_ = 0.0f;  // vagalumes e brilhos da terra purificada
     float transicao_ = -1.0f;  // -1 = nenhuma; 0..2 = escurece, troca o dia (em 1), clareia
     bool desmaio_ = false;
     bool mostrarColisoes_ = false;

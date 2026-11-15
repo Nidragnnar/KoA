@@ -184,6 +184,8 @@ TEST(SaveV3, MigraCopiaDeSaveReal) {
     ASSERT_TRUE(d2);
     EXPECT_TRUE(d2->temPovo);
     EXPECT_TRUE(d2->temCronicas);
+    EXPECT_TRUE(d2->temRegioes);  // fase 11: regiões vivas gravadas
+    for (const auto& [id, e] : d2->regioes) std::printf("[save real] região %s: corrupção %.0f, última visita dia %d\n", id.c_str(), e.corrupcao, e.ultimaVisita);
     std::printf("[save real] dia %d, casa nível %d, %zu objetos alterados, %zu moradores, %zu páginas nas Crônicas, título %s\n", d2->dia,
                 w.reino.construcao("casa_herdeiro")->level, d2->objetos.size(), d2->moradores.size(), d2->cronicas.size(),
                 w.titulo().nome.c_str());

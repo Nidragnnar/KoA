@@ -8,6 +8,31 @@
   "cura_com_era": true,
   "saidas": [
     { "tile": [0, 15], "tam": [1, 6], "destino": "vilarejo", "chegada": [61, 19], "dir": "esquerda" },
-    { "tile": [45, 5], "tam": [3, 1], "destino": "cripta", "chegada": [13, 15], "dir": "cima" }
-  ]
+    { "tile": [45, 5], "tam": [3, 1], "destino": "cripta", "chegada": [13, 15], "dir": "cima" },
+    { "tile": [29, 35], "tam": [1, 1], "destino": "minas", "chegada": [25, 2], "dir": "baixo", "requer": "minas_abertas" }
+  ],
+  "_vida": "Fase 11. corrupcao_inicial 0..100; prosperidade = quanto da terra livre vira prosperidade; producao = recurso por ponto de prosperidade, por noite; invasao = criaturas a mais quando a corrupção passa de 85. Cada transformação vale quando o marco existe e troca nome, luz, visual (era), criaturas e produção.",
+  "vida": {
+    "corrupcao_inicial": 70,
+    "prosperidade": 0.5,
+    "producao": { "madeira": 0.08 },
+    "dica": "Vencer criaturas aqui baixa a corrupção. Abaixo de 25, E no Coração da Floresta (nas ruínas no meio da mata) purifica a terra.",
+    "invasao": [
+      { "tipo": "lobo", "tile": [6, 16] }, { "tipo": "lobo", "tile": [8, 19] },
+      { "tipo": "sombra", "tile": [12, 17] }, { "tipo": "sombra", "tile": [14, 20] }, { "tipo": "esqueleto", "tile": [18, 21] }
+    ],
+    "transformacoes": [
+      { "marco": "purificou:floresta", "nome": "Floresta Encantada",
+        "escuridao_min": 0.12, "ambiente": [0.75, 0.95, 0.85], "hostil": false, "era": 3,
+        "sem_inimigos": ["sombra", "esqueleto"], "voltam_acima": 60,
+        "prosperidade": 1.0, "producao": { "madeira": 0.1, "comida": 0.04 },
+        "dica": "A floresta está viva e rende madeira e frutos. Volte de vez em quando: abandonada, ela volta a escurecer.",
+        "enfeites": [
+          { "sprite": "cristal", "tile": [24, 11], "luz": [0.55, 1.0, 0.75, 46] },
+          { "sprite": "cristal", "tile": [30, 11], "luz": [0.55, 1.0, 0.75, 46] },
+          { "sprite": "cristal", "tile": [24, 14], "luz": [0.55, 1.0, 0.75, 46] },
+          { "sprite": "cristal", "tile": [30, 14], "luz": [0.55, 1.0, 0.75, 46] }
+        ] }
+    ]
+  }
 }

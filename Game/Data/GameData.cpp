@@ -113,7 +113,27 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
         if (erro) *erro = "Data/World/estacoes.json ausente ou inválido";
         return false;
     }
-    return lerEstacoes(je, estacoes, erro);
+    if (!lerEstacoes(je, estacoes, erro)) return false;
+    // Fase 11: o que o herdeiro decide quando um chefe se rende
+    const auto tx = ke::fs::lerTexto(pasta / "Lore/escolhas.json");
+    const auto jx = tx ? nlohmann::json::parse(*tx, nullptr, false) : nlohmann::json();
+    if (!tx || jx.is_discarded()) {
+        if (erro) *erro = "Data/Lore/escolhas.json ausente ou inválido";
+        return false;
+    }
+    if (!lerEscolhas(jx, escolhas, erro)) return false;
+    for (const auto& [id, ini] : inimigos)
+        if (!ini.escolha.empty() && !escolhas.contains(ini.escolha)) {
+            if (erro) *erro = "inimigo " + id + " usa escolha inexistente: " + ini.escolha;
+            return false;
+        }
+    for (const auto& [id, e] : escolhas)
+        for (const auto& o : e.opcoes)
+            if (!o.item.empty() && !equipamentos.contains(o.item)) {
+                if (erro) *erro = "escolha " + id + " dá item inexistente: " + o.item;
+                return false;
+            }
+    return true;
 }
 
 }

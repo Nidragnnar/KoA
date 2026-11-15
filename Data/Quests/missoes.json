@@ -1,5 +1,5 @@
 {
-  "_como_funciona": "O morador oferece a missão no fim de uma conversa (se o requisito foi cumprido). Objetivos: derrotar (alvo = inimigo), construir (alvo = construção), ter (alvo = recurso), visitar (alvo = região). Ao cumprir, a recompensa vem na hora.",
+  "_como_funciona": "O morador oferece a missão no fim de uma conversa (se o requisito foi cumprido). Objetivos: derrotar (alvo = inimigo), construir (alvo = construção), ter (alvo = recurso), visitar (alvo = região), marco (alvo = acontecimento: purificar, abrir passagem, decidir o destino de um chefe). Ao cumprir, a recompensa vem na hora.",
   "missoes": [
     { "id": "limpar_estrada", "nome": "Limpar a Estrada", "npc": "oswin",
       "descricao": "Derrote 5 sombras na Floresta Amaldiçoada, a leste.",
@@ -24,6 +24,18 @@
     { "id": "cavaleiro_caido", "nome": "O Cavaleiro Caído", "npc": "maelis", "requer": "floresta_sussurra",
       "descricao": "Derrote o Cavaleiro Caído que guarda o fundo da cripta.",
       "objetivo": { "tipo": "derrotar", "alvo": "cavaleiro_caido", "quantidade": 1 },
-      "recompensa": { "ouro": 150, "amizade": 200, "item": "espada_linhagem" } }
+      "recompensa": { "ouro": 150, "amizade": 200, "item": "espada_linhagem" } },
+    { "id": "coracao_floresta", "nome": "O Coração da Floresta", "npc": "maelis", "requer": "floresta_sussurra",
+      "descricao": "Nas ruínas no meio da floresta há um altar antigo. Vença as criaturas até a corrupção cair abaixo de 25 (R mostra) e purifique o Coração com E.",
+      "objetivo": { "tipo": "marco", "alvo": "purificou:floresta", "quantidade": 1 },
+      "recompensa": { "ouro": 40, "amizade": 150 } },
+    { "id": "minas_valdren", "nome": "As Minas de Valdren", "npc": "bram", "requer": "martelo_bram",
+      "descricao": "Ao sul da floresta, uma passagem desabada leva às minas antigas. Escore o entulho com 15 de madeira e entre.",
+      "objetivo": { "tipo": "visitar", "alvo": "minas", "quantidade": 1 },
+      "recompensa": { "ouro": 30, "amizade": 100 } },
+    { "id": "golem_cinzas", "nome": "O Gigante das Minas", "npc": "oswin", "requer": "limpar_estrada",
+      "descricao": "Algo enorme ronda o fundo das minas. Enfrente-o e decida o que fazer com ele.",
+      "objetivo": { "tipo": "marco", "alvo": "chefe_golem_cinzas", "quantidade": 1 },
+      "recompensa": { "ouro": 50, "amizade": 150 } }
   ]
 }

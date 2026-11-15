@@ -15,6 +15,12 @@
       { "id": "bram_titulo", "uma_vez": true, "se": { "marco": "titulo:senhor_cinzas" }, "falas": [
         "Senhor das Cinzas, é? O povo inventa cada coisa.",
         "...Combina. Você tem fuligem até na sobrancelha."] },
+      { "id": "bram_cristal", "uma_vez": true, "se": { "marco": "primeiro_cristal" }, "falas": [
+        "Isso é cristal das minas velhas? Deixe eu ver... É. É sim.",
+        "Me traga oito desses e um saco de ouro, e com a forja grande eu faço uma lâmina que corta até sombra."] },
+      { "id": "bram_minas", "uma_vez": true, "se": { "marco": "minas_abertas" }, "falas": [
+        "Você abriu a passagem das minas? Meu avô trabalhou lá embaixo.",
+        "Cuidado com as aranhas. E com o que mais estiver lá. Ninguém volta das minas falando muito."] },
       { "id": "bram_hadrian", "uma_vez": true, "se": { "marco": "chefe_cavaleiro_caido" }, "falas": [
         "O Cavaleiro Caído... Dizem que usava a armadura do capitão Hadrian. Fui eu que forjei aquela armadura.",
         "Se era ele, que descanse. Merecia mais do que vigiar um buraco no chão."] },
@@ -32,6 +38,9 @@
         "Majestade! Ninguém aqui acreditava que você voltaria. Eu acreditava. Mais ou menos.",
         "Sou Edda. Tinha uma taverna ali na praça, antes do fogo.",
         "Hoje sirvo sopa de raiz pra quem sobrou. Mas ainda sei rir alto!"] },
+      { "id": "edda_pacto", "uma_vez": true, "se": { "marco": "escolha:golem_cinzas:pacto" }, "falas": [
+        "Não sei o que você fez nas minas, {titulo}, mas o pão anda com gosto de cinza.",
+        "E o povo dorme mal. Eu também. Não que eu esteja reclamando. Estou um pouquinho."] },
       { "id": "edda_casa", "uma_vez": true, "se": { "casa_nivel_min": 2 }, "falas": [
         "Você viu? Tem fumaça saindo da chaminé da sua casa!",
         "Fumaça de chaminé é sinal de gente viva. Faz anos que eu não via isso aqui."] },
@@ -70,6 +79,16 @@
       { "se": { "evento": "aurora", "periodo": "noite" }, "falas": [
         "Está vendo as luzes? Cada cor é uma lembrança que a terra devolve.",
         "Faça um pedido, {titulo}. Dizem que a aurora escuta."] },
+      { "id": "maelis_pacto", "uma_vez": true, "se": { "marco": "escolha:golem_cinzas:pacto" }, "falas": [
+        "Você aceitou um presente da Chama. Sinto o cheiro de cinza em você.",
+        "Não vou julgar, {titulo}. Mas um pacto sempre volta para cobrar. Sempre."] },
+      { "id": "maelis_guardiao", "uma_vez": true, "se": { "marco": "escolha:golem_cinzas:purificar" }, "falas": [
+        "O gigante das minas agora guarda em vez de destruir. O rito do Coração funcionou duas vezes.",
+        "A Chama pode ser limpa, {titulo}. Isso muda tudo o que eu pensava sobre a Queda."] },
+      { "id": "maelis_coracao", "uma_vez": true, "se": { "marco": "purificou:floresta" }, "falas": [
+        "Eu senti daqui. O Coração da Floresta voltou a bater.",
+        "Os antigos chamavam aquele altar de Coração porque a floresta inteira respirava por ele.",
+        "Guarde o rito, {titulo}. Algo me diz que não será a última vez que precisará dele."] },
       { "id": "maelis_ato1", "uma_vez": true, "se": { "marco": "misterio:primeiro_ato" }, "falas": [
         "Então é isso. O rei abriu a Torre do Selo, e a Chama não salvou o reino: consumiu.",
         "Mas uma Chama assim não morre, {titulo}. Apenas muda de lugar.",
@@ -108,6 +127,15 @@
       { "id": "oswin_soldado", "uma_vez": true, "se": { "marco": "pista:diario_soldado" }, "falas": [
         "Esse diário... a letra é do Tobias, meu sobrinho. Marchou com o capitão Hadrian.",
         "Nunca voltou. Agora sei que viu o fogo sair do castelo. Obrigado por me trazer isso."] },
+      { "id": "oswin_pacto", "uma_vez": true, "se": { "marco": "escolha:golem_cinzas:pacto" }, "falas": [
+        "Pacto com a coisa das minas? ...Não é meu lugar questionar, majestade.",
+        "Mas vou dobrar a vigia nas noites de lua vermelha. E vou rezar. As duas coisas."] },
+      { "id": "oswin_golem", "uma_vez": true, "se": { "marco": "escolha:golem_cinzas:derrotar" }, "falas": [
+        "Despedaçou o gigante das minas! Queria ter visto. Juro que queria.",
+        "Pedra boa vai voltar a descer aquele morro. Bram vai chorar de alegria. Escondido, claro."] },
+      { "id": "oswin_tomada", "uma_vez": true, "se": { "marco": "tomada:floresta" }, "falas": [
+        "As criaturas voltaram com força à floresta, {titulo}. Terra sem vigia vira toca.",
+        "Dê uma passada lá. Uma espada aparecendo de vez em quando vale mais que muralha."] },
       { "id": "oswin_estrada", "uma_vez": true, "se": { "marco": "missao:limpar_estrada" }, "falas": [
         "A estrada está livre. Dizem que até mercadores vão voltar a passar por ela.",
         "Esperei quarenta anos de guarda para ver isso, {titulo}."] },
@@ -128,6 +156,9 @@
       { "se": { "estacao": "outono", "ja_falou_hoje": false }, "falas": [
         "Outono. Colhe tudo, guarda tudo.",
         "No inverno a terra dorme. A barriga não."] },
+      { "id": "tilda_floresta", "uma_vez": true, "se": { "marco": "purificou:floresta" }, "falas": [
+        "Fui à floresta. Sozinha. Voltei com um cesto de amoras.",
+        "Sete anos sem amora, {titulo}. Sete."] },
       { "id": "tilda_memorial", "uma_vez": true, "se": { "marco": "construiu:memorial" }, "falas": [
         "Levei flores ao Memorial. Meu pai está naqueles nomes que ninguém sabe.",
         "É bom ter um lugar pra chorar que não seja a cozinha."] },

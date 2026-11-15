@@ -34,7 +34,7 @@ struct Coletavel {
     std::string spriteNormal;      // para voltar quando renasce
     int diaEsgotado = 0;           // dia em que acabou (renasce alguns dias depois)
 
-    int diasParaRenascer() const { return tipo == "arvore" ? 3 : 4; }
+    int diasParaRenascer() const { return tipo == "arvore" ? 3 : tipo == "veio" ? 5 : 4; }
 };
 
 // Baús e restos com ouro
@@ -88,6 +88,14 @@ struct TrocaPorEra {
 struct Pista {
     std::string id;
 };
+
+// Fase 11: objeto que se usa com E ("altar" = Coração da Floresta, "entulho" = passagem das minas)
+struct Interativo {
+    std::string acao;
+};
+
+// Enfeite que só existe enquanto a região está transformada (some e volta com ela)
+struct EnfeiteRegiao {};
 
 // Fonte de luz (tochas)
 struct Luz {

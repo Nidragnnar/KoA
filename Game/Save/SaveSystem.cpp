@@ -53,10 +53,15 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
     json paginas = json::array();
     for (const auto& c : d.cronicas) paginas.push_back({{"marco", c.marco}, {"dia", c.dia}, {"era", c.era}, {"texto", c.texto}});
     json cronicas = {{"cronicas", paginas}};
+    json jRegioes = json::object();
+    for (const auto& [id, e] : d.regioes)
+        jRegioes[id] = {{"corrupcao", e.corrupcao}, {"seguranca", e.seguranca}, {"prosperidade", e.prosperidade}, {"ultima_visita", e.ultimaVisita}};
+    json regioes = {{"regioes", jRegioes}};
 
     const std::pair<const char*, const json*> arquivos[] = {
         {"player.json", &player}, {"inventory.json", &inv}, {"kingdom.json", &reino}, {"world.json", &mundo},
         {"npcs.json", &jNpcs}, {"relationships.json", &jRel}, {"quests.json", &quests}, {"chronicles.json", &cronicas},
+        {"regions.json", &regioes},
         {"metadata.json", &meta}};  // metadata por último: só existe save "válido" quando tudo foi gravado
     for (const auto& [nome, conteudo] : arquivos) {
         if (!ke::fs::gravarTextoSeguro(dir / nome, conteudo->dump(2))) {
@@ -96,6 +101,11 @@ json SaveSystem::migrar(json tudo, int deVersao) {
         tudo["chronicles"] = {{"cronicas", json::array()}, {"reconstruir", true}};
         deVersao = 5;
     }
+    if (deVersao < 6) {
+        // v5 não tinha regiões vivas: cada região começa como no mapa (o jogo usa os valores iniciais)
+        tudo["regions"] = {{"regioes", json::object()}, {"padrao", true}};
+        deVersao = 6;
+    }
     tudo["metadata"]["versao_formato"] = deVersao;
     return tudo;
 }
@@ -122,9 +132,10 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
         }
         // Arquivos que só existem a partir da v2
         if (versao >= 2) {
-            for (const char* nome : {"npcs", "relationships", "quests", "chronicles"}) {
+            for (const char* nome : {"npcs", "relationships", "quests", "chronicles", "regions"}) {
                 if (std::string(nome) == "quests" && versao < 4) continue;
                 if (std::string(nome) == "chronicles" && versao < 5) continue;
+                if (std::string(nome) == "regions" && versao < 6) continue;
                 const auto texto = ke::fs::lerTexto(dir / (std::string(nome) + ".json"));
                 tudo[nome] = texto ? json::parse(*texto, nullptr, false) : json();
                 if (tudo[nome].is_discarded() || !tudo[nome].is_object()) {
@@ -160,6 +171,17 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
         d.temCronicas = !jc.value("reconstruir", false);
         for (const auto& c : jc.value("cronicas", json::array()))
             d.cronicas.push_back({c.value("marco", ""), std::max(0, c.value("dia", 0)), std::clamp(c.value("era", 0), 0, 3), c.value("texto", "")});
+        const json& jreg = tudo["regions"];
+        d.temRegioes = !jreg.value("padrao", false);
+        const json regioes = jreg.value("regioes", json::object());  // variável: .items() de temporário quebra
+        for (const auto& [id, je] : regioes.items()) {
+            EstadoRegiao e;
+            e.corrupcao = std::clamp(je.value("corrupcao", 70.0f), 0.0f, 100.0f);
+            e.seguranca = std::clamp(je.value("seguranca", 0.0f), 0.0f, 100.0f);
+            e.prosperidade = std::clamp(je.value("prosperidade", 0.0f), 0.0f, 100.0f);
+            e.ultimaVisita = std::max(1, je.value("ultima_visita", 1));
+            d.regioes[id] = e;
+        }
         for (const auto& [id, q] : tudo["inventory"].items())
             if (q.is_number_integer()) d.inventario[id] = std::max(0, q.get<int>());
         const json& r = tudo["kingdom"];

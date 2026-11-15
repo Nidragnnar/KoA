@@ -68,10 +68,11 @@ TEST(Regioes, CarregaFlorestaECripta) {
     World w = vilarejo();
     ASSERT_TRUE(w.regioes.contains("floresta"));
     ASSERT_TRUE(w.regioes.contains("cripta"));
+    ASSERT_TRUE(w.regioes.contains("minas"));  // fase 11
     EXPECT_GT(w.regioes.at("floresta").spawns.size(), 10u);
-    EXPECT_EQ(dados().inimigos.size(), 4u);
-    EXPECT_EQ(dados().equipamentos.size(), 8u);
-    EXPECT_EQ(dados().missoes.size(), 6u);
+    EXPECT_EQ(dados().inimigos.size(), 6u);
+    EXPECT_EQ(dados().equipamentos.size(), 11u);
+    EXPECT_EQ(dados().missoes.size(), 9u);
     EXPECT_GT(w.regioes.at("floresta").escuridaoMin, 0.3f) << "a floresta é escura mesmo de dia";
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "Game/App/Contexto.h"
+#include "Game/UI/Cliques.h"
 
 namespace koa {
 
@@ -15,6 +16,9 @@ public:
 private:
     bool aberta_ = false, controles_ = false;
     int sel_ = 0;
+    // Mouse: onde as linhas e as barras de volume apareceram no último quadro
+    mutable Cliques cliques_;
+    mutable float barraX_ = 0.0f, barraL_ = 1.0f;
 };
 
 }

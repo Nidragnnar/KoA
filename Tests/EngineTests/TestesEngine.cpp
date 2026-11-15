@@ -6,6 +6,9 @@
 #include "Engine/Audio/Sintetizador.h"
 #include "Engine/Core/Time.h"
 #include "Engine/Physics/Collision.h"
+#include "Engine/Platform/Input.h"
+
+#include <SDL3/SDL_events.h>
 #include "Engine/Renderer/Animation.h"
 #include "Engine/Renderer/ParticleSystem.h"
 #include "Engine/Renderer/RenderTarget.h"
@@ -74,6 +77,38 @@ TEST(Letterbox, EscalaInteiraQuandoCabe) {
     const Retangulo r2 = calcularLetterbox(1366, 768, 640, 360);
     EXPECT_EQ(r2.largura, 1280);  // 2× com bordas
     EXPECT_EQ(r2.x, 43);
+}
+
+TEST(Mouse, CoordenadasDaJanelaViramTelaInterna) {
+    // Janela 1366×768: a tela interna aparece em 2× com faixas de 43 px dos lados e 24 px em cima e embaixo
+    const Retangulo r = calcularLetterbox(1366, 768, 640, 360);
+    Input in;
+    in.definirTela(r.x, r.y, r.largura, r.altura, 640, 360, 1.0f);
+    SDL_Event e{};
+    e.type = SDL_EVENT_MOUSE_MOTION;
+    e.motion.x = 43.0f + 2.0f * 100.0f;
+    e.motion.y = 24.0f + 2.0f * 50.0f;
+    in.processar(e);
+    EXPECT_FLOAT_EQ(in.mouse().x, 100.0f);
+    EXPECT_FLOAT_EQ(in.mouse().y, 50.0f);
+    EXPECT_TRUE(in.mouseMoveu());
+    SDL_Event c{};
+    c.type = SDL_EVENT_MOUSE_BUTTON_DOWN;
+    c.button.button = SDL_BUTTON_LEFT;
+    c.button.x = 43.0f + 2.0f * 320.0f;
+    c.button.y = 24.0f;
+    in.processar(c);
+    EXPECT_TRUE(in.clicou(BotaoMouse::Esquerdo));
+    EXPECT_FLOAT_EQ(in.mouse().x, 320.0f);
+    in.fimDoPasso();
+    EXPECT_FALSE(in.clicou(BotaoMouse::Esquerdo)) << "o clique vale um passo só";
+    EXPECT_TRUE(in.segurandoMouse(BotaoMouse::Esquerdo));
+    // Tela de alta densidade (2 pixels por ponto): a posição em pontos é convertida
+    in.definirTela(r.x, r.y, r.largura, r.altura, 640, 360, 2.0f);
+    e.motion.x = (43.0f + 2.0f * 100.0f) / 2.0f;
+    e.motion.y = (24.0f + 2.0f * 50.0f) / 2.0f;
+    in.processar(e);
+    EXPECT_FLOAT_EQ(in.mouse().x, 100.0f);
 }
 
 TEST(Animacao, RepeteOuParaNoUltimoQuadro) {

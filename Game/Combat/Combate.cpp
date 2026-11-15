@@ -21,6 +21,7 @@ bool lerCombate(const nlohmann::json& ji, const nlohmann::json& je, const nlohma
             if (i.contains("ouro")) d.ouroMin = i["ouro"][0].get<int>(), d.ouroMax = i["ouro"][1].get<int>();
             if (i.contains("tamanho")) d.tamanho = {i["tamanho"][0].get<int>(), i["tamanho"][1].get<int>()};
             d.chefe = i.value("chefe", false);
+            d.escolha = i.value("escolha", "");
             inimigos[d.id] = d;
         }
         for (const auto& e : je.at("equipamentos")) {

@@ -6,12 +6,15 @@ era a era, até a **Alta Fantasia**.
 
 Engine própria em **C++20 + SDL3 + OpenGL 3.3** (Kingdom Engine), com EnTT, Dear ImGui, nlohmann/json e GoogleTest.
 
-## Versão 1.2
+## Versão 1.3
 
 A 2.0 está em andamento (identidade e plano em `docs/VISAO_2.0.md`). A fase 9 trouxe as Crônicas do Reino
 (tecla C), os títulos do herdeiro, o mercador viajante, três monumentos e o começo do mistério da Queda das Cinzas.
 A fase 10 trouxe as estações que mudam a economia, as noites raras (Lua de Sangue, aurora, meteoros) e o
 Festival da Colheita, que cresce com a era.
+A fase 11 trouxe as regiões vivas (tecla R): a floresta e as minas têm corrupção, segurança e prosperidade.
+A floresta pode ser purificada no Coração da Floresta e virar a Floresta Encantada. Ao sul dela ficam as minas,
+com cristal e o Golem de Cinzas, um chefe que se rende e deixa o herdeiro escolher: despedaçar, purificar ou aceitar um pacto.
 
 As 8 fases do plano de arquitetura da 1.0 estão feitas:
 
@@ -28,9 +31,10 @@ As 8 fases do plano de arquitetura da 1.0 estão feitas:
 |---|---|
 | W A S D / setas | andar |
 | E / Espaço | interagir (segure para continuar golpeando) |
-| J | atacar |
+| clique esquerdo / J | atacar (o clique vira o herói para o cursor) |
+| mouse | escolher e confirmar nos menus e painéis (clicar fora fecha) |
 | H | comer |
-| B / K / L / C | obras / reino / diário / Crônicas |
+| B / K / R / L / C | obras / reino / terras do reino / diário / Crônicas |
 | Esc | menu (salvar, opções, controles, título, sair) |
 | F5 | salvar |
 | F11 | tela cheia |

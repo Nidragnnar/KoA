@@ -1,0 +1,45 @@
+{
+  "nome": "Minas Abandonadas",
+  "mapa": "minas.txt",
+  "_legenda": "K = veio de cristal, M = aranha, Q = o Golem de Cinzas (chefe com escolha), U = escada para a floresta",
+  "escuridao_min": 0.75,
+  "ambiente": [0.36, 0.34, 0.42],
+  "hostil": true,
+  "saidas": [
+    { "tile": [24, 0], "tam": [3, 1], "destino": "floresta", "chegada": [29, 33], "dir": "cima" }
+  ],
+  "vida": {
+    "corrupcao_inicial": 80,
+    "prosperidade": 0.3,
+    "producao": { "pedra": 0.04 },
+    "dica": "O Golem de Cinzas guarda o fundo das minas. Vencer criaturas aqui baixa a corrupção.",
+    "invasao": [
+      { "tipo": "aranha", "tile": [20, 3] }, { "tipo": "aranha", "tile": [29, 4] }, { "tipo": "aranha", "tile": [22, 5] }
+    ],
+    "transformacoes": [
+      { "marco": "escolha:golem_cinzas:purificar", "nome": "Minas Arcanas",
+        "escuridao_min": 0.5, "ambiente": [0.32, 0.58, 0.95], "hostil": false,
+        "sem_inimigos": ["aranha", "esqueleto"], "voltam_acima": 60,
+        "rendimento_veio": 2, "prosperidade": 1.0, "producao": { "pedra": 0.05, "cristal": 0.04 },
+        "dica": "O Guardião de Cristal vigia as minas. Volte de vez em quando: terra esquecida volta a escurecer.",
+        "enfeites": [
+          { "sprite": "guardiao_cristal", "tile": [25, 23], "solido": true, "luz": [0.5, 0.85, 1.0, 70] },
+          { "sprite": "cristal", "tile": [18, 21], "luz": [0.45, 0.75, 1.0, 50] },
+          { "sprite": "cristal", "tile": [32, 21], "luz": [0.45, 0.75, 1.0, 50] },
+          { "sprite": "cristal", "tile": [18, 26], "luz": [0.45, 0.75, 1.0, 50] },
+          { "sprite": "cristal", "tile": [32, 26], "luz": [0.45, 0.75, 1.0, 50] },
+          { "sprite": "cristal", "tile": [23, 4], "luz": [0.45, 0.75, 1.0, 44] },
+          { "sprite": "cristal", "tile": [27, 4], "luz": [0.45, 0.75, 1.0, 44] }
+        ] },
+      { "marco": "escolha:golem_cinzas:derrotar", "nome": "Minas de Valdren",
+        "escuridao_min": 0.6, "ambiente": [0.5, 0.47, 0.44], "hostil": true,
+        "rendimento_veio": 1, "prosperidade": 0.8, "producao": { "pedra": 0.08, "cristal": 0.015 },
+        "dica": "As minas foram reabertas. Mantenha as aranhas longe e elas rendem pedra todas as noites." },
+      { "marco": "escolha:golem_cinzas:pacto", "nome": "Minas da Chama",
+        "escuridao_min": 0.65, "ambiente": [0.72, 0.36, 0.26], "hostil": true,
+        "piso_corrupcao": 50, "felicidade": -4, "lua_sangue": 2.0,
+        "rendimento_veio": 2, "prosperidade": 0.9, "producao": { "cristal": 0.04, "ouro": 0.15 },
+        "dica": "A Chama paga bem e cobra caro: o povo dorme mal e a Lua de Sangue vem mais vezes." }
+    ]
+  }
+}

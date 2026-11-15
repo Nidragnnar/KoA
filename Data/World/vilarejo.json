@@ -6,7 +6,7 @@
     "T": "árvore (madeira)", "R": "rocha (pedra)", "C": "baú esquecido (ouro)", "G": "túmulo", "t": "tocha",
     "f": "cerca quebrada", "B": "arbusto", "W": "poço", "F": "fogueira", "P": "ponto inicial do herdeiro"
   },
-  "regioes": ["floresta", "cripta"],
+  "regioes": ["floresta", "cripta", "minas"],
   "saidas": [
     { "tile": [63, 17], "tam": [1, 5], "destino": "floresta", "chegada": [3, 17], "dir": "direita" }
   ],

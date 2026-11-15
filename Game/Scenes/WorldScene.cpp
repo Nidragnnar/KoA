@@ -83,24 +83,30 @@ void WorldScene::entradaForja() {
     ke::Input& in = ctx_.app.input();
     const auto opcoes = opcoesForja();
     const int n = static_cast<int>(opcoes.size());
-    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_Q)) forja_ = false;
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_Q) || cliqueFecha(in, hud_.cliques)) forja_ = false;
     if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selForja_ = (selForja_ + n - 1) % n;
     if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selForja_ = (selForja_ + 1) % n;
-    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE))
+    const bool clique = listaComMouse(in, hud_.cliques, selForja_, n);
+    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique)
         mundo_.forjar(opcoes[selForja_]);
 }
 
 void WorldScene::entradaCronicas() {
     ke::Input& in = ctx_.app.input();
-    if (in.pressionou(SDL_SCANCODE_C) || in.pressionou(SDL_SCANCODE_ESCAPE)) {
+    if (in.pressionou(SDL_SCANCODE_C) || in.pressionou(SDL_SCANCODE_ESCAPE) || cliqueFecha(in, hud_.cliques)) {
         cronicas_ = false;
         return;
     }
     if (in.pressionou(SDL_SCANCODE_A) || in.pressionou(SDL_SCANCODE_LEFT) || in.pressionou(SDL_SCANCODE_D) ||
         in.pressionou(SDL_SCANCODE_RIGHT))
         abaCronicas_ = 1 - abaCronicas_;
-    const bool cima = in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP);
-    const bool baixo = in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN);
+    // Abas também no clique (ids 100 e 101)
+    if (const int id = hud_.cliques.em(in.mouse()); in.clicou(ke::BotaoMouse::Esquerdo) && (id == 100 || id == 101)) {
+        abaCronicas_ = id - 100;
+        return;
+    }
+    const bool cima = in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP) || in.roda() > 0.0f;
+    const bool baixo = in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN) || in.roda() < 0.0f;
     if (abaCronicas_ == 0) {
         const int n = static_cast<int>(mundo_.cronicas.size());
         if (cima) rolagem_ = std::max(0, rolagem_ - 1);
@@ -109,8 +115,9 @@ void WorldScene::entradaCronicas() {
         const int n = static_cast<int>(ctx_.dados.lore.pistas.size());
         if (cima) selFragmento_ = (selFragmento_ + n - 1) % n;
         if (baixo) selFragmento_ = (selFragmento_ + 1) % n;
+        const bool clique = listaComMouse(in, hud_.cliques, selFragmento_, n);
         const PistaDef& p = ctx_.dados.lore.pistas[selFragmento_];
-        if ((in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE)) &&
+        if ((in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique) &&
             mundo_.marcos.contains("pista:" + p.id))
             leitura_ = p.id;
     }
@@ -120,13 +127,14 @@ void WorldScene::entradaLoja() {
     ke::Input& in = ctx_.app.input();
     const auto& itens = ctx_.dados.npcs.at(loja_).loja;
     const int n = static_cast<int>(itens.size());
-    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_Q)) {
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_Q) || cliqueFecha(in, hud_.cliques)) {
         loja_.clear();
         return;
     }
     if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selLoja_ = (selLoja_ + n - 1) % n;
     if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selLoja_ = (selLoja_ + 1) % n;
-    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE))
+    const bool clique = listaComMouse(in, hud_.cliques, selLoja_, n);
+    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique)
         mundo_.comprar(loja_, itens[selLoja_].id);
 }
 
@@ -140,6 +148,15 @@ void WorldScene::entradaJogo() {
     e.interagir = in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_SPACE);
     e.interagirSegurando = in.segurando(SDL_SCANCODE_E) || in.segurando(SDL_SCANCODE_SPACE);
     e.atacar = in.pressionou(SDL_SCANCODE_J);
+    // Clique esquerdo: ataca virado para o cursor (o J ataca para onde o herói já olha)
+    if (in.clicou(ke::BotaoMouse::Esquerdo)) {
+        e.atacar = true;
+        if (mundo_.jogador.acao <= 0.0f) {
+            const glm::vec2 d = cam_.canto() + in.mouse() - (mundo_.jogador.pos - glm::vec2(0, 10));
+            if (std::abs(d.x) > std::abs(d.y)) mundo_.jogador.dir = d.x < 0 ? Direcao::Esquerda : Direcao::Direita;
+            else if (std::abs(d.y) > 0.0f) mundo_.jogador.dir = d.y < 0 ? Direcao::Cima : Direcao::Baixo;
+        }
+    }
     e.comer = in.pressionou(SDL_SCANCODE_H);
     if (in.pressionou(SDL_SCANCODE_ESCAPE)) {
         pausa_ = true;
@@ -166,7 +183,31 @@ void WorldScene::entradaJogo() {
         painelReino_ = true;
         return;
     }
+    if (in.pressionou(SDL_SCANCODE_R)) {
+        painelRegioes_ = true;
+        return;
+    }
     mundo_.passo(static_cast<float>(1.0 / 60.0), e);
+}
+
+void WorldScene::entradaEscolha() {
+    ke::Input& in = ctx_.app.input();
+    const EscolhaDef& d = ctx_.dados.escolhas.at(escolha_);
+    const int n = static_cast<int>(d.opcoes.size());
+    // Esc adia a decisão: o chefe continua de joelhos (E perto dele abre de novo)
+    if (in.pressionou(SDL_SCANCODE_ESCAPE)) {
+        escolha_.clear();
+        return;
+    }
+    if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selEscolha_ = (selEscolha_ + n - 1) % n;
+    if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selEscolha_ = (selEscolha_ + 1) % n;
+    // Clique fora do painel não fecha: uma decisão dessas não se perde por um clique sem querer
+    const bool clique = listaComMouse(in, hud_.cliques, selEscolha_, n);
+    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique) {
+        const std::string id = escolha_;
+        if (mundo_.escolher(id, d.opcoes[selEscolha_].id)) escolha_.clear();
+    }
+    mundo_.passo(static_cast<float>(1.0 / 60.0), {});
 }
 
 std::vector<std::string> WorldScene::opcoesObras() const {
@@ -180,10 +221,14 @@ void WorldScene::entradaMenuObras() {
     ke::Input& in = ctx_.app.input();
     const auto opcoes = opcoesObras();
     const int n = static_cast<int>(opcoes.size());
-    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_B)) menuObras_ = false;
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_B) || cliqueFecha(in, hud_.cliques)) {
+        menuObras_ = false;
+        return;
+    }
     if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selObra_ = (selObra_ + n - 1) % n;
     if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selObra_ = (selObra_ + 1) % n;
-    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE)) {
+    const bool clique = listaComMouse(in, hud_.cliques, selObra_, n);
+    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique) {
         const BuildingDef& d = ctx_.dados.construcoes.at(opcoes[selObra_]);
         if (!mundo_.monumentoLiberado(d)) {
             hud_.aviso(d.requerTexto, cor::ruim);
@@ -223,7 +268,8 @@ void WorldScene::entradaColocacao() {
         colocando_.clear();
         return;
     }
-    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE)) {
+    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) ||
+        in.clicou(ke::BotaoMouse::Esquerdo)) {
         if (!mundo_.construir(colocando_, tileFantasma()).empty()) colocando_.clear();
     }
     mundo_.passo(static_cast<float>(1.0 / 60.0), e);  // sem interagir: o E serve para confirmar
@@ -231,10 +277,12 @@ void WorldScene::entradaColocacao() {
 
 void WorldScene::entradaPainelReino() {
     ke::Input& in = ctx_.app.input();
-    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_K) || in.pressionou(SDL_SCANCODE_E)) painelReino_ = false;
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_K) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques))
+        painelReino_ = false;
     int imp = static_cast<int>(mundo_.estado.imposto);
-    if (in.pressionou(SDL_SCANCODE_A) || in.pressionou(SDL_SCANCODE_LEFT)) imp = std::max(0, imp - 1);
-    if (in.pressionou(SDL_SCANCODE_D) || in.pressionou(SDL_SCANCODE_RIGHT)) imp = std::min(2, imp + 1);
+    const int seta = in.clicou(ke::BotaoMouse::Esquerdo) ? hud_.cliques.em(in.mouse()) : -1;  // 200 = <, 201 = >
+    if (in.pressionou(SDL_SCANCODE_A) || in.pressionou(SDL_SCANCODE_LEFT) || seta == 200) imp = std::max(0, imp - 1);
+    if (in.pressionou(SDL_SCANCODE_D) || in.pressionou(SDL_SCANCODE_RIGHT) || seta == 201) imp = std::min(2, imp + 1);
     if (imp != static_cast<int>(mundo_.estado.imposto)) {
         mundo_.estado.imposto = static_cast<Imposto>(imp);
         hud_.aviso(std::string("Impostos agora: ") + nomeImposto(mundo_.estado.imposto), cor::ouro);
@@ -246,13 +294,14 @@ void WorldScene::entradaPainel() {
     const auto opcoes = opcoesPainel();
     const int n = static_cast<int>(opcoes.size());
     selPainel_ = std::clamp(selPainel_, 0, n - 1);
-    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_Q)) {
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_Q) || cliqueFecha(in, hud_.cliques)) {
         painel_.clear();
         return;
     }
     if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selPainel_ = (selPainel_ + n - 1) % n;
     if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selPainel_ = (selPainel_ + 1) % n;
-    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE)) {
+    const bool clique = listaComMouse(in, hud_.cliques, selPainel_, n);
+    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique) {
         const std::string& o = opcoes[selPainel_];
         if (o == "Reconstruir") {
             if (mundo_.melhorarConstrucao(painel_)) painel_.clear();
@@ -284,7 +333,8 @@ void WorldScene::entradaPausa() {
     if (in.pressionou(SDL_SCANCODE_ESCAPE)) pausa_ = false;
     if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selPausa_ = (selPausa_ + n - 1) % n;
     if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selPausa_ = (selPausa_ + 1) % n;
-    if (in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_SPACE)) {
+    const bool clique = listaComMouse(in, hud_.cliques, selPausa_, n);
+    if (in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_SPACE) || clique) {
         const std::string& o = OPCOES_PAUSA[selPausa_];
         if (o == "Continuar") pausa_ = false;
         else if (o == "Salvar") salvar();
@@ -305,7 +355,7 @@ void WorldScene::entradaDialogo(float dt) {
     const int tamanho = Hud::tamanhoUtf8(conversa_->falas[linhaFala_]);
     letras_ = std::min(static_cast<float>(tamanho), letras_ + dt * LETRAS_POR_SEGUNDO);
     if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_SPACE) || in.pressionou(SDL_SCANCODE_RETURN) ||
-        in.pressionou(SDL_SCANCODE_ESCAPE)) {
+        in.pressionou(SDL_SCANCODE_ESCAPE) || in.clicou(ke::BotaoMouse::Esquerdo)) {
         if (letras_ < tamanho && !in.pressionou(SDL_SCANCODE_ESCAPE)) {
             letras_ = static_cast<float>(tamanho);  // primeiro toque: mostra a fala inteira
         } else if (linhaFala_ + 1 < static_cast<int>(conversa_->falas.size()) && !in.pressionou(SDL_SCANCODE_ESCAPE)) {
@@ -362,10 +412,12 @@ void WorldScene::tratarEventos() {
         case EventoJogo::Tipo::Titulo:
         case EventoJogo::Tipo::EventoRaro:
         case EventoJogo::Tipo::Festival:
+        case EventoJogo::Tipo::Transformou:
         case EventoJogo::Tipo::MissaoConcluida: som.tocar(ke::Som::Magia); break;
         case EventoJogo::Tipo::AbrirConversa:
         case EventoJogo::Tipo::AbrirConstrucao:
         case EventoJogo::Tipo::LerPista:
+        case EventoJogo::Tipo::AbrirEscolha:
         case EventoJogo::Tipo::MissaoNova: som.tocar(ke::Som::Menu); break;
         default: break;
         }
@@ -376,7 +428,13 @@ void WorldScene::tratarEventos() {
             cam_.tremor = std::max(cam_.tremor, 1.2f);
             break;
         }
-        case EventoJogo::Tipo::Esgotou: poeira(e.pos, {7, 5}, 16, {0.38f, 0.34f, 0.3f, 1}); break;
+        case EventoJogo::Tipo::Esgotou:
+            if (e.alvo == "purificou" || e.alvo == "purificar") poeira(e.pos - glm::vec2(0, 6), {7, 7}, 24, {0.75f, 1.0f, 0.8f, 1});  // sopro de luz
+            else if (e.alvo == "pacto") poeira(e.pos, {12, 14}, 60, {0.9f, 0.35f, 0.15f, 1});
+            else if (e.alvo == "derrotar") poeira(e.pos, {12, 14}, 60, {0.45f, 0.42f, 0.4f, 1});
+            else if (e.alvo == "entulho") poeira(e.pos, {9, 7}, 40, {0.5f, 0.45f, 0.38f, 1}), cam_.tremor = 2.0f;
+            else poeira(e.pos, {7, 5}, 16, {0.38f, 0.34f, 0.3f, 1});
+            break;
         case EventoJogo::Tipo::Ganhou:
             textoFlutuante(e.pos - glm::vec2(0, 14), std::format("+{} {}", e.quantidade, ctx_.dados.nomeRecurso(e.recurso)), cor::ouro);
             hud_.pulsar(e.recurso);
@@ -397,7 +455,7 @@ void WorldScene::tratarEventos() {
             salvar();  // salvamento automático após cada obra
             break;
         }
-        case EventoJogo::Tipo::Aviso: hud_.aviso(e.texto, cor::ruim); break;
+        case EventoJogo::Tipo::Aviso: hud_.aviso(e.texto, e.alvo == "bom" ? cor::bom : cor::ruim); break;
         case EventoJogo::Tipo::AbrirConversa:
             conversa_ = mundo_.conversar(e.alvo);
             linhaFala_ = 0;
@@ -523,6 +581,23 @@ void WorldScene::tratarEventos() {
             flash_ = std::max(flash_, 0.4f);
             ke::log::info("festival começou (dia {})", mundo_.relogio.dia);
             break;
+        case EventoJogo::Tipo::AbrirEscolha:
+            if (ctx_.dados.escolhas.contains(e.alvo)) {
+                escolha_ = e.alvo;
+                selEscolha_ = 0;
+                cam_.tremor = std::max(cam_.tremor, 2.5f);
+                ke::log::info("escolha aberta: {}", e.alvo);
+            }
+            break;
+        case EventoJogo::Tipo::Transformou:
+            nomeRegiao_ = e.texto;
+            tituloRegiao_ = 3.5f;
+            flash_ = 1.0f;
+            cam_.tremor = std::max(cam_.tremor, 2.5f);
+            hud_.aviso(e.texto + "!", cor::ouro);
+            ke::log::info("região transformada: {} -> {}", e.alvo, e.texto);
+            salvar();  // um acontecimento desses não pode se perder
+            break;
         }
     }
 }
@@ -621,8 +696,8 @@ void WorldScene::efeitosAmbiente(float dt) {
             part_.emitir(p);
         }
     }
-    // Vida de cada era (só no vilarejo; fora dele a terra segue amaldiçoada)
-    const float era = mundo_.noVilarejo() ? mundo_.reino.eraVisual : 0.0f;
+    // Vida de cada era (no vilarejo; fora dele só na terra purificada)
+    const float era = mundo_.noVilarejo() ? mundo_.reino.eraVisual : static_cast<float>(mundo_.eraEm(mundo_.jogador.pos));
     const bool noite = mundo_.relogio.escuridao() > 0.5f;
     tempoAtmosfera_ += dt;
     if (era >= 0.6f && tempoAtmosfera_ > 0.12f) {
@@ -692,14 +767,15 @@ void WorldScene::atualizar(double dtD) {
 
     // O relógio para em menus, painéis, conversas e no sono
     mundo_.relogio.parado = pausa_ || !painel_.empty() || conversa_.has_value() || transicao_ >= 0.0f || menuObras_ || painelReino_ ||
-                            relatorio_ || diario_ || forja_ || cronicas_ || !leitura_.empty() || !loja_.empty();
+                            relatorio_ || diario_ || forja_ || cronicas_ || !leitura_.empty() || !loja_.empty() || painelRegioes_ ||
+                            !escolha_.empty();
     feridoFlash_ = std::max(0.0f, feridoFlash_ - dt);
     tituloRegiao_ = std::max(0.0f, tituloRegiao_ - dt);
     tituloEra_ = std::max(0.0f, tituloEra_ - dt);
     if (tituloEra_ <= 0.0f) tituloNovo_ = std::max(0.0f, tituloNovo_ - dt);  // o título espera a era terminar de ser anunciada
     // Música: a era do reino no vilarejo; trilha de perigo na floresta e na cripta
-    ctx_.app.audio().definir(mundo_.noVilarejo() ? mundo_.reino.eraVisual : 0.0f, mundo_.relogio.escuridao(),
-                             mundo_.infoAtual().hostil ? 1.0f : 0.0f);
+    ctx_.app.audio().definir(mundo_.noVilarejo() ? mundo_.reino.eraVisual : static_cast<float>(mundo_.eraEm(mundo_.jogador.pos)),
+                             mundo_.relogio.escuridao(), mundo_.regiaoHostil() ? 1.0f : 0.0f);
 
     if (transicao_ >= 0.0f) {
         const float antes = transicao_;
@@ -715,23 +791,29 @@ void WorldScene::atualizar(double dtD) {
         // Lendo um fragmento: E ou Esc fecha (e volta para as Crônicas, se veio de lá)
         ke::Input& in = ctx_.app.input();
         if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_ESCAPE) ||
-            in.pressionou(SDL_SCANCODE_SPACE))
+            in.pressionou(SDL_SCANCODE_SPACE) || in.clicou(ke::BotaoMouse::Esquerdo))
             leitura_.clear();
         mundo_.passo(dt, {});
     } else if (relatorio_) {
         ke::Input& in = ctx_.app.input();
         if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_ESCAPE) ||
-            in.pressionou(SDL_SCANCODE_SPACE))
+            in.pressionou(SDL_SCANCODE_SPACE) || in.clicou(ke::BotaoMouse::Esquerdo))
             relatorio_ = false;
         mundo_.passo(dt, {});
     } else if (conversa_) entradaDialogo(dt);
-    else if (!painel_.empty()) entradaPainel();
+    else if (!escolha_.empty()) entradaEscolha();
+    else if (painelRegioes_) {
+        ke::Input& in = ctx_.app.input();
+        if (in.pressionou(SDL_SCANCODE_R) || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques))
+            painelRegioes_ = false;
+    } else if (!painel_.empty()) entradaPainel();
     else if (forja_) entradaForja();
     else if (!loja_.empty()) entradaLoja();
     else if (cronicas_) entradaCronicas();
     else if (diario_) {
         ke::Input& in = ctx_.app.input();
-        if (in.pressionou(SDL_SCANCODE_L) || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E)) diario_ = false;
+        if (in.pressionou(SDL_SCANCODE_L) || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques))
+            diario_ = false;
     } else if (menuObras_) entradaMenuObras();
     else if (painelReino_) entradaPainelReino();
     else if (!colocando_.empty()) entradaColocacao();
@@ -789,7 +871,7 @@ void WorldScene::renderizar(float) {
     }
     r.definirMistura(ke::Mistura::Normal);
     if (painel_.empty() && !pausa_ && !conversa_ && transicao_ < 0.0f && colocando_.empty() && !menuObras_ && !painelReino_ &&
-        !relatorio_ && !diario_ && !forja_ && !cronicas_ && leitura_.empty() && loja_.empty())
+        !relatorio_ && !diario_ && !forja_ && !cronicas_ && leitura_.empty() && loja_.empty() && !painelRegioes_ && escolha_.empty())
         rend_.desenharAlvo(r, f, mundo_, tempo_);
     std::string motivoObra;
     bool obraValida = false;
@@ -819,7 +901,8 @@ void WorldScene::renderizar(float) {
     }
     r.terminar();
 
-    // 3) Interface em coordenadas da tela
+    // 3) Interface em coordenadas da tela (os painéis registram de novo onde o mouse pode clicar)
+    hud_.cliques.limpar();
     r.comecar(glm::ortho(0.0f, 640.0f, 360.0f, 0.0f, -1.0f, 1.0f));
     // Aurora mágica: faixas de luz ondulando no alto do céu (fora da cripta)
     if (const float escuro = mundo_.escuridao(); mundo_.eventoAgora("aurora") && escuro > 0.3f && mundo_.regiaoAtual != "cripta") {
@@ -864,6 +947,8 @@ void WorldScene::renderizar(float) {
     if (menuObras_) hud_.menuObras(r, mundo_, opcoesObras(), selObra_);
     if (!colocando_.empty()) hud_.dicaColocacao(r, ctx_.dados.construcoes.at(colocando_).nivel(1)->nome, obraValida, motivoObra);
     if (painelReino_) hud_.painelReino(r, mundo_);
+    if (painelRegioes_) hud_.painelRegioes(r, mundo_);
+    if (!escolha_.empty()) hud_.painelEscolha(r, mundo_, ctx_.dados.escolhas.at(escolha_), selEscolha_, tempo_);
     if (relatorio_ && transicao_ < 0.0f && leitura_.empty()) hud_.relatorioManha(r, mundo_);
     if (pausa_) hud_.menuPausa(r, OPCOES_PAUSA, selPausa_);
     if (pausa_ && telaOpcoes_.aberta()) telaOpcoes_.desenhar(r, f, ctx_);
@@ -919,6 +1004,14 @@ void WorldScene::interfaceDepuracao() {
             const BuildingDef* d = mundo_.def(b);
             if (d && ImGui::SliderInt(b.id.c_str(), &b.level, 1, d->nivelMax()))
                 if (const auto* nv = d->nivel(b.level)) b.name = nv->nome;
+        }
+    }
+    if (ImGui::CollapsingHeader("Regiões")) {
+        for (auto& [id, e] : mundo_.estadoRegioes) {
+            ImGui::Text("%s (última visita: dia %d)", mundo_.nomeRegiao(id).c_str(), e.ultimaVisita);
+            ImGui::SliderFloat(("Corrupção##" + id).c_str(), &e.corrupcao, 0.0f, 100.0f, "%.0f");
+            ImGui::SliderFloat(("Segurança##" + id).c_str(), &e.seguranca, 0.0f, 100.0f, "%.0f");
+            ImGui::SliderFloat(("Prosperidade##" + id).c_str(), &e.prosperidade, 0.0f, 100.0f, "%.0f");
         }
     }
     if (ImGui::Button("Salvar (F5)")) salvar();
