@@ -104,6 +104,19 @@
       ]
     },
     {
+      "_guilda": "Fase 14: a Guilda dos Aventureiros só pode ser construída com o reino estável (marco estabilidade). aventureiros = quantos a guilda recruta; reliquias = quantas relíquias ela expõe.",
+      "id": "guilda", "aparencia": "guilda", "tamanho": [4, 3], "construivel": true, "limite": 1,
+      "requer": "estabilidade", "requer_texto": "Só com o reino em paz: felicidade 55+, segurança para todos e 14 moradores.",
+      "niveis": [
+        { "nivel": 1, "nome": "Salão dos Aventureiros", "descricao": "Mesas compridas, um mapa na parede e gente procurando trabalho.",
+          "custo": { "madeira": 40, "pedra": 25, "ouro": 40 }, "efeitos": { "felicidade": 2, "aventureiros": 3, "reliquias": 1 } },
+        { "nivel": 2, "nome": "Guilda dos Aventureiros", "descricao": "Um brasão na porta e uma sala para as relíquias.",
+          "custo": { "madeira": 40, "pedra": 50, "ouro": 90 }, "efeitos": { "felicidade": 3, "aventureiros": 5, "reliquias": 2 } },
+        { "nivel": 3, "nome": "Grande Guilda", "descricao": "Aventureiros de todo o continente vêm pedir para entrar.",
+          "custo": { "madeira": 50, "pedra": 90, "ouro": 180, "cristal": 5 }, "efeitos": { "felicidade": 5, "aventureiros": 6, "reliquias": 3 } }
+      ]
+    },
+    {
       "_muralha": "Fase 13: a Muralha Leste fica na entrada da estrada (fixa no mapa, como a casa). Nível 1 são só ruínas; do 2 em diante ela bloqueia e o portão segura as criaturas até a vida dele (vida_portao) acabar.",
       "id": "muralha", "aparencia": "muralha", "tamanho": [1, 7], "construivel": false, "limite": 1,
       "niveis": [

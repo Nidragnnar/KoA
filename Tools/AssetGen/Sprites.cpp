@@ -1695,6 +1695,32 @@ void fase11(Lista& l) {
     l.emplace_back("icone_cristal", iconeCristal());
 }
 
+// ---------- Fase 14: a Guilda dos Aventureiros ----------
+
+// Salão com telhado roxo, um escudo com espadas cruzadas na fachada e, nos níveis altos, estandartes e uma torre
+Img guilda(int n) {
+    Img t = predio(64, n == 3 ? 100 : 88, n == 1 ? 26 : 30, n, hex("#5a3a6a"), 5900 + n, 2);
+    const int yParede = t.h - (n == 1 ? 26 : 30) - 2;
+    // Escudo com duas espadas cruzadas sobre a porta
+    const int cx = 32, cy = yParede - 6;
+    t.rect(cx - 6, cy - 6, 12, 9, n == 1 ? hex("#6a4a2a") : hex("#2a4a8a"));
+    for (int j = 0; j < 4; ++j) t.rect(cx - 5 + j, cy + 3 + j, 10 - j * 2, 1, n == 1 ? hex("#6a4a2a") : hex("#2a4a8a"));
+    t.linha(cx - 7, cy - 7, cx + 6, cy + 5, hex("#c8c8d0"));
+    t.linha(cx + 7, cy - 7, cx - 6, cy + 5, hex("#c8c8d0"));
+    t.rect(cx - 1, cy - 2, 2, 2, hex("#d8b048"));
+    if (n >= 2)  // estandartes nas laterais
+        for (const int x : {4, 56}) {
+            t.rect(x, yParede + 2, 1, 16, hex("#3a2a1a"));
+            t.rect(x + 1, yParede + 2, 4, 9, hex("#6a2a7a"));
+            t.px(x + 3, yParede + 5, hex("#d8b048"));
+        }
+    if (n == 3)  // torre de vigia com bandeira
+        for (int j = 0; j < 14; ++j) t.rect(48, 4 + j, 8, 1, j < 3 ? hex("#3a4a6a") : hex("#77736c"));
+    if (n == 3) t.rect(51, 0, 1, 5, hex("#3a2a1a")), t.rect(52, 0, 4, 3, hex("#d8b048"));
+    t.contornar(CONTORNO);
+    return t;
+}
+
 // ---------- Fase 13: a Muralha Leste, o portão e os soldados ----------
 
 // Trecho de muralha (um tile de largura): 1 ruínas, 2 paliçada, 3 pedra, 4 fortificada com ameia
@@ -1786,6 +1812,7 @@ void fase13(Lista& l) {
         l.emplace_back(std::format("portao_n{}", n), portao(n, false));
     }
     l.emplace_back("portao_quebrado", portao(2, true));
+    for (int n = 1; n <= 3; ++n) l.emplace_back(std::format("guilda_n{}", n), guilda(n));  // fase 14
     for (int q = 0; q < 2; ++q) l.emplace_back(std::format("soldado_{}", q), soldado(q));
 }
 

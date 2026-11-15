@@ -58,6 +58,8 @@ private:
     bool escolhaAbriu_ = false;
     // Fase 12
     int lealdadeAntes_ = 0;
+    // Fase 14
+    std::string guilda_;  // id da guilda construída
 };
 
 }

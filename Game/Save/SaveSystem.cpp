@@ -61,11 +61,21 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
                      {"ultima_decisao", d.ultimaDecisao}};
     json defesa = {{"horda_dia", d.hordaDia}, {"horda_numero", d.hordaNumero}, {"proxima_horda", d.proximaHorda},
                    {"portao_vida", d.portaoVida}, {"notas", d.notasDefesa}};
+    json jAvent = json::object();
+    for (const auto& [id, a] : d.aventureiros)
+        jAvent[id] = {{"nivel", a.nivel}, {"ferido_ate", a.feridoAte}, {"fora", a.fora}, {"sumido", a.sumido}, {"volta_dia", a.voltaDia}};
+    json jReliq = json::array();
+    for (const auto& r : d.reliquias)
+        jReliq.push_back({{"id", r.id}, {"exposta", r.exposta}, {"conhecida", r.conhecida}, {"purificada", r.purificada}});
+    json guilda = {{"aventureiros", jAvent},
+                   {"expedicao", {{"destino", d.expedicao.destino}, {"grupo", d.expedicao.grupo}, {"partida", d.expedicao.partida},
+                                  {"volta", d.expedicao.volta}}},
+                   {"reliquias", jReliq}};
 
     const std::pair<const char*, const json*> arquivos[] = {
         {"player.json", &player}, {"inventory.json", &inv}, {"kingdom.json", &reino}, {"world.json", &mundo},
         {"npcs.json", &jNpcs}, {"relationships.json", &jRel}, {"quests.json", &quests}, {"chronicles.json", &cronicas},
-        {"regions.json", &regioes}, {"council.json", &conselho}, {"defense.json", &defesa},
+        {"regions.json", &regioes}, {"council.json", &conselho}, {"defense.json", &defesa}, {"guild.json", &guilda},
         {"metadata.json", &meta}};  // metadata por último: só existe save "válido" quando tudo foi gravado
     for (const auto& [nome, conteudo] : arquivos) {
         if (!ke::fs::gravarTextoSeguro(dir / nome, conteudo->dump(2))) {
@@ -120,6 +130,11 @@ json SaveSystem::migrar(json tudo, int deVersao) {
         tudo["defense"] = {{"padrao", true}};
         deVersao = 8;
     }
+    if (deVersao < 9) {
+        // v8 não tinha guilda: sem aventureiros, sem expedição e sem relíquias
+        tudo["guild"] = json::object();
+        deVersao = 9;
+    }
     tudo["metadata"]["versao_formato"] = deVersao;
     return tudo;
 }
@@ -146,8 +161,9 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
         }
         // Arquivos que só existem a partir da v2
         if (versao >= 2) {
-            for (const char* nome : {"npcs", "relationships", "quests", "chronicles", "regions", "council", "defense"}) {
+            for (const char* nome : {"npcs", "relationships", "quests", "chronicles", "regions", "council", "defense", "guild"}) {
                 if (std::string(nome) == "defense" && versao < 8) continue;
+                if (std::string(nome) == "guild" && versao < 9) continue;
                 if (std::string(nome) == "quests" && versao < 4) continue;
                 if (std::string(nome) == "chronicles" && versao < 5) continue;
                 if (std::string(nome) == "regions" && versao < 6) continue;
@@ -215,6 +231,24 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
         d.proximaHorda = std::max(0, jdef.value("proxima_horda", 0));
         d.portaoVida = std::max(0, jdef.value("portao_vida", 0));
         d.notasDefesa = jdef.value("notas", std::vector<std::string>{});
+        const json& jg = tudo["guild"];
+        const json avent = jg.value("aventureiros", json::object());  // variável: .items() de temporário quebra
+        for (const auto& [id, ja] : avent.items()) {
+            EstadoAventureiro a;
+            a.nivel = std::clamp(ja.value("nivel", 1), 1, 3);
+            a.feridoAte = std::max(0, ja.value("ferido_ate", 0));
+            a.fora = ja.value("fora", false);
+            a.sumido = ja.value("sumido", false);
+            a.voltaDia = std::max(0, ja.value("volta_dia", 0));
+            d.aventureiros[id] = a;
+        }
+        const json jexp = jg.value("expedicao", json::object());
+        d.expedicao.destino = jexp.value("destino", "");
+        d.expedicao.grupo = jexp.value("grupo", std::vector<std::string>{});
+        d.expedicao.partida = jexp.value("partida", 0);
+        d.expedicao.volta = jexp.value("volta", 0);
+        for (const auto& jr : jg.value("reliquias", json::array()))
+            d.reliquias.push_back({jr.value("id", ""), jr.value("exposta", false), jr.value("conhecida", false), jr.value("purificada", false)});
         for (const auto& [id, q] : tudo["inventory"].items())
             if (q.is_number_integer()) d.inventario[id] = std::max(0, q.get<int>());
         const json& r = tudo["kingdom"];

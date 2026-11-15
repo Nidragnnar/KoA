@@ -167,6 +167,20 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
             if (erro) *erro = "horda usa criatura inexistente: " + tipo;
             return false;
         }
+    // Fase 14: guilda, expedições e relíquias
+    const auto tg = ke::fs::lerTexto(pasta / "Kingdom/guilda.json");
+    const auto jg = tg ? nlohmann::json::parse(*tg, nullptr, false) : nlohmann::json();
+    if (!tg || jg.is_discarded()) {
+        if (erro) *erro = "Data/Kingdom/guilda.json ausente ou inválido";
+        return false;
+    }
+    if (!lerGuilda(jg, guilda, erro)) return false;
+    for (const auto& dest : guilda.destinos)
+        for (const auto& [rec, faixa] : dest.ganhos)
+            if (!recursos.contains(rec)) {
+                if (erro) *erro = "destino " + dest.id + " rende recurso inexistente: " + rec;
+                return false;
+            }
     return true;
 }
 

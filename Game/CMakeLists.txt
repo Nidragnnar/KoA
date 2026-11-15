@@ -7,6 +7,7 @@ add_library(KingdomGame STATIC
     Kingdom/Estacoes.cpp
     Kingdom/Conselho.cpp
     Kingdom/Defesa.cpp
+    Kingdom/Guilda.cpp
     NPC/Npc.cpp
     Economy/Economia.cpp
     Combat/Combate.cpp

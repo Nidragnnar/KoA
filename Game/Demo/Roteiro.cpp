@@ -172,7 +172,7 @@ void Roteiro::noMundo(WorldScene& cena) {
 
     if (fase_ == 1) {
         // Fase 12: um caso do conselho abre sozinho depois do relatório da manhã; antes da etapa dele, fica para depois
-        if (cena.decisaoAberta() && etapa_ < 38) {
+        if (cena.decisaoAberta() && (etapa_ < 38 || etapa_ >= 42)) {
             in.simularToque(SDL_SCANCODE_ESCAPE);
             return;
         }
@@ -1041,7 +1041,95 @@ void Roteiro::noMundo(WorldScene& cena) {
             if (quadro_ == 3000) verificar(false, "a batalha terminou a tempo"), terminar();
             return;
         }
-        case 42:
+        // ---------- Fase 14: a guilda, uma expedição e as relíquias ----------
+        case 42: {  // com o reino estável, a guilda é construída; de manhã chegam os aventureiros
+            if (quadro_ == 1) {
+                w.marcar("estabilidade");  // o roteiro tem um reino grande e feliz; aqui não espera a manhã certa
+                for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 400);
+                w.inventario.definir("comida", 200);
+                guilda_ = w.construir("guilda", lugarLivre(w, "guilda", {44, 25}));
+                verificar(!guilda_.empty(), "a guilda começou (reino estável)");
+                w.dormir(false);
+            }
+            if (quadro_ == 10) in.simularToque(SDL_SCANCODE_E);  // fecha o relatório
+            if (quadro_ == 20) {
+                verificar(w.nivelGuilda() == 1 && w.aventureiros.size() == 3, std::format("a guilda ficou pronta com {} aventureiros", w.aventureiros.size()));
+                w.relogio.minutos = 10 * 60;
+                if (const BuildingData* b = w.reino.construcao(guilda_)) {
+                    w.jogador.pos = w.pontoPorta(*b) + glm::vec2(0, 6);
+                    w.jogador.dir = Direcao::Cima;
+                }
+            }
+            if (quadro_ == 25) in.simularToque(SDL_SCANCODE_E);  // painel da construção
+            if (quadro_ == 35) in.simularToque(SDL_SCANCODE_S);  // Reconstruir → Abrir a guilda
+            if (quadro_ == 40) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 60) {
+                verificar(cena.guildaAberta(), "\"Abrir a guilda\" abre o painel dos aventureiros");
+                capturar("66_guilda_destinos");
+            }
+            if (quadro_ == 62) proxima();
+            return;
+        }
+        case 43: {  // Ruínas do Vale com Kael e Ysolde
+            if (quadro_ == 2) in.simularToque(SDL_SCANCODE_E);   // destino 1: Ruínas do Vale
+            if (quadro_ == 8) in.simularToque(SDL_SCANCODE_E);   // Kael
+            if (quadro_ == 12) in.simularToque(SDL_SCANCODE_S);
+            if (quadro_ == 16) in.simularToque(SDL_SCANCODE_E);  // Ysolde
+            if (quadro_ == 20 || quadro_ == 24) in.simularToque(SDL_SCANCODE_S);  // até "Partir"
+            if (quadro_ == 35) capturar("67_grupo_da_expedicao");
+            if (quadro_ == 37) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 50) {
+                verificar(w.expedicao.destino == "ruinas_vale" && w.expedicao.grupo.size() == 2, "a expedição partiu com Kael e Ysolde");
+                in.simularToque(SDL_SCANCODE_ESCAPE);
+            }
+            if (quadro_ == 60) {
+                verificar(!cena.guildaAberta(), "Esc fecha a guilda");
+                proxima();
+            }
+            return;
+        }
+        case 44: {  // dois dias depois, a volta no relatório da manhã
+            if (quadro_ == 1) {
+                diaAntes_ = w.expedicao.volta;
+                while (w.relogio.dia < diaAntes_ - 1) w.dormir(false);
+                w.dormir(false);  // a manhã da volta (o relatório desta fica na tela)
+            }
+            if (quadro_ == 20) {
+                const bool voltou = std::ranges::any_of(w.ultimoRelatorio.notas, [](const std::string& n) { return n.find("A expedição a Ruínas do Vale Cinzento voltou") != std::string::npos; });
+                verificar(voltou && w.expedicao.destino.empty(), "a expedição voltou e contou como foi no relatório");
+                capturar("68_volta_da_expedicao");
+            }
+            if (quadro_ == 22) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 30) proxima();
+            return;
+        }
+        case 45: {  // relíquias: expor a Coroa de Ferro Negro revela a maldição
+            if (quadro_ == 1) {
+                w.ganharReliquia("diario_rainha");
+                w.ganharReliquia("coroa_ferro");
+                for (auto& r : w.reliquias) r.exposta = false;
+                if (const BuildingData* b = w.reino.construcao(guilda_)) {
+                    w.jogador.pos = w.pontoPorta(*b) + glm::vec2(0, 6);
+                    w.jogador.dir = Direcao::Cima;
+                }
+            }
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 12) in.simularToque(SDL_SCANCODE_S);
+            if (quadro_ == 16) in.simularToque(SDL_SCANCODE_E);  // Abrir a guilda
+            if (quadro_ == 22 || quadro_ == 26) in.simularToque(SDL_SCANCODE_D);  // aba das relíquias
+            if (quadro_ == 30) in.simularToque(SDL_SCANCODE_S);  // a coroa
+            if (quadro_ == 40) capturar("69_reliquias");
+            if (quadro_ == 42) in.simularToque(SDL_SCANCODE_E);  // expor
+            if (quadro_ == 60) {
+                const EstadoReliquia* c = w.estadoReliquia("coroa_ferro");
+                verificar(c && c->exposta && c->conhecida, "exposta, a Coroa de Ferro Negro revela a maldição");
+                capturar("70_maldicao");
+            }
+            if (quadro_ == 62) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 70) proxima();
+            return;
+        }
+        case 46:
             w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();

@@ -49,6 +49,10 @@ public:
     void painelConselho(ke::Renderer2D& r, const World& w, int sel, const std::string& proposto, float tempo);
     void painelDecisao(ke::Renderer2D& r, const World& w, const DecisaoDef& d, int sel, float tempo);
     std::string textoEfeito(const CargoDef& c, float valor) const;  // "+6 segurança", "+22% impostos"...
+    // Fase 14: abas 0 expedição, 1 aventureiros, 2 relíquias. Na expedição, passo 0 escolhe o destino e 1 monta o grupo
+    void painelGuilda(ke::Renderer2D& r, const World& w, int aba, int sel, int passo, const std::string& destino,
+                      const std::vector<std::string>& grupo, float tempo);
+    std::vector<std::string> aventureirosRecrutados(const World& w) const;  // na ordem dos dados
 
     // Onde cada opção dos painéis apareceu no último quadro (a cena limpa antes de desenhar)
     Cliques cliques;

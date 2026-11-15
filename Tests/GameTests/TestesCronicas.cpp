@@ -284,55 +284,70 @@ TEST(Cenarios, MontarSavesDeTeste) {
         w.equip.arma = "espada_linhagem";
         w.equip.armadura = "cota_malha";
     };
-    // Save_002: os batedores avisaram: a horda chega AMANHÃ às 20:00, e a Muralha Leste ainda está em ruínas.
-    // Há recursos para reconstruir a muralha (E nela, perto do portão leste), uma torre e um posto (B): as obras
-    // ficam prontas de manhã, a tempo
-    {
-        World w = vilarejo();
-        reinoAvancado(w);
-        equipar(w);
-        w.relogio.dia = 12;
-        w.relogio.minutos = 9 * 60;
-        for (const char* r : {"madeira", "pedra"}) w.inventario.definir(r, 250);
-        w.inventario.definir("ouro", 300);
-        w.inventario.definir("comida", 100);
-        w.agendarHorda(13);
-        w.marcar("horda_avisada", "", true);
-        w.tirarEventos();
-        gravar(w, "Save_002");
-    }
-    // Save_003: a noite da horda, 19:30, com Muralha de Pedra (portão 300), uma Torre de Pedra e um Quartel atrás dela,
-    // e Oswin como Marechal (mais um soldado). A floresta está bem corrompida: a horda vem grande.
-    // O herdeiro está ao lado do portão; às 20:00 a horda chega pela estrada leste
-    {
-        World w = vilarejo();
-        reinoAvancado(w);
-        equipar(w);
-        w.relogio.dia = 14;
-        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 600);
-        while (w.muralha()->level < 3) ASSERT_TRUE(w.melhorarConstrucao("muralha_leste"));
-        const std::pair<const char*, glm::ivec2> obras[] = {{"torre", {56, 14}}, {"posto_guarda", {55, 23}}};
-        for (const auto& [def, perto] : obras) obra(w, def, perto);
-        w.dormir(false);  // obras prontas
+    // Guilda pronta no nível pedido, ao lado da praça (os aventureiros chegam na manhã seguinte)
+    auto erguerGuilda = [&](World& w, int nivel) {
+        w.marcar("estabilidade", "", true);
+        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 1000);
+        w.inventario.definir("cristal", 20);
+        obra(w, "guilda", {44, 25});
+        w.dormir(false);
         for (const auto& b : w.reino.construcoes)
-            if (b.defId == "torre" || b.defId == "posto_guarda") {
+            if (b.defId == "guilda") {
                 const std::string id = b.id;
-                ASSERT_TRUE(w.melhorarConstrucao(id));
+                while (w.reino.construcao(id)->level < nivel) ASSERT_TRUE(w.melhorarConstrucao(id));
             }
-        ASSERT_TRUE(w.nomear("marechal", "oswin"));
-        w.lealdade["oswin"] = 75;
-        w.estadoRegioes.at("floresta").corrupcao = 85.0f;
-        w.hordaDia = 0;
-        w.agendarHorda(w.relogio.dia);
-        w.relogio.minutos = 19 * 60 + 30;
+        w.dormir(false);  // a guilda recruta pelo nível
+    };
+    // Save_002: Guilda dos Aventureiros (nível 2) com 5 aventureiros prontos e comida para as viagens.
+    // E na porta da guilda → "Abrir a guilda": escolher destino, montar o grupo e partir. Uma relíquia guardada
+    // (Ampulheta Partida): expô-la mostra se é amaldiçoada
+    {
+        World w = vilarejo();
+        reinoAvancado(w);
+        equipar(w);
+        erguerGuilda(w, 2);
+        w.relogio.minutos = 9 * 60;
+        w.inventario.definir("comida", 150);
         w.inventario.definir("madeira", 120);
         w.inventario.definir("pedra", 120);
         w.inventario.definir("ouro", 200);
-        w.inventario.definir("comida", 80);
-        w.jogador.pos = {58 * 16 + 8.0f, 19 * 16 + 14.0f};
-        w.jogador.dir = Direcao::Direita;
+        w.inventario.definir("cristal", 0);
+        w.ganharReliquia("ampulheta");
+        w.hordaDia = 0;
+        w.proximaHorda = w.relogio.dia + 12;
         w.tirarEventos();
-        std::printf("[cenário] horda de força %d contra defesa %d\n", w.forcaProximaHorda(), w.defesaDoReino());
+        gravar(w, "Save_002");
+    }
+    // Save_003: Grande Guilda (3 relíquias). A expedição à Biblioteca Afundada volta AMANHÃ (dormir para ver);
+    // Garrick ferido, Kael desaparecido (reaparece em dois dias). O Mapa da Torre do Selo já abriu a Torre.
+    // O Olho da Chama está exposto e já mostrou a maldição; a floresta foi purificada e há 6 cristais: dá para
+    // pedir a Maelis que purifique (P na aba das relíquias)
+    {
+        World w = vilarejo();
+        reinoAvancado(w);
+        equipar(w);
+        erguerGuilda(w, 3);
+        w.relogio.minutos = 18 * 60;
+        w.inventario.definir("comida", 150);
+        ASSERT_TRUE(w.partir("biblioteca", {"lira", "tomas", "dunstan"}));
+        w.expedicao.partida = w.relogio.dia - 2;
+        w.expedicao.volta = w.relogio.dia + 1;
+        w.aventureiros["garrick"].feridoAte = w.relogio.dia + 2;
+        w.aventureiros["kael"].sumido = true;
+        w.aventureiros["kael"].voltaDia = w.relogio.dia + 2;
+        w.ganharReliquia("mapa_torre");
+        w.ganharReliquia("olho_chama");
+        w.ganharReliquia("escudo_vigias");
+        ASSERT_TRUE(w.exporReliquia("olho_chama", true));
+        ASSERT_TRUE(w.exporReliquia("escudo_vigias", true));
+        w.marcar("purificou:floresta", "Floresta Encantada", true);
+        w.inventario.definir("cristal", 6);
+        w.inventario.definir("madeira", 120);
+        w.inventario.definir("pedra", 120);
+        w.inventario.definir("ouro", 200);
+        w.hordaDia = 0;
+        w.proximaHorda = w.relogio.dia + 12;
+        w.tirarEventos();
         gravar(w, "Save_003");
     }
 }

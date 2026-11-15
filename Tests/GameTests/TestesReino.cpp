@@ -48,7 +48,7 @@ TEST(Obras, DadosDas8Construcoes) {
         construiveis += d.construivel && !d.monumento;
         monumentos += d.monumento;
     }
-    EXPECT_EQ(construiveis, 8);
+    EXPECT_EQ(construiveis, 9);  // as 8 da fase 5 e a guilda (fase 14)
     EXPECT_EQ(monumentos, 3);  // memorial, jardim e estátua (fase 9)
     EXPECT_EQ(dados().construcoes.at("taverna").nivel(1)->nome, "Pequena Taverna");
     EXPECT_EQ(dados().construcoes.at("taverna").nivel(3)->nome, "Grande Estalagem");

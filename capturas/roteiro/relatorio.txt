@@ -186,4 +186,16 @@ captura: 64_batalha_no_portao
 [OK] a primeira horda foi vencida e entrou nas Crônicas
 [OK] a vitória rende ouro
 captura: 65_depois_da_batalha
+[OK] a guilda começou (reino estável)
+[OK] a guilda ficou pronta com 3 aventureiros
+[OK] "Abrir a guilda" abre o painel dos aventureiros
+captura: 66_guilda_destinos
+captura: 67_grupo_da_expedicao
+[OK] a expedição partiu com Kael e Ysolde
+[OK] Esc fecha a guilda
+[OK] a expedição voltou e contou como foi no relatório
+captura: 68_volta_da_expedicao
+captura: 69_reliquias
+[OK] exposta, a Coroa de Ferro Negro revela a maldição
+captura: 70_maldicao
 RESULTADO: 0 falha(s)

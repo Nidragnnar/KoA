@@ -77,6 +77,17 @@
     "muralha_n3": "A Muralha Leste foi erguida em pedra, com um portão de carvalho e ferro.",
     "muralha_n4": "A Muralha Leste ganhou ameias e tochas. Dizem que dá para vê-la da borda da floresta.",
 
+    "estabilidade": "Valdren ficou em paz por tempo bastante para que gente de fora quisesse vir. Aventureiros começaram a perguntar pelo caminho.",
+    "construiu:guilda": "A Guilda dos Aventureiros abriu as portas. No mapa da parede, metade do reino ainda está em branco.",
+    "expedicao:*": "A primeira expedição de Valdren partiu para {nome}.",
+    "reliquia:*": "Aventureiros trouxeram de volta {nome}, uma relíquia da antiga Valdren.",
+    "reliquia:mapa_torre": "Na Biblioteca Afundada, aventureiros acharam o Mapa da Torre do Selo. Pela primeira vez desde a Queda, alguém sabe o caminho.",
+    "reliquia:fragmento_selo": "Na Torre do Selo, os aventureiros acharam a porta quebrada por dentro. A Chama não escapou: alguém a levou.",
+    "maldicao:*": "Exposta na guilda, {nome} mostrou o que era: uma relíquia amaldiçoada.",
+    "purificou_reliquia:*": "Maelis purificou {nome} com o rito do Coração da Floresta.",
+    "desaparecido:*": "{nome} desapareceu numa expedição. Deixaram uma vela acesa na guilda.",
+    "voltou:*": "{nome}, que todos davam por perdido, voltou a Valdren pela estrada leste.",
+
     "misterio:primeiro_ato": "As peças se juntaram: a Queda das Cinzas começou dentro do castelo, pelas mãos do próprio rei. Resta saber para onde foi a Chama."
   }
 }

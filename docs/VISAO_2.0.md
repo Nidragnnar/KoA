@@ -73,10 +73,13 @@ A 1.0 provou a base (reino, vida, RPG, eras). A 2.0 dá ao jogo a sua identidade
 - Páginas nas Crônicas (cada horda, cada nível da muralha) e falas do Oswin.
 - Fica para depois: hordas por outras entradas, muralha em volta do vilarejo inteiro e criaturas que miram construções.
 
-### Fase 14 — Guilda, expedições e relíquias
-- Guilda que surge com a estabilidade; expedições ao longo dos dias, com resultado conforme a preparação.
-- Aventureiros podem voltar feridos, trazer artefatos ou desaparecer.
-- Relíquias da antiga civilização, algumas amaldiçoadas.
+### Fase 14 — Guilda, expedições e relíquias (feita, versão 1.6)
+- **Estabilidade**: com felicidade 55+, segurança para todos e 14 moradores, o relatório da manhã avisa que aventureiros procuram Valdren, e a **Guilda dos Aventureiros** passa a aparecer no B (`Data/Kingdom/guilda.json`). Três níveis: 3, 5 e 6 aventureiros; 1, 2 e 3 relíquias expostas.
+- **Seis aventureiros com nome**, cada um com força, especialidade (combate, exploração, saber) e nível (sobe a cada expedição que dá certo).
+- **Expedições** (E na guilda → "Abrir a guilda"): uma por vez, de 1 a 3 aventureiros, gastando 2 de comida por dia por pessoa. Cinco destinos: Ruínas do Vale, Biblioteca Afundada, Pântano das Cinzas, Fortaleza de Hadrian e a Torre do Selo (só com o mapa dela). O painel mostra a chance em palavras ("Boas chances", "Arriscado", "Muito arriscado", "Suicida"). O resultado sai no relatório da manhã da volta: triunfo (ganhos × 1,5 e nível), sucesso, a duras penas (metade, feridos) ou desastre (nada, alguém desaparece; às vezes ele volta dias depois).
+- **Relíquias** (11): cada uma com um texto da antiga Valdren e um efeito quando exposta (felicidade, segurança, ouro, comida, dano, defesa). Três são amaldiçoadas: o custo só aparece quando expostas. Maelis purifica com o rito da floresta e 3 cristais.
+- Páginas nas Crônicas (estabilidade, guilda, expedições, relíquias, maldições, desaparecidos). A da Torre do Selo deixa a próxima pergunta: a Chama não escapou, alguém a levou.
+- Fica para depois: mais de uma expedição ao mesmo tempo, aventureiros que morrem, vender relíquias ao Corvin e o segundo ato do mistério.
 
 ### Fase 15 — Vida cotidiana
 - Cultivo próprio, pesca, cozinha e animais.
@@ -90,6 +93,6 @@ A 1.0 provou a base (reino, vida, RPG, eras). A 2.0 dá ao jogo a sua identidade
 
 ## Notas técnicas
 
-- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) e a 13 para a v8 (`defense.json`).
+- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`) e a 14 para a v9 (`guild.json`).
 - Conteúdo (crônicas, títulos, eventos, cargos, estações) em JSON dentro de `Data/`, como missões e diálogos hoje.
 - O roteiro ponta a ponta ganha etapas a cada fase; a arte nova vem do NidraIA em sessão separada.

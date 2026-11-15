@@ -122,6 +122,16 @@ O plano da 2.0 está em `docs/VISAO_2.0.md`.
 - **Save v8**: arquivo novo `defense.json` (dia da horda, número, próxima, vida do portão, notas para a manhã). A batalha em si não se salva: carregada depois das 20:00 do dia marcado, ela recomeça do portão.
 - **Testes**: 143 (12 novos da fase 13) e o roteiro com as etapas 39 a 41 (reconstruir a paliçada pelo painel, o aviso dos batedores e a batalha com torre, soldados e o herdeiro).
 
+## Fase 14 — Guilda, expedições e relíquias (versão 1.6)
+
+- **Regras** (`Game/Kingdom/Guilda.h`): `poderAventureiro`, `desfechoPorMargem`, `chanceEmPalavras` e `sorteExpedicao` são puras. A sorte vem de um hash do destino e do dia da partida: o mesmo plano dá o mesmo resultado, e nada de sorteio vai para o save.
+- **Guilda**: uma construção comum com `requer: estabilidade` (marco dado de manhã quando o reino está em paz). O nível dela diz quantos aventureiros recruta (`efeito aventureiros`) e quantas relíquias expõe (`efeito reliquias`).
+- **Expedição**: `World::partir` valida e cobra a comida; `voltaDaExpedicao` (em `manhaDaGuilda`, chamada por `dormir`) calcula margem, ganhos, relíquia, feridos, sumiço e nível, e escreve no relatório da manhã.
+- **Relíquias**: `efeitosReliquias()` soma as expostas (e as maldições não purificadas) e entra em `modificadorReino` (felicidade, ouro, segurança, comida), em `danoArma`/`defesaArmadura` e na chance da Lua de Sangue. Equipar automaticamente compara só o equipamento, sem o bônus das relíquias.
+- **Painel da guilda** (abas Expedição, Aventureiros e Relíquias), com teclado e mouse; o menu de obras encolhe a linha quando há muitas obras.
+- **Save v9**: arquivo novo `guild.json` (aventureiros, expedição em curso, relíquias). Saves v1 a v8 começam sem guilda.
+- **Testes**: 155 (12 novos da fase 14) e o roteiro com as etapas 42 a 45 (construir e abrir a guilda, montar o grupo, a volta da expedição e a maldição revelada).
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

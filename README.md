@@ -6,7 +6,7 @@ era a era, até a **Alta Fantasia**.
 
 Engine própria em **C++20 + SDL3 + OpenGL 3.3** (Kingdom Engine), com EnTT, Dear ImGui, nlohmann/json e GoogleTest.
 
-## Versão 1.5
+## Versão 1.6
 
 A 2.0 está em andamento (identidade e plano em `docs/VISAO_2.0.md`). A fase 9 trouxe as Crônicas do Reino
 (tecla C), os títulos do herdeiro, o mercador viajante, três monumentos e o começo do mistério da Queda das Cinzas.
@@ -21,6 +21,9 @@ O jogo também passou a aceitar o mouse: clique para atacar e para escolher nos 
 A fase 13 trouxe a defesa do reino: hordas avisadas com dias de antecedência atacam o portão leste às 20:00.
 A Muralha Leste (reconstruída em 3 níveis) segura as criaturas, as torres atiram flechas, os postos da guarda mandam
 soldados, e o herdeiro luta no portão. Sem ele, as defesas lutam sozinhas; o que passar saqueia a praça.
+A fase 14 trouxe a Guilda dos Aventureiros (com o reino estável): seis aventureiros com nome partem em expedições de
+alguns dias para as ruínas da antiga Valdren e voltam com recursos, feridos, desaparecidos ou com relíquias, que,
+expostas na guilda, ajudam o reino; algumas são amaldiçoadas, e Maelis sabe purificá-las.
 
 As 8 fases do plano de arquitetura da 1.0 estão feitas:
 

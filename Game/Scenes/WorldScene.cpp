@@ -64,6 +64,7 @@ std::vector<std::string> WorldScene::opcoesPainel() const {
     if (d && d->nivel(b->level + 1)) o.push_back("Reconstruir");
     if (painel_ == "casa_herdeiro") o.push_back("Dormir até amanhã");
     if (b && b->defId == "forja" && b->constructed) o.push_back("Forjar equipamento");
+    if (b && b->defId == "guilda" && b->constructed) o.push_back("Abrir a guilda");
     if (b && b->defId == "muralha") {
         const Custo c = mundo_.custoReparo();
         if (!c.empty()) o.push_back(std::format("Reparar portão ({} pedra, {} madeira)", c.at("pedra"), c.at("madeira")));
@@ -254,6 +255,71 @@ void WorldScene::entradaConselho() {
     }
 }
 
+void WorldScene::entradaGuilda() {
+    ke::Input& in = ctx_.app.input();
+    const DadosGuilda& dg = ctx_.dados.guilda;
+    const auto recrutados = hud_.aventureirosRecrutados(mundo_);
+    const bool montando = abaGuilda_ == 0 && passoExpedicao_ == 1 && mundo_.expedicao.destino.empty();
+    // Esc volta da montagem do grupo para os destinos; senão fecha
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || cliqueFecha(in, hud_.cliques)) {
+        if (montando && in.pressionou(SDL_SCANCODE_ESCAPE)) passoExpedicao_ = 0, selGuilda_ = 0;
+        else guilda_ = false;
+        return;
+    }
+    // Abas: A/D ou clique (100..102)
+    int aba = abaGuilda_;
+    if (in.pressionou(SDL_SCANCODE_A) || in.pressionou(SDL_SCANCODE_LEFT)) aba = (aba + 2) % 3;
+    if (in.pressionou(SDL_SCANCODE_D) || in.pressionou(SDL_SCANCODE_RIGHT)) aba = (aba + 1) % 3;
+    const int clicado = in.clicou(ke::BotaoMouse::Esquerdo) ? hud_.cliques.em(in.mouse()) : -1;
+    if (clicado >= 100 && clicado <= 102) aba = clicado - 100;
+    if (aba != abaGuilda_) {
+        abaGuilda_ = aba;
+        selGuilda_ = passoExpedicao_ = 0;
+        return;
+    }
+    // Tamanho da lista da aba atual
+    int n = 0;
+    if (abaGuilda_ == 0 && mundo_.expedicao.destino.empty()) n = passoExpedicao_ == 0 ? static_cast<int>(dg.destinos.size()) : static_cast<int>(recrutados.size()) + 1;
+    else if (abaGuilda_ == 1) n = static_cast<int>(recrutados.size());
+    else if (abaGuilda_ == 2) n = static_cast<int>(mundo_.reliquias.size());
+    if (n == 0) return;
+    selGuilda_ = std::clamp(selGuilda_, 0, n - 1);
+    if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selGuilda_ = (selGuilda_ + n - 1) % n;
+    if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selGuilda_ = (selGuilda_ + 1) % n;
+    const bool clique = listaComMouse(in, hud_.cliques, selGuilda_, n);
+    const bool confirmar = in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique;
+    if (abaGuilda_ == 0 && passoExpedicao_ == 0 && confirmar) {
+        const DestinoDef& d = dg.destinos[selGuilda_];
+        if (mundo_.destinoAberto(d)) {
+            destinoSel_ = d.id;
+            grupoSel_.clear();
+            passoExpedicao_ = 1;
+            selGuilda_ = 0;
+        } else {
+            hud_.aviso("Ninguém conhece o caminho para lá.", cor::ruim);
+        }
+    } else if (montando && confirmar) {
+        if (selGuilda_ < static_cast<int>(recrutados.size())) {
+            // Põe ou tira do grupo (só quem está pronto, até o máximo)
+            const std::string& id = recrutados[selGuilda_];
+            if (const auto it = std::ranges::find(grupoSel_, id); it != grupoSel_.end()) grupoSel_.erase(it);
+            else if (!mundo_.aventureiroPronto(id)) hud_.aviso(dg.aventureiro(id)->nome + " não está pronto.", cor::ruim);
+            else if (static_cast<int>(grupoSel_.size()) >= dg.grupoMax) hud_.aviso(std::format("O grupo vai com até {} aventureiros.", dg.grupoMax), cor::ruim);
+            else grupoSel_.push_back(id);
+        } else if (mundo_.partir(destinoSel_, grupoSel_)) {
+            passoExpedicao_ = 0;
+            selGuilda_ = 0;
+            grupoSel_.clear();
+        }
+    } else if (abaGuilda_ == 2) {
+        // Clique na linha só escolhe (para ler); expor é no E ou no botão
+        const std::string id = mundo_.reliquias[selGuilda_].id;
+        const bool tecla = in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE);
+        if (tecla || clicado == 500) mundo_.exporReliquia(id, !mundo_.reliquias[selGuilda_].exposta);
+        if (in.pressionou(SDL_SCANCODE_P) || clicado == 501) mundo_.purificarReliquia(id);
+    }
+}
+
 void WorldScene::entradaDecisao() {
     ke::Input& in = ctx_.app.input();
     const DecisaoDef* d = mundo_.decisaoAtual();
@@ -393,6 +459,10 @@ void WorldScene::entradaPainel() {
             painel_.clear();
             forja_ = true;
             selForja_ = 0;
+        } else if (o == "Abrir a guilda") {
+            painel_.clear();
+            guilda_ = true;
+            abaGuilda_ = selGuilda_ = passoExpedicao_ = 0;
         } else if (o.starts_with("Reparar portão")) {
             mundo_.repararPortao();  // o painel fica aberto (mostra a vida nova)
         } else if (o.starts_with("Comprar 10 pedra")) {
@@ -684,6 +754,21 @@ void WorldScene::tratarEventos() {
             som.tocar(ke::Som::Magia);
             ke::log::info("conselho: {} no cargo {}", e.recurso, e.alvo);
             break;
+        // ---------- Fase 14: a guilda ----------
+        case EventoJogo::Tipo::Partiu:
+            hud_.aviso(e.texto, cor::ouro);
+            som.tocar(ke::Som::Menu);
+            ke::log::info("expedição: {} ({} dias)", e.alvo, e.quantidade);
+            salvar();
+            break;
+        case EventoJogo::Tipo::Reliquia:
+            hud_.aviso(e.recurso == "nova" ? "Nova relíquia: " + e.texto + "!" : e.texto,
+                       e.recurso == "maldicao" ? cor::ruim : e.recurso == "purificada" ? cor::bom : cor::ouro);
+            som.tocar(e.recurso == "maldicao" ? ke::Som::Dano : ke::Som::Magia);
+            if (e.recurso == "maldicao") cam_.tremor = std::max(cam_.tremor, 2.0f), feridoFlash_ = 0.4f;
+            ke::log::info("relíquia {}: {}", e.alvo, e.recurso);
+            salvar();
+            break;
         // ---------- Fase 13: a batalha no portão ----------
         case EventoJogo::Tipo::HordaChegou:
             nomeRegiao_ = "A horda chegou!";
@@ -919,7 +1004,7 @@ void WorldScene::atualizar(double dtD) {
     // O relógio para em menus, painéis, conversas e no sono
     mundo_.relogio.parado = pausa_ || !painel_.empty() || conversa_.has_value() || transicao_ >= 0.0f || menuObras_ || painelReino_ ||
                             relatorio_ || diario_ || forja_ || cronicas_ || !leitura_.empty() || !loja_.empty() || painelRegioes_ ||
-                            !escolha_.empty() || painelConselho_ || decisao_;
+                            !escolha_.empty() || painelConselho_ || decisao_ || guilda_;
     feridoFlash_ = std::max(0.0f, feridoFlash_ - dt);
     tituloRegiao_ = std::max(0.0f, tituloRegiao_ - dt);
     tituloEra_ = std::max(0.0f, tituloEra_ - dt);
@@ -958,6 +1043,7 @@ void WorldScene::atualizar(double dtD) {
     else if (!escolha_.empty()) entradaEscolha();
     else if (decisao_) entradaDecisao();
     else if (painelConselho_) entradaConselho();
+    else if (guilda_) entradaGuilda();
     else if (painelRegioes_) {
         ke::Input& in = ctx_.app.input();
         if (in.pressionou(SDL_SCANCODE_R) || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques))
@@ -1028,7 +1114,7 @@ void WorldScene::renderizar(float) {
     r.definirMistura(ke::Mistura::Normal);
     if (painel_.empty() && !pausa_ && !conversa_ && transicao_ < 0.0f && colocando_.empty() && !menuObras_ && !painelReino_ &&
         !relatorio_ && !diario_ && !forja_ && !cronicas_ && leitura_.empty() && loja_.empty() && !painelRegioes_ && escolha_.empty() &&
-        !painelConselho_ && !decisao_)
+        !painelConselho_ && !decisao_ && !guilda_)
         rend_.desenharAlvo(r, f, mundo_, tempo_);
     std::string motivoObra;
     bool obraValida = false;
@@ -1106,6 +1192,7 @@ void WorldScene::renderizar(float) {
     if (painelReino_) hud_.painelReino(r, mundo_);
     if (painelRegioes_) hud_.painelRegioes(r, mundo_);
     if (painelConselho_) hud_.painelConselho(r, mundo_, selConselho_, propostoConselho(), tempo_);
+    if (guilda_) hud_.painelGuilda(r, mundo_, abaGuilda_, selGuilda_, passoExpedicao_, destinoSel_, grupoSel_, tempo_);
     if (decisao_ && mundo_.decisaoAtual()) {
         hud_.cliques.limpar();  // por cima do conselho: só as opções do caso valem para o mouse
         hud_.painelDecisao(r, mundo_, *mundo_.decisaoAtual(), selDecisao_, tempo_);

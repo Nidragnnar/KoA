@@ -62,7 +62,9 @@ struct EventoJogo {
         // Fase 12
         Decidiu, Nomeou,
         // Fase 13
-        HordaChegou, Flecha, PortaoGolpeado, PortaoCaiu, Saque, SoldadoCaiu, BatalhaFim
+        HordaChegou, Flecha, PortaoGolpeado, PortaoCaiu, Saque, SoldadoCaiu, BatalhaFim,
+        // Fase 14
+        Partiu, Reliquia
     };
     Tipo tipo;
     glm::vec2 pos{0.0f};
@@ -234,6 +236,26 @@ public:
     Custo custoReparo() const;
     bool repararPortao();
 
+    // Fase 14: a Guilda dos Aventureiros, expedições e relíquias
+    std::map<std::string, EstadoAventureiro> aventureiros;  // recrutados pela guilda
+    Expedicao expedicao;                                    // destino vazio = nenhuma em curso
+    std::vector<EstadoReliquia> reliquias;                  // na ordem em que chegaram
+    int nivelGuilda() const;                                // 0 = sem guilda pronta
+    int vagasReliquias() const;
+    int reliquiasExpostas() const;
+    bool aventureiroPronto(const std::string& id) const;
+    std::string situacaoAventureiro(const std::string& id) const;  // "pronto", "ferido por 2 dias"...
+    int nivelAventureiro(const std::string& id) const;
+    bool destinoAberto(const DestinoDef& d) const;
+    int comidaExpedicao(const DestinoDef& d, int tamanho) const;
+    int margemSemSorte(const DestinoDef& d, const std::vector<std::string>& grupo) const;
+    bool partir(const std::string& destino, const std::vector<std::string>& grupo);
+    void ganharReliquia(const std::string& id);
+    bool exporReliquia(const std::string& id, bool expor);
+    bool purificarReliquia(const std::string& id);
+    EfeitosReliquia efeitosReliquias() const;  // somados das expostas (com as maldições que valem)
+    const EstadoReliquia* estadoReliquia(const std::string& id) const;
+
     std::vector<ke::AABB> obstaculos() const;
     ke::AABB caixaConstrucao(const BuildingData& b) const;
     glm::vec2 pontoPorta(const BuildingData& b) const;
@@ -311,6 +333,9 @@ private:
     void manhaDaDefesa();              // avisos de horda e o conserto do Mestre das Obras
     int danoTorres() const;
     int soldadosDosPostos() const;
+    // Fase 14
+    void manhaDaGuilda(std::vector<std::string>& notas);
+    void voltaDaExpedicao(std::vector<std::string>& notas);
     bool batalha_ = false;
     int vencidasNaBatalha_ = 0, saquesNaBatalha_ = 0;
     std::map<std::string, float> recargaTorre_;  // id da torre → segundos até a próxima flecha

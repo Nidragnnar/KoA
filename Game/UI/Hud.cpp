@@ -101,15 +101,24 @@ void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
         const int faltam = w.hordaDia - w.relogio.dia;
         horda = faltam <= 0 ? std::format("Horda esta noite ({}:00)", dados_.defesa.hora) : std::format("Horda em {} dia{}", faltam, faltam > 1 ? "s" : "");
     }
-    const float l = static_cast<float>(std::max({f_.largura(era), f_.largura(data) + 50, f_.largura(titulo), f_.largura(hoje), f_.largura(horda)})) + 12.0f;
-    const float alt = 41.0f + (hoje.empty() ? 0.0f : 11.0f) + (horda.empty() ? 0.0f : 11.0f);
+    // Fase 14: a expedição na estrada
+    std::string expedicao;
+    if (!w.expedicao.destino.empty()) {
+        const int faltam = w.expedicao.volta - w.relogio.dia;
+        expedicao = faltam <= 1 ? "Expedição volta amanhã" : std::format("Expedição volta em {} dias", faltam);
+    }
+    const float l = static_cast<float>(std::max({f_.largura(era), f_.largura(data) + 50, f_.largura(titulo), f_.largura(hoje), f_.largura(horda),
+                                                 f_.largura(expedicao)})) + 12.0f;
+    const float alt = 41.0f + (hoje.empty() ? 0.0f : 11.0f) + (horda.empty() ? 0.0f : 11.0f) + (expedicao.empty() ? 0.0f : 11.0f);
     desenharPainel(r, {634 - l, 6}, {l, alt});
     float yLinha = 44;
     if (!hoje.empty()) f_.desenhar(r, hoje, {634 - l + 6, yLinha}, corHoje), yLinha += 11;
     if (!horda.empty()) {
         const float a = 0.8f + 0.2f * std::sin(tempo * 4.0f);
         f_.desenhar(r, horda, {634 - l + 6, yLinha}, cor::ruim * glm::vec4(a, a, a, 1));
+        yLinha += 11;
     }
+    if (!expedicao.empty()) f_.desenhar(r, expedicao, {634 - l + 6, yLinha}, cor::apagado);
     f_.desenhar(r, data, {634 - l + 6, 11}, cor::texto);
     const std::string hora = w.relogio.textoHora();
     f_.desenhar(r, hora, {628.0f - f_.largura(hora), 11}, w.relogio.escuridao() > 0.5f ? glm::vec4(0.6f, 0.7f, 1.0f, 1) : cor::ouro);
@@ -230,21 +239,23 @@ void Hud::barra(ke::Renderer2D& r, glm::vec2 p, float l, float fr, glm::vec4 c) 
 
 void Hud::menuObras(ke::Renderer2D& r, const World& w, const std::vector<std::string>& defs, int sel) {
     r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.45f});
-    const float alt = 48.0f + defs.size() * 26.0f;
-    const glm::vec2 p{100, std::floor(180 - alt / 2)}, s{440, alt};
+    // A linha encolhe um pouco quando há muitas obras (o painel cabe na tela)
+    const float lh = std::min(26.0f, std::floor(300.0f / std::max<size_t>(1, defs.size())));
+    const float alt = 48.0f + defs.size() * lh;
+    const glm::vec2 p{100, std::floor(176 - alt / 2)}, s{440, alt};
     desenharPainel(r, p, s);
     painelClicavel(p, s);
     f_.desenharCentralizado(r, "Obras do Reino", {320, p.y + 12}, cor::ouro);
     for (size_t i = 0; i < defs.size(); ++i) {
         const BuildingDef& d = dados_.construcoes.at(defs[i]);
         const NivelConstrucao& n1 = *d.nivel(1);
-        const float y = p.y + 28 + i * 26.0f;
+        const float y = p.y + 28 + i * lh;
         const bool s1 = static_cast<int>(i) == sel;
         const int tem = w.contarConstrucoes(d.id);
         const bool esgotada = d.limite > 0 && tem >= d.limite;
         const bool bloqueada = !w.monumentoLiberado(d);
-        if (s1) r.retangulo({p.x + 8, y - 3}, {s.x - 16, 25}, {0.45f, 0.36f, 0.22f, 0.45f});
-        cliques.area({p.x + 8, y - 3}, {s.x - 16, 25}, static_cast<int>(i));
+        if (s1) r.retangulo({p.x + 8, y - 3}, {s.x - 16, lh - 1}, {0.45f, 0.36f, 0.22f, 0.45f});
+        cliques.area({p.x + 8, y - 3}, {s.x - 16, lh - 1}, static_cast<int>(i));
         f_.desenhar(r, n1.nome, {p.x + 14, y}, esgotada || bloqueada ? cor::apagado : s1 ? cor::ouro : cor::texto);
         if (d.monumento) f_.desenhar(r, "monumento", {p.x + 22.0f + f_.largura(n1.nome), y}, cor::apagado);
         const std::string qtd = d.limite > 0 ? std::format("{}/{}", tem, d.limite) : std::to_string(tem);
@@ -370,7 +381,7 @@ void Hud::combate(ke::Renderer2D& r, const World& w, float tempo) {
         const std::string t = "O conselho espera sua decisão (G)";
         const float a = 0.8f + 0.2f * std::sin(tempo * 3.0f);
         const float l = static_cast<float>(f_.largura(t)) + 10;
-        const float y = 63.0f + (w.hordaDia > 0 || w.emBatalha() ? 11.0f : 0.0f);
+        const float y = 63.0f + (w.hordaDia > 0 || w.emBatalha() ? 11.0f : 0.0f) + (w.expedicao.destino.empty() ? 0.0f : 11.0f);
         r.retangulo({634 - l, y}, {l, 11}, {0.05f, 0.04f, 0.04f, 0.7f});
         f_.desenhar(r, t, {639 - l, y + 2}, cor::ouro * glm::vec4(a, a, a, 1));
     }
@@ -815,6 +826,175 @@ void Hud::painelDecisao(ke::Renderer2D& r, const World& w, const DecisaoDef& d, 
         y += 9;
     }
     f_.desenharCentralizado(r, "W/S ou mouse escolher   E ou clique decidir   Esc decidir depois (G)", {320, p.y + s.y - 11}, cor::apagado);
+}
+
+// ---------- Fase 14: a Guilda dos Aventureiros ----------
+
+std::vector<std::string> Hud::aventureirosRecrutados(const World& w) const {
+    std::vector<std::string> v;
+    for (const auto& a : dados_.guilda.aventureiros)
+        if (w.aventureiros.contains(a.id)) v.push_back(a.id);
+    return v;
+}
+
+namespace {
+
+const char* palavraPerigo(int p) { return p <= 2 ? "baixo" : p <= 4 ? "médio" : p <= 6 ? "alto" : "mortal"; }
+const char* palavraTipo(const std::string& t) { return t == "combate" ? "combate" : t == "saber" ? "saber" : "exploração"; }
+
+}
+
+void Hud::painelGuilda(ke::Renderer2D& r, const World& w, int aba, int sel, int passo, const std::string& destino,
+                       const std::vector<std::string>& grupo, float tempo) {
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.5f});
+    const glm::vec2 p{60, 18}, s{520, 324};
+    desenharPainel(r, p, s);
+    painelClicavel(p, s);
+    const DadosGuilda& dg = dados_.guilda;
+    f_.desenharCentralizado(r, "Guilda dos Aventureiros", {320, p.y + 12}, cor::ouro, true, 1);
+    const auto recrutados = aventureirosRecrutados(w);
+    // Abas (100, 101, 102)
+    const std::string abas[3] = {"Expedição", std::format("Aventureiros ({})", recrutados.size()),
+                                 std::format("Relíquias ({}/{} expostas)", w.reliquiasExpostas(), w.vagasReliquias())};
+    float xa = 320.0f;
+    for (const auto& a : abas) xa -= (f_.largura(a) + 24) / 2.0f;
+    for (int i = 0; i < 3; ++i) {
+        const float la = static_cast<float>(f_.largura(abas[i]));
+        if (i == aba) r.retangulo({xa - 5, p.y + 26}, {la + 10, 12}, {0.45f, 0.36f, 0.22f, 0.5f});
+        cliques.area({xa - 5, p.y + 24}, {la + 10, 15}, 100 + i);
+        f_.desenhar(r, abas[i], {xa, p.y + 28}, i == aba ? cor::ouro : cor::apagado);
+        xa += la + 24;
+    }
+    r.retangulo({p.x + 12, p.y + 42}, {s.x - 24, 1}, cor::borda);
+    const float xR = p.x + 18;
+    float y = p.y + 50;
+    auto linhaSel = [&](int i, float h) {
+        if (i == sel) r.retangulo({p.x + 10, y - 3}, {s.x - 20, h}, {0.45f, 0.36f, 0.22f, 0.45f});
+        cliques.area({p.x + 10, y - 3}, {s.x - 20, h}, i);
+    };
+    auto paragrafo = [&](const std::string& t, glm::vec4 c, int recuo = 0) {
+        for (const auto& l : quebrarLinhas(f_, t, static_cast<int>(s.x) - 40 - recuo)) f_.desenhar(r, l, {xR + recuo, y}, c), y += 11;
+    };
+    std::string rodape;
+    if (aba == 0) {
+        if (!w.expedicao.destino.empty()) {
+            // Expedição em curso
+            const DestinoDef* d = dg.destino(w.expedicao.destino);
+            const int faltam = std::max(0, w.expedicao.volta - w.relogio.dia);
+            f_.desenhar(r, "Em expedição: " + (d ? d->nome : w.expedicao.destino), {xR, y}, cor::ouro);
+            y += 14;
+            paragrafo(faltam == 0 ? "Volta amanhã cedo, no relatório da manhã." : std::format("Volta em {} dia{}, no relatório da manhã.", faltam, faltam > 1 ? "s" : ""),
+                      cor::texto);
+            std::string nomes;
+            for (const auto& id : w.expedicao.grupo) nomes += (nomes.empty() ? "" : ", ") + dg.aventureiro(id)->nome;
+            paragrafo("Grupo: " + nomes, cor::texto);
+            if (d) paragrafo(std::string("Antes de partir: ") + chanceEmPalavras(w.margemSemSorte(*d, w.expedicao.grupo)) + ".", cor::apagado);
+            rodape = "A/D abas   Esc fechar";
+        } else if (passo == 0) {
+            for (size_t i = 0; i < dg.destinos.size(); ++i) {
+                const DestinoDef& d = dg.destinos[i];
+                const bool aberto = w.destinoAberto(d);
+                linhaSel(static_cast<int>(i), 25);
+                f_.desenhar(r, aberto ? d.nome : "? ? ?", {xR, y}, !aberto ? cor::apagado : static_cast<int>(i) == sel ? cor::ouro : cor::texto);
+                f_.desenhar(r, aberto ? std::format("{} dias   perigo {}   {}", d.dias, palavraPerigo(d.perigo), palavraTipo(d.tipo))
+                                      : "Ninguém conhece o caminho. Talvez um mapa antigo...",
+                            {xR + 10, y + 11}, cor::apagado);
+                y += 27;
+            }
+            y += 4;
+            if (sel >= 0 && sel < static_cast<int>(dg.destinos.size()) && w.destinoAberto(dg.destinos[sel])) {
+                const DestinoDef& d = dg.destinos[sel];
+                paragrafo(d.descricao, cor::texto);
+                std::string ganhos;
+                for (const auto& [rec, faixa] : d.ganhos) ganhos += (ganhos.empty() ? "" : ", ") + std::format("{} a {} de {}", faixa.first, faixa.second, dados_.nomeRecurso(rec));
+                paragrafo("Pode render: " + ganhos + (d.reliquias.empty() ? "." : ", e talvez uma relíquia."), cor::apagado);
+            }
+            rodape = "A/D abas   W/S destino   E montar o grupo   Esc fechar";
+        } else {
+            const DestinoDef* d = dg.destino(destino);
+            f_.desenhar(r, "Grupo para " + (d ? d->nome : destino) + std::format(" (até {})", dg.grupoMax), {xR, y}, cor::ouro);
+            y += 15;
+            for (size_t i = 0; i < recrutados.size(); ++i) {
+                const std::string& id = recrutados[i];
+                const AventureiroDef& a = *dg.aventureiro(id);
+                const bool no = std::ranges::find(grupo, id) != grupo.end();
+                const bool pronto = w.aventureiroPronto(id);
+                linhaSel(static_cast<int>(i), 13);
+                f_.desenhar(r, no ? "[x]" : "[ ]", {xR, y}, no ? cor::bom : cor::apagado);
+                f_.desenhar(r, a.nome, {xR + 26, y}, !pronto ? cor::apagado : static_cast<int>(i) == sel ? cor::ouro : cor::texto);
+                const std::string info = d ? std::format("força {}", poderAventureiro(a, w.nivelAventureiro(id), *d)) : "";
+                f_.desenhar(r, info, {xR + 230, y}, cor::texto);
+                const std::string sit = w.situacaoAventureiro(id);
+                f_.desenhar(r, sit, {p.x + s.x - 18 - f_.largura(sit), y}, pronto ? cor::bom : cor::ruim);
+                y += 14;
+            }
+            y += 6;
+            const int n = static_cast<int>(recrutados.size());
+            linhaSel(n, 14);
+            if (d) {
+                const int comida = w.comidaExpedicao(*d, static_cast<int>(grupo.size()));
+                const std::string t = grupo.empty() ? "Partir (escolha ao menos um aventureiro)"
+                                                    : std::format("Partir: {} de comida, {} dias.  {}", comida, d->dias, chanceEmPalavras(w.margemSemSorte(*d, grupo)));
+                f_.desenhar(r, t, {xR, y}, grupo.empty() ? cor::apagado : sel == n ? cor::ouro : cor::texto);
+            }
+            y += 20;
+            paragrafo("Especialidade do destino vale +1. Cada expedição que dá certo deixa o grupo mais forte.", cor::apagado);
+            rodape = "W/S escolher   E põe ou tira, E em Partir   Esc voltar";
+        }
+    } else if (aba == 1) {
+        if (recrutados.empty()) paragrafo("Ninguém ainda. Os aventureiros chegam de manhã depois que a guilda fica pronta.", cor::apagado);
+        for (size_t i = 0; i < recrutados.size(); ++i) {
+            const std::string& id = recrutados[i];
+            const AventureiroDef& a = *dg.aventureiro(id);
+            linhaSel(static_cast<int>(i), 13);
+            f_.desenhar(r, a.nome, {xR, y}, static_cast<int>(i) == sel ? cor::ouro : cor::texto);
+            f_.desenhar(r, std::format("força {}   nível {}   {}", a.forca + w.nivelAventureiro(id) - 1, w.nivelAventureiro(id), palavraTipo(a.especialidade)),
+                        {xR + 200, y}, cor::texto);
+            const std::string sit = w.situacaoAventureiro(id);
+            f_.desenhar(r, sit, {p.x + s.x - 18 - f_.largura(sit), y}, w.aventureiroPronto(id) ? cor::bom : cor::ruim);
+            y += 15;
+        }
+        if (sel >= 0 && sel < static_cast<int>(recrutados.size())) {
+            y += 8;
+            paragrafo(dg.aventureiro(recrutados[sel])->descricao, cor::apagado);
+        }
+        rodape = "A/D abas   W/S escolher   Esc fechar";
+    } else {
+        if (w.reliquias.empty()) paragrafo("Nenhuma relíquia ainda. Expedições podem trazê-las das ruínas da antiga Valdren.", cor::apagado);
+        for (size_t i = 0; i < w.reliquias.size(); ++i) {
+            const EstadoReliquia& e = w.reliquias[i];
+            const ReliquiaDef& d = *dg.reliquia(e.id);
+            linhaSel(static_cast<int>(i), 13);
+            f_.desenhar(r, d.nome, {xR, y}, static_cast<int>(i) == sel ? cor::ouro : cor::texto);
+            const std::string marca = e.exposta ? "exposta" : "guardada";
+            f_.desenhar(r, marca, {p.x + s.x - 18 - f_.largura(marca), y}, e.exposta ? cor::bom : cor::apagado);
+            y += 14;
+        }
+        if (sel >= 0 && sel < static_cast<int>(w.reliquias.size())) {
+            const EstadoReliquia& e = w.reliquias[sel];
+            const ReliquiaDef& d = *dg.reliquia(e.id);
+            y = std::max(y + 6, p.y + 180.0f);
+            paragrafo(d.texto, cor::texto);
+            y += 3;
+            paragrafo("Efeito exposta: " + textoEfeitos(d.efeitos), cor::bom);
+            if (d.amaldicoada && e.purificada) paragrafo("Purificada por Maelis: a maldição se foi.", cor::bom);
+            else if (d.amaldicoada && e.conhecida) paragrafo("Maldição: " + textoEfeitos(d.maldicao), cor::ruim);
+            // Botões (500 expor/recolher, 501 purificar)
+            y += 4;
+            const std::string b1 = e.exposta ? "[E] Recolher" : "[E] Expor";
+            f_.desenhar(r, b1, {xR, y}, cor::ouro);
+            cliques.area({xR - 4, y - 3}, {f_.largura(b1) + 8.0f, 13}, 500);
+            if (d.amaldicoada && e.conhecida && !e.purificada) {
+                const std::string b2 = "[P] Purificar com Maelis (3 cristais)";
+                const float x2 = xR + f_.largura(b1) + 30.0f;
+                f_.desenhar(r, b2, {x2, y}, cor::ouro);
+                cliques.area({x2 - 4, y - 3}, {f_.largura(b2) + 8.0f, 13}, 501);
+            }
+        }
+        rodape = "A/D abas   W/S escolher   E expor ou recolher   Esc fechar";
+    }
+    (void)tempo;
+    f_.desenharCentralizado(r, rodape, {320, p.y + s.y - 11}, cor::apagado);
 }
 
 // ---------- Fase 11: terras do reino e chefes com escolha ----------
