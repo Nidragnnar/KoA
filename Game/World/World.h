@@ -67,7 +67,9 @@ struct EventoJogo {
         // Fase 14
         Partiu, Reliquia,
         // Fase 15
-        Mordida, Presente, AbrirCozinha, Carinho
+        Mordida, Presente, AbrirCozinha, Carinho,
+        // Fase 16
+        AlaErguida, BrasaoNovo
     };
     Tipo tipo;
     glm::vec2 pos{0.0f};
@@ -279,6 +281,19 @@ public:
     int coracoesDe(const std::string& npc) { const Relacionamento* r = relacao(npc); return r ? r->coracoes() : 0; }
     bool fazerCarinho(entt::entity animal);
     void sincronizarAnimais();                    // tantos bichos quanto o galinheiro e o curral pedem
+
+    // Fase 16: o castelo, as alas e o brasão da linhagem
+    std::vector<std::string> alas;                // alas erguidas, na ordem em que subiram
+    Brasao brasao;
+    bool brasaoCriado = false;                    // o herdeiro já montou o próprio brasão
+    const DadosCastelo& dadosCastelo() const { return dados_->castelo; }
+    int nivelCastelo() const;
+    int vagasAlas() const;                        // quantas alas o nível do castelo permite (erguidas ou não)
+    bool erguerAla(const std::string& id);
+    EfeitosAla efeitosAlas() const;
+    void definirBrasao(const Brasao& b);
+    // O que falta para o próximo nível de uma construção ("" = nada: só os recursos)
+    std::string requisitoProximoNivel(const BuildingData& b) const;
 
     std::vector<ke::AABB> obstaculos() const;
     ke::AABB caixaConstrucao(const BuildingData& b) const;

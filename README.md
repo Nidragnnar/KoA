@@ -6,7 +6,7 @@ era a era, até a **Alta Fantasia**.
 
 Engine própria em **C++20 + SDL3 + OpenGL 3.3** (Kingdom Engine), com EnTT, Dear ImGui, nlohmann/json e GoogleTest.
 
-## Versão 1.7
+## Versão 1.8
 
 A 2.0 está em andamento (identidade e plano em `docs/VISAO_2.0.md`). A fase 9 trouxe as Crônicas do Reino
 (tecla C), os títulos do herdeiro, o mercador viajante, três monumentos e o começo do mistério da Queda das Cinzas.
@@ -28,6 +28,10 @@ A fase 15 trouxe a vida cotidiana: a horta do herdeiro ao lado da casa (plantar,
 semente tem suas estações), a pesca (E de frente para a água, espere a mordida e puxe), o fogão na fogueira da praça
 (sete receitas que curam, dão força até dormir ou alegram o povo), galinheiro e curral com galinhas e vacas que dão
 ovo e leite, e presentes: na conversa, F dá ao morador o prato ou ingrediente de que ele mais gosta.
+A fase 16 trouxe o castelo dos reis e o brasão da linhagem: as ruínas no alto do vilarejo se reconstroem em quatro
+níveis (Torre de Menagem, Salão Real e Castelo Real, os dois últimos esperando as eras), cada nível abre vaga para
+uma ala (tesouro, quartel, jardim, celeiro, biblioteca ou salão de banquetes), e no painel do castelo se monta o
+brasão: forma, divisão, cores, símbolo e lema. As cores aparecem nos estandartes da praça e nas bandeiras do castelo.
 
 As 8 fases do plano de arquitetura da 1.0 estão feitas:
 

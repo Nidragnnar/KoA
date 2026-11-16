@@ -235,7 +235,7 @@ TEST(Cenarios, MontarSavesDeTeste) {
     free(pasta);
     auto gravar = [&](World& w, const std::string& slot) {
         DadosSave d = w.capturar();
-        d.versaoJogo = "1.7.0";
+        d.versaoJogo = "1.8.0";
         d.dataHora = "cenário de teste";
         ASSERT_TRUE(s.salvar(d, slot));
     };
@@ -284,63 +284,60 @@ TEST(Cenarios, MontarSavesDeTeste) {
         w.equip.arma = "espada_linhagem";
         w.equip.armadura = "cota_malha";
     };
-    // Fase 15: verão (todas as culturas crescem), galinheiro e curral prontos, despensa com ingredientes
-    auto vidaNoCampo = [&](World& w, Estacao e, int diaDaEstacao) {
+    // Fase 16: reino avançado, 10:00, ao pé do castelo
+    auto aoPeDoCastelo = [&](World& w) {
         reinoAvancado(w);
         equipar(w);
-        w.missoes.erase("maos_na_terra");  // a Tilda ainda oferece a missão da horta
-        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 1000);
-        obra(w, "galinheiro", {23, 12});
-        obra(w, "curral", {27, 12});
-        w.dormir(false);
-        while (!(w.relogio.estacao() == e && w.relogio.diaDaEstacao() == diaDaEstacao)) ++w.relogio.dia;
-        w.inventario.definir("madeira", 120);
-        w.inventario.definir("pedra", 120);
-        w.inventario.definir("ouro", 200);
-        w.inventario.definir("comida", 150);
+        w.relogio.minutos = 10 * 60;
+        if (const BuildingData* c = w.reino.construcao("castelo")) {
+            w.jogador.pos = w.pontoPorta(*c) + glm::vec2(0, 8);
+            w.jogador.dir = Direcao::Cima;
+        }
         w.hordaDia = 0;
         w.proximaHorda = w.relogio.dia + 12;
         w.ultimaDecisao = w.relogio.dia;  // nenhum caso do conselho atrapalhando o teste
     };
-    // Save_002: Verão, 9:00. Horta com um nabo PRONTO (canteiro 1), trigo crescendo e já regado (2), abóbora
-    // sem regar (3) e um canteiro vazio (4); sementes dos três tipos. Galinheiro (3 galinhas) e curral (2 vacas)
-    // ao lado da casa. Na mochila: nabo 2, ovo 3, leite 1, peixe 1, trigo 2 (dá para sopa, omelete e pão)
-    // e um Ensopado do Pescador para dar ao Bram (favorito)
+    // Save_002: no Despertar, diante das RUÍNAS do castelo, com recursos para a Torre de Menagem (e uma ala).
+    // E no portão: Reconstruir, depois "Alas do castelo" e "Brasão da linhagem". O Salão Real ainda pede o Reino Renascido
     {
         World w = vilarejo();
-        vidaNoCampo(w, Estacao::Verao, 1);
-        w.relogio.minutos = 9 * 60;
-        w.canteiros[0] = {"nabo", 2, w.relogio.dia - 1, true};
-        w.canteiros[1] = {"trigo", 1, w.relogio.dia, false};
-        w.canteiros[2] = {"abobora", 2, w.relogio.dia - 1, false};
-        w.canteiros[3] = {};
-        w.inventario.definir("semente_nabo", 3);
-        w.inventario.definir("semente_trigo", 2);
-        w.inventario.definir("semente_abobora", 2);
-        for (const auto& [item, q] : std::map<std::string, int>{{"nabo", 2}, {"ovo", 3}, {"leite", 1}, {"peixe", 1}, {"trigo", 2}, {"ensopado", 1}})
-            w.inventario.definir(item, q);
+        aoPeDoCastelo(w);
+        w.inventario.definir("madeira", 160);
+        w.inventario.definir("pedra", 230);
+        w.inventario.definir("ouro", 220);
         w.tirarEventos();
         gravar(w, "Save_002");
     }
-    // Save_003: último dia do OUTONO, 18:00, herdeiro ferido (vida 40). Abóbora pronta; nabo regado (cresce
-    // esta noite, ainda é outono); TRIGO regado (fora da estação: amanhã o relatório fala do frio). Amanhã é
-    // inverno: nada se planta. Pratos prontos (pão 2, omelete, ensopado) e ingredientes do Banquete da Colheita
-    // (peixe dourado, trigo 2, abóbora 1). Hoje já houve carinho nas galinhas e presente para a Edda
+    // Save_003: Reino Renascido, castelo no SALÃO REAL com a Sala do Tesouro e uma vaga livre; brasão já trocado
+    // (esquartelado de azure e prata, um leão de ouro). 21:00: janelas do castelo acesas. Recursos para mais uma ala
+    // e para o Castelo Real, que ainda pede a Alta Fantasia
     {
         World w = vilarejo();
-        vidaNoCampo(w, Estacao::Outono, Relogio::DIAS_POR_ESTACAO);
-        w.relogio.minutos = 18 * 60;
-        w.jogador.vida = 40;
-        w.canteiros[0] = {"abobora", 4, w.relogio.dia - 1, true};
-        w.canteiros[1] = {"nabo", 1, w.relogio.dia, false};
-        w.canteiros[2] = {"trigo", 1, w.relogio.dia, false};
-        w.canteiros[3] = {};
-        w.inventario.definir("semente_nabo", 2);
-        for (const auto& [item, q] : std::map<std::string, int>{{"pao", 2}, {"omelete", 1}, {"ensopado", 1}, {"peixe_dourado", 1}, {"trigo", 2}, {"abobora", 1}})
-            w.inventario.definir(item, q);
-        for (auto [e, a] : w.reg.view<const Animal>().each())
-            if (a.tipo == "galinha") w.carinhos[a.chave] = w.relogio.dia;
-        w.presenteDia["edda"] = w.relogio.dia;
+        aoPeDoCastelo(w);
+        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 5000);
+        w.inventario.definir("cristal", 60);
+        // Tudo no nível máximo (o castelo até o Salão Real): o desenvolvimento chega ao Reino Renascido
+        for (bool subiu = true; subiu;) {
+            subiu = false;
+            for (const auto& b : std::vector<BuildingData>(w.reino.construcoes))
+                if (b.defId != "castelo" && b.defId != "muralha" && b.constructed && w.def(b) && w.def(b)->nivel(b.level + 1) &&
+                    w.requisitoProximoNivel(b).empty())
+                    subiu = w.melhorarConstrucao(b.id) || subiu;
+        }
+        ASSERT_TRUE(w.melhorarConstrucao("castelo"));
+        w.marcar("era:2", "Reino Renascido", true);
+        ASSERT_TRUE(w.melhorarConstrucao("castelo"));
+        EXPECT_GE(static_cast<int>(w.reino.eraAlvo()), 2) << "desenvolvimento " << w.reino.desenvolvimento();
+        w.reino.eraVisual = 2.0f;
+        std::printf("[cenário] Save_003: desenvolvimento %d, era alvo %d\n", w.reino.desenvolvimento(), static_cast<int>(w.reino.eraAlvo()));
+        ASSERT_TRUE(w.erguerAla("tesouro"));
+        w.definirBrasao({"classico", "esquartelado", "azure", "prata", "leao", "ouro", 3});
+        w.relogio.minutos = 21 * 60;
+        w.inventario.definir("madeira", 300);
+        w.inventario.definir("pedra", 500);
+        w.inventario.definir("ouro", 600);
+        w.inventario.definir("cristal", 25);
+        w.inventario.definir("comida", 150);
         w.tirarEventos();
         gravar(w, "Save_003");
     }

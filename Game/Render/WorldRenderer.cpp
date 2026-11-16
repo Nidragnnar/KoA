@@ -3,10 +3,12 @@
 #include <algorithm>
 #include <cmath>
 #include <format>
+#include <functional>
 
 #include "Game/Exploration/Components.h"
 #include "Game/Combat/Combate.h"
 #include "Game/NPC/Npc.h"
+#include "Game/UI/Brasao.h"
 
 namespace koa {
 
@@ -60,7 +62,22 @@ struct Desenhavel {
     glm::vec2 pos;
     bool espelhar = false;
     float piscar = 0.0f;
+    std::function<void()> desenho;  // fase 16: peças compostas (estandartes com o brasão), no lugar do sprite
 };
+
+// Fase 16: bandeiras penduradas nas muralhas do castelo (canto do pano no sprite, a partir do canto de cima)
+std::vector<glm::vec2> bandeirasCastelo(int nivel) {
+    if (nivel == 2) return {{36, 38}};
+    if (nivel == 3) return {{36, 38}, {113, 38}};
+    if (nivel >= 4) return {{36, 38}, {113, 38}, {73, 14}};
+    return {};
+}
+
+// Janelas do castelo (para brilhar à noite a partir do Salão Real)
+std::vector<glm::vec2> janelasCastelo(const ke::SpriteRegion& s) {
+    const float oy = s.tamanho.y - 112.0f;  // 0 hoje (o castelo não passa de 112 px)
+    return {{15, 35 + oy}, {15, 61 + oy}, {143, 55 + oy}, {53, 55 + oy}, {107, 55 + oy}};
+}
 
 }
 
@@ -109,6 +126,11 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     auto visivel = [&](glm::vec2 p) { return p.x > margemMin.x && p.x < margemMax.x && p.y > margemMin.y && p.y < margemMax.y; };
     for (auto [e, p, v] : w.reg.view<const Posicao, const Visual>().each()) {
         if (v.sprite.empty() || !visivel(p.v) || escondido(e, p.v) || w.reg.all_of<Canteiro>(e)) continue;
+        if (v.sprite.starts_with("estandarte_")) {  // fase 16: os estandartes levam o brasão da linhagem
+            const glm::vec2 base = p.v + glm::vec2(0.0f, 2.0f);
+            lista.push_back({p.v.y, nullptr, {}, false, 0.0f, [&r, &w, base, tempo, this] { desenharEstandarte(r, rec_, w.dadosCastelo(), w.brasao, base, tempo); }});
+            continue;
+        }
         const int era = w.eraEm(p.v);
         std::string nome = v.sprite;
         if (const auto* a = w.reg.try_get<Animado>(e))
@@ -142,7 +164,14 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
         }
         const ke::SpriteRegion& s = spriteConstrucao(w, b);
         const ke::AABB c = w.caixaConstrucao(b);
-        lista.push_back({c.max.y, &s, {std::floor((c.min.x + c.max.x) * 0.5f - s.tamanho.x / 2), c.max.y - s.tamanho.y}});
+        const glm::vec2 cantoSprite{std::floor((c.min.x + c.max.x) * 0.5f - s.tamanho.x / 2), c.max.y - s.tamanho.y};
+        lista.push_back({c.max.y, &s, cantoSprite});
+        if (b.defId == "castelo" && b.constructed)  // fase 16: as bandeiras da linhagem no alto das torres
+            for (const glm::vec2 m : bandeirasCastelo(b.level))
+                lista.push_back({c.max.y + 0.01f, nullptr, {}, false, 0.0f, [&r, &w, pano = cantoSprite + m, this] {
+                                     r.retangulo(pano - glm::vec2(1, 2), {16, 2}, {0.29f, 0.23f, 0.16f, 1});  // a vara de onde o pano pende
+                                     desenharPano(r, rec_, w.dadosCastelo(), w.brasao, pano);
+                                 }});
     }
     for (auto [e, p, m, mv, a] : w.reg.view<const Posicao, const Morador, const Movimento, const Agenda>().each()) {
         if (a.dormindo || !visivel(p.v)) continue;
@@ -199,6 +228,10 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     }
     std::ranges::stable_sort(lista, {}, &Desenhavel::y);
     for (const auto& d : lista) {
+        if (d.desenho) {
+            d.desenho();
+            continue;
+        }
         r.sprite(*d.sprite, d.pos, glm::vec4(1.0f), d.espelhar);
         if (d.piscar > 0.0f) {
             r.definirMistura(ke::Mistura::Aditiva);
@@ -256,6 +289,13 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
         for (const auto& b : w.reino.construcoes) {
             if (b.level < 2 || b.defId == "muralha") continue;  // muralha não tem janela
             const ke::AABB c = w.caixaConstrucao(b);
+            if (b.defId == "castelo") {  // fase 16: o castelo acende as janelas a partir do Salão Real
+                if (b.level < 3 || !b.constructed) continue;
+                const ke::SpriteRegion& s = spriteConstrucao(w, b);
+                const glm::vec2 cantoSprite{(c.min.x + c.max.x) * 0.5f - s.tamanho.x / 2, c.max.y - s.tamanho.y};
+                for (const glm::vec2 j : janelasCastelo(s)) r.sprite(luz, cantoSprite + j - 8.0f, {1.0f, 0.7f, 0.35f, 0.8f * escuro}, false, 16.0f / 64.0f);
+                continue;
+            }
             for (const float x : {0.25f, 0.75f}) {
                 const glm::vec2 jan{c.min.x + (c.max.x - c.min.x) * x, c.max.y - 22.0f};
                 r.sprite(luz, jan - 8.0f, {1.0f, 0.7f, 0.35f, 0.8f * escuro}, false, 16.0f / 64.0f);
@@ -328,6 +368,13 @@ void WorldRenderer::desenharLuzes(ke::Renderer2D& r, const World& w, const ke::C
     for (const auto& b : w.reino.construcoes) {
         if (b.level < 2 || !b.constructed || !w.noVilarejo() || b.defId == "muralha") continue;
         const ke::AABB c = w.caixaConstrucao(b);
+        if (b.defId == "castelo") {
+            if (b.level < 3) continue;
+            const ke::SpriteRegion& s = spriteConstrucao(w, b);
+            const glm::vec2 cantoSprite{(c.min.x + c.max.x) * 0.5f - s.tamanho.x / 2, c.max.y - s.tamanho.y};
+            for (const glm::vec2 j : janelasCastelo(s)) r.sprite(luz, cantoSprite + j - 26.0f, {1.0f, 0.75f, 0.4f, 0.9f}, false, 52.0f / 64.0f);
+            continue;
+        }
         for (const float x : {0.25f, 0.75f}) {
             const glm::vec2 jan{c.min.x + (c.max.x - c.min.x) * x, c.max.y - 22.0f};
             r.sprite(luz, jan - 26.0f, {1.0f, 0.75f, 0.4f, 0.9f}, false, 52.0f / 64.0f);

@@ -1,0 +1,63 @@
+{
+  "_como_funciona": "Fase 16. O castelo é uma construção fixa do mapa (Data/Buildings/construcoes.json, id 'castelo'), reconstruída em 4 níveis. Cada nível a partir do 2 abre uma vaga de ala (n2: 1, n3: 2, n4: 3). Cada ala é erguida uma vez, na hora, pagando o custo; efeitos somados todo dia: felicidade e seguranca (pontos), impostos e comida (fração: 0.15 = +15%), viajantes (famílias a mais que podem chegar), ouro_dia, soldados (a mais no portão) e expedicao (força a mais nas expedições da guilda). O brasão da linhagem se monta no painel do castelo: forma, divisão, duas cores do campo, símbolo, cor do símbolo e lema. As cores aparecem nos estandartes do vilarejo e nas bandeiras do castelo.",
+  "vagas_por_nivel": [0, 0, 1, 2, 3],
+  "alas": [
+    { "id": "tesouro", "nome": "Sala do Tesouro", "descricao": "Cofres, balanças e um escrivão que não deixa moeda sumir.",
+      "custo": { "pedra": 60, "ouro": 80 }, "efeitos": { "impostos": 0.15, "ouro_dia": 3 } },
+    { "id": "quartel", "nome": "Quartel Real", "descricao": "Camas, armas e um pátio de treino: um soldado a mais no portão.",
+      "custo": { "madeira": 60, "pedra": 60, "ouro": 60 }, "efeitos": { "seguranca": 8, "soldados": 1 } },
+    { "id": "jardim", "nome": "Jardim Real", "descricao": "Roseiras, um lago pequeno e bancos onde o povo pode passear.",
+      "custo": { "madeira": 40, "pedra": 30, "ouro": 50 }, "efeitos": { "felicidade": 5 } },
+    { "id": "celeiro", "nome": "Celeiro Real", "descricao": "Grãos guardados para o inverno: a colheita rende mais.",
+      "custo": { "madeira": 80, "pedra": 30, "ouro": 40 }, "efeitos": { "comida": 0.2 } },
+    { "id": "biblioteca", "nome": "Biblioteca Real", "descricao": "Mapas e crônicas antigas: as expedições sabem onde pisar.",
+      "custo": { "madeira": 50, "pedra": 40, "ouro": 90, "cristal": 4 }, "efeitos": { "expedicao": 1, "felicidade": 1 } },
+    { "id": "salao", "nome": "Salão de Banquetes", "descricao": "Mesas longas e lareiras: viajantes ouvem falar e vêm morar.",
+      "custo": { "madeira": 70, "pedra": 50, "ouro": 70 }, "efeitos": { "felicidade": 2, "viajantes": 1 } }
+  ],
+  "brasao": {
+    "formas": [
+      { "id": "classico", "nome": "Clássico" },
+      { "id": "redondo", "nome": "Redondo" },
+      { "id": "pontudo", "nome": "Pontudo" },
+      { "id": "quadrado", "nome": "Estandarte" }
+    ],
+    "divisoes": [
+      { "id": "pleno", "nome": "Pleno" },
+      { "id": "partido", "nome": "Partido" },
+      { "id": "cortado", "nome": "Cortado" },
+      { "id": "esquartelado", "nome": "Esquartelado" },
+      { "id": "banda", "nome": "Banda" },
+      { "id": "chefe", "nome": "Chefe" }
+    ],
+    "tinturas": [
+      { "id": "goles", "nome": "Goles", "cor": "#a8262c" },
+      { "id": "azure", "nome": "Azure", "cor": "#2a52a8" },
+      { "id": "sable", "nome": "Sable", "cor": "#2a2628" },
+      { "id": "sinople", "nome": "Sinople", "cor": "#2e7a3a" },
+      { "id": "purpura", "nome": "Púrpura", "cor": "#6a2a7a" },
+      { "id": "brasa", "nome": "Brasa", "cor": "#d0602a" },
+      { "id": "ouro", "nome": "Ouro", "cor": "#d8b040" },
+      { "id": "prata", "nome": "Prata", "cor": "#d8d8e0" }
+    ],
+    "simbolos": [
+      { "id": "coroa", "nome": "uma coroa" },
+      { "id": "leao", "nome": "um leão" },
+      { "id": "dragao", "nome": "um dragão" },
+      { "id": "chama", "nome": "uma chama" },
+      { "id": "arvore", "nome": "uma árvore" },
+      { "id": "espada", "nome": "uma espada" },
+      { "id": "torre", "nome": "uma torre" },
+      { "id": "lua", "nome": "uma lua" }
+    ],
+    "lemas": [
+      "Das cinzas, a coroa.",
+      "Firmes como a pedra.",
+      "A chama não se apaga.",
+      "Pelo povo, pela terra.",
+      "Nenhum inverno dura para sempre.",
+      "Sangue antigo, juramento novo."
+    ],
+    "inicial": { "forma": "classico", "divisao": "pleno", "cor1": "goles", "cor2": "ouro", "simbolo": "coroa", "cor_simbolo": "ouro", "lema": 0 }
+  }
+}

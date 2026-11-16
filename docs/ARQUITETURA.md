@@ -143,6 +143,15 @@ O plano da 2.0 está em `docs/VISAO_2.0.md`.
 - **Save v10**: arquivo novo `life.json` (canteiros, bônus dos pratos, presente e carinho do dia). Saves v1 a v9 começam com a horta vazia e ganham 4 sementes de nabo.
 - **Testes**: 171 (16 novos da fase 15) e o roteiro com as etapas 46 a 50 (horta, pesca com o clique, fogão e banquete, animais e carinho, presente ao Bram).
 
+## Fase 16 — Castelo e brasão (versão 1.8)
+
+- **Castelo**: a decoração `castelo_ruina` virou a construção fixa `castelo` (10×5 tiles, no mesmo lugar). Como a muralha, o nível 1 não conta como obra, nem no desenvolvimento, nem nos títulos. Construções fixas agora limpam o que estiver embaixo ao carregar o mapa.
+- **Requisito por nível**: `NivelConstrucao::requer` (marco) e `requerTexto`. `World::requisitoProximoNivel` bloqueia o "Reconstruir" sem cobrar nada; o painel da construção mostra o motivo em vermelho.
+- **Alas e brasão** (`Game/Kingdom/Castelo.h`): `DadosCastelo` (alas, peças, tinturas, lemas, brasão inicial), `textoBrasao` (a descrição heráldica), `girarPeca` (o editor) e `validar` (peças que sumiram dos dados voltam à inicial). No `World`: `alas`, `brasao`, `erguerAla`, `efeitosAlas` (entram em `modificadorReino`, em `soldadosDosPostos` e em `margemSemSorte`) e `definirBrasao`.
+- **Desenho** (`Game/UI/Brasao.h`): o escudo e o pano são máscaras brancas por forma e divisão (`escudo_<forma>_<divisão>_a/_b`, `pano_<divisão>_a/_b`) tingidas com as cores do brasão; a borda e o símbolo (com contorno) vão por cima. O `WorldRenderer` desenha os estandartes da praça (enfeites `estandarte_*`) e as bandeiras do castelo como peças compostas na ordem de profundidade (`Desenhavel::desenho`). O castelo não passa de 112 px de altura porque fica no alto do mapa.
+- **Save v11**: arquivo novo `castle.json` (alas, brasão, se o herdeiro já criou o dele). O nível do castelo vai no `kingdom.json` como o das outras construções. Saves v1 a v10 começam com o castelo em ruínas, sem alas e com o brasão dos reis antigos.
+- **Testes**: 181 (10 novos da fase 16) e o roteiro com as etapas 51 a 53 (reconstruir pelo painel, alas pelo teclado e pelo clique, o editor do brasão com teclado e mouse, estandartes e bandeiras).
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

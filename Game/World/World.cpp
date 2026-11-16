@@ -228,6 +228,9 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
     presenteDia.clear();
     carinhos.clear();
     pesca_ = {};
+    alas.clear();
+    brasao = dados_ ? dados_->castelo.inicial : Brasao{};
+    brasaoCriado = false;
 
     InfoRegiao info;
     try {
@@ -270,6 +273,9 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
             }
             reg.destroy(remover.begin(), remover.end());
         };
+        // Fase 16: nada fica em cima das construções fixas (o castelo ocupa o lugar da antiga decoração)
+        for (const auto& b : reino.construcoes)
+            if (const BuildingDef* d = def(b)) limpar(b.tile, d->tamanho);
         // Guardado numa variável: iterar .items() de um temporário lê memória já liberada
         const nlohmann::json jLocais = j.value("locais", nlohmann::json::object());
         for (const auto& [nome, t] : jLocais.items()) {
@@ -1675,6 +1681,10 @@ bool World::melhorarConstrucao(const std::string& id) {
         eventos_.push_back({EventoJogo::Tipo::Aviso, pontoPorta(*b), id, "", 0, "Ainda em obras: fica pronta amanhã."});
         return false;
     }
+    if (const std::string falta = requisitoProximoNivel(*b); !falta.empty()) {  // fase 16: nível que espera um marco
+        eventos_.push_back({EventoJogo::Tipo::Aviso, pontoPorta(*b), id, "", 0, falta});
+        return false;
+    }
     if (!melhorar(*b, *d, inventario)) {
         eventos_.push_back({EventoJogo::Tipo::Aviso, pontoPorta(*b), id, "", 0, avaliarMelhoria(*b, *d, inventario).motivo});
         return false;
@@ -1686,6 +1696,7 @@ bool World::melhorarConstrucao(const std::string& id) {
         bloqueio_.clear();
         marcar(std::format("muralha_n{}", b->level), b->name);
     }
+    if (b->defId == "castelo") marcar(std::format("castelo_n{}", b->level), b->name);
     return true;
 }
 
@@ -1749,6 +1760,11 @@ DadosSave World::capturar() const {
     d.buffDefesa = buffDefesa;
     d.presenteDia = presenteDia;
     d.carinhos = carinhos;
+    // Fase 16
+    d.alas = alas;
+    d.temBrasao = true;
+    d.brasaoCriado = brasaoCriado;
+    d.brasao = brasao;
     return d;
 }
 
@@ -1881,6 +1897,12 @@ void World::aplicar(const DadosSave& d) {
     carinhos = d.carinhos;
     if (!d.temCotidiano) inventario.adicionar("semente_nabo", 4);
     atualizarCanteiros();
+    // Fase 16: alas que ainda existem (no máximo as vagas do castelo) e o brasão validado
+    alas.clear();
+    for (const auto& id : d.alas)
+        if (dados().castelo.ala(id) && std::ranges::find(alas, id) == alas.end() && static_cast<int>(alas.size()) < vagasAlas()) alas.push_back(id);
+    brasao = dados().castelo.validar(d.temBrasao ? d.brasao : dados().castelo.inicial);
+    brasaoCriado = d.temBrasao && d.brasaoCriado;
     sincronizarAnimais();
     renascerInimigos();  // o chefe derrotado não volta (e a corrupção salva decide quantas criaturas há)
     bloqueio_.clear();
@@ -1937,7 +1959,7 @@ int World::contarObrasProntas(bool tipos) const {
     std::set<std::string> defs;
     int n = 0;
     for (const auto& b : reino.construcoes)
-        if (b.constructed && b.defId != "casa" && !(b.defId == "muralha" && b.level < 2)) {  // ruínas não são obra
+        if (b.constructed && b.defId != "casa" && !((b.defId == "muralha" || b.defId == "castelo") && b.level < 2)) {  // ruínas não são obra
             ++n;
             defs.insert(b.defId);
         }
@@ -2009,7 +2031,10 @@ void World::reconstruirCronicas() {
     if (const BuildingData* casa = reino.construcao("casa_herdeiro"))
         for (int n = 2; n <= casa->level; ++n) marcar(n == 2 ? "casa_reconstruida" : std::format("casa_n{}", n), "", true);
     for (const auto& b : reino.construcoes)
-        if (b.constructed && b.defId != "casa" && b.defId != "muralha") marcar("construiu:" + b.defId, b.name, true);
+        if (b.constructed && b.defId != "casa" && b.defId != "muralha" && b.defId != "castelo") marcar("construiu:" + b.defId, b.name, true);
+    if (const BuildingData* c = reino.construcao("castelo"))
+        for (int n = 2; n <= c->level; ++n)
+            if (const BuildingDef* d = def(*c); d && d->nivel(n)) marcar(std::format("castelo_n{}", n), d->nivel(n)->nome, true);
     for (const auto& v : visitadas)
         if (v != "vilarejo" && regioes.contains(v)) marcar("visitou:" + v, regioes.at(v).nome, true);
     for (const MissaoDef& m : dados().missoes)
@@ -2239,6 +2264,14 @@ ModificadorDia World::modificadorReino(Estacao e) const {
     m.ouroDia += r.ouroDia;
     m.seguranca += r.seguranca;
     m.comida *= std::max(0.0f, 1.0f + r.comida);
+    // Fase 16: as alas do castelo
+    const EfeitosAla a = efeitosAlas();
+    m.felicidade += a.felicidade;
+    m.seguranca += a.seguranca;
+    m.impostos *= 1.0f + a.impostos;
+    m.comida *= 1.0f + a.comida;
+    m.viajantes += a.viajantes;
+    m.ouroDia += a.ouroDia;
     return m;
 }
 
@@ -2584,6 +2617,7 @@ int World::soldadosDosPostos() const {
         if (b.defId == "posto_guarda" && b.constructed)
             if (const BuildingDef* d = def(b); d && d->nivel(b.level)) n += static_cast<int>(d->nivel(b.level)->efeito("soldados"));
     if (n > 0 && efeitoCargo("marechal") > 0.0f) ++n;  // o Marechal leva mais um para o portão
+    n += efeitosAlas().soldados;                        // fase 16: o Quartel Real manda o seu
     return n;
 }
 
@@ -2901,6 +2935,7 @@ int World::margemSemSorte(const DestinoDef& d, const std::vector<std::string>& g
     int poder = 0;
     for (const auto& id : grupo)
         if (const AventureiroDef* a = dados().guilda.aventureiro(id)) poder += poderAventureiro(*a, nivelAventureiro(id), d);
+    if (!grupo.empty()) poder += efeitosAlas().expedicao;  // fase 16: os mapas da Biblioteca Real
     return poder - d.perigo * 2;
 }
 
@@ -3434,6 +3469,56 @@ bool World::darPresente(const std::string& npc) {
                         std::format("{} {} {}!", nome, favorito ? "adorou o presente:" : "agradeceu por", dados().nomeRecurso(item))});
     marcar("presente:" + npc, nome);
     return true;
+}
+
+// ---------- Fase 16: o castelo, as alas e o brasão ----------
+
+int World::nivelCastelo() const {
+    const BuildingData* c = reino.construcao("castelo");
+    return c && c->constructed ? c->level : 0;
+}
+
+int World::vagasAlas() const { return dados().castelo.vagas(nivelCastelo()); }
+
+EfeitosAla World::efeitosAlas() const {
+    EfeitosAla e;
+    for (const auto& id : alas)
+        if (const AlaDef* a = dados().castelo.ala(id)) e += a->efeitos;
+    return e;
+}
+
+bool World::erguerAla(const std::string& id) {
+    const AlaDef* a = dados().castelo.ala(id);
+    const BuildingData* c = reino.construcao("castelo");
+    if (!a || !c) return false;
+    auto aviso = [&](const std::string& t) { eventos_.push_back({EventoJogo::Tipo::Aviso, pontoPorta(*c), "castelo", "", 0, t}); };
+    if (std::ranges::find(alas, id) != alas.end()) return aviso(a->nome + " já foi erguida."), false;
+    if (static_cast<int>(alas.size()) >= vagasAlas())
+        return aviso(vagasAlas() == 0 ? "Reconstrua a Torre de Menagem para erguer alas." : "Sem vaga: reconstrua o castelo para erguer mais alas."), false;
+    if (!inventario.pagar(a->custo)) return aviso("Faltam recursos para a " + a->nome + "."), false;
+    alas.push_back(id);
+    eventos_.push_back({EventoJogo::Tipo::AlaErguida, pontoPorta(*c), id, "", static_cast<int>(alas.size()), a->nome});
+    marcar("ala:" + id, a->nome);
+    return true;
+}
+
+void World::definirBrasao(const Brasao& b) {
+    const DadosCastelo& dc = dados().castelo;
+    const Brasao novo = dc.validar(b);
+    const bool mudou = !brasaoCriado || novo != brasao;
+    brasao = novo;
+    brasaoCriado = true;
+    if (!mudou) return;
+    const std::string texto = textoBrasao(dc, brasao);
+    eventos_.push_back({EventoJogo::Tipo::BrasaoNovo, jogador.pos, "", "", 0, texto});
+    marcar("brasao", texto);  // a primeira vez vira página nas Crônicas
+}
+
+std::string World::requisitoProximoNivel(const BuildingData& b) const {
+    const BuildingDef* d = def(b);
+    const NivelConstrucao* prox = d ? d->nivel(b.level + 1) : nullptr;
+    if (!prox || prox->requer.empty() || marcos.contains(prox->requer)) return "";
+    return prox->requerTexto.empty() ? "Ainda não é hora de reconstruir." : prox->requerTexto;
 }
 
 }

@@ -94,6 +94,11 @@
     "construiu:curral": "Um curral foi erguido, e com ele o primeiro leite fresco desde a Queda.",
     "cozinhou:banquete": "O herdeiro serviu um Banquete da Colheita na praça. O povo comeu até a lua subir.",
     "presente:*": "O herdeiro levou um presente a {nome}.",
+    "castelo_n2": "A Torre de Menagem voltou a ficar de pé. Pela primeira vez desde a Queda, um estandarte da linhagem tremulou no alto do castelo.",
+    "castelo_n3": "O Salão Real abriu as portas. O herdeiro recebeu o povo sob um teto que os reis antigos tinham deixado ruir.",
+    "castelo_n4": "O Castelo Real brilhou em pedra branca e cúpulas azuis. De longe, quem chega pela estrada sabe que Valdren tem um rei.",
+    "ala:*": "Uma nova ala subiu no castelo: {nome}.",
+    "brasao": "A Casa de Valdren ganhou um brasão novo, bordado em todos os estandartes: {nome}.",
 
     "misterio:primeiro_ato": "As peças se juntaram: a Queda das Cinzas começou dentro do castelo, pelas mãos do próprio rei. Resta saber para onde foi a Chama."
   }

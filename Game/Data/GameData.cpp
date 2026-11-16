@@ -39,6 +39,8 @@ bool GameData::lerJson(const nlohmann::json& jr, const nlohmann::json& jc, std::
                 nv.nivel = n.at("nivel").get<int>();
                 nv.nome = n.value("nome", d.id);
                 nv.descricao = n.value("descricao", "");
+                nv.requer = n.value("requer", "");  // fase 16: marco que libera este nível
+                nv.requerTexto = n.value("requer_texto", "");
                 if (n.contains("custo"))
                     for (const auto& [rid, q] : n["custo"].items()) nv.custo[rid] = q.get<int>();
                 if (n.contains("efeitos"))
@@ -168,6 +170,24 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
             if (erro) *erro = "horda usa criatura inexistente: " + tipo;
             return false;
         }
+    // Fase 16: castelo, alas e brasão
+    const auto tcas = ke::fs::lerTexto(pasta / "Kingdom/castelo.json");
+    const auto jcas = tcas ? nlohmann::json::parse(*tcas, nullptr, false) : nlohmann::json();
+    if (!tcas || jcas.is_discarded()) {
+        if (erro) *erro = "Data/Kingdom/castelo.json ausente ou inválido";
+        return false;
+    }
+    if (!lerCastelo(jcas, castelo, erro)) return false;
+    for (const AlaDef& a : castelo.alas)
+        for (const auto& [rec, q] : a.custo)
+            if (!recursos.contains(rec)) {
+                if (erro) *erro = "ala " + a.id + " custa recurso inexistente: " + rec;
+                return false;
+            }
+    if (!construcoes.contains("castelo")) {
+        if (erro) *erro = "construcoes.json sem o castelo";
+        return false;
+    }
     // Fase 14: guilda, expedições e relíquias
     const auto tg = ke::fs::lerTexto(pasta / "Kingdom/guilda.json");
     const auto jg = tg ? nlohmann::json::parse(*tg, nullptr, false) : nlohmann::json();

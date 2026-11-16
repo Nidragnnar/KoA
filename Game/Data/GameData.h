@@ -9,6 +9,7 @@
 
 #include "Game/Combat/Combate.h"
 #include "Game/Inventory/Inventory.h"
+#include "Game/Kingdom/Castelo.h"
 #include "Game/Kingdom/Conselho.h"
 #include "Game/Kingdom/Cotidiano.h"
 #include "Game/Kingdom/Defesa.h"
@@ -29,6 +30,7 @@ struct NivelConstrucao {
     std::string nome, descricao;
     Custo custo;  // para chegar a este nível (o nível 1 é o custo da obra)
     std::map<std::string, float> efeitos;  // populacao_max, felicidade, seguranca, comida_dia, ouro_dia...
+    std::string requer, requerTexto;       // fase 16: marco que libera este nível ("" = nenhum)
 
     float efeito(const std::string& qual) const {
         const auto it = efeitos.find(qual);
@@ -68,6 +70,7 @@ struct GameData {
     DadosConselho conselho;                      // fase 12: cargos, leis e decisões políticas
     DadosDefesa defesa;                          // fase 13: hordas e a defesa do portão
     DadosGuilda guilda;                          // fase 14: aventureiros, expedições e relíquias
+    DadosCastelo castelo;                        // fase 16: alas do castelo e o brasão da linhagem
     DadosCotidiano cotidiano;                    // fase 15: horta, pesca, animais, cozinha e presentes
 
     const InimigoDef* inimigoPorLetra(char c) const {

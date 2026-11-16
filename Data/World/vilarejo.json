@@ -15,10 +15,10 @@
   "reino_inicial": { "populacao": 8, "populacao_base": 8, "felicidade": 40, "imposto": 1 },
   "construcoes": [
     { "id": "casa_herdeiro", "def": "casa", "tile": [20, 13], "nivel": 1 },
-    { "id": "muralha_leste", "def": "muralha", "tile": [60, 16], "nivel": 1 }
+    { "id": "muralha_leste", "def": "muralha", "tile": [60, 16], "nivel": 1 },
+    { "id": "castelo", "def": "castelo", "tile": [27, 2], "nivel": 1 }
   ],
   "decoracoes": [
-    { "sprite": "castelo_ruina", "tile": [27, 2], "base": [10, 5] },
     { "sprite": "barraco", "tile": [38, 10], "base": [3, 2] },
     { "sprite": "barraco", "tile": [11, 14], "base": [3, 2] },
     { "sprite": "barraco", "tile": [8, 29], "base": [3, 2] },

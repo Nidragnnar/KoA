@@ -90,15 +90,21 @@ A 1.0 provou a base (reino, vida, RPG, eras). A 2.0 dá ao jogo a sua identidade
 - Missão nova da Tilda ("Mãos na Terra": a primeira colheita) e páginas nas Crônicas (primeira colheita, peixe dourado, galinheiro, curral, banquete, presentes).
 - Fica para depois: regador e canteiros que se compram, vara de pesca melhor, receitas descobertas, vender pratos e o mercado comprando a colheita.
 
+### Fase 16 — Castelo e brasão (feita, versão 1.8)
+- **O castelo dos reis** deixou de ser enfeite: é uma construção fixa do mapa (como a casa e a muralha), em quatro níveis. Ruínas (não contam como obra), **Torre de Menagem** (a torre principal e o portão de pé, a primeira bandeira), **Salão Real** (muralhas inteiras, telhados, janelas acesas à noite; pede o Reino Renascido) e **Castelo Real** (pedra branca, cúpulas azuis e a torre do meio; pede a Alta Fantasia). Cada nível dá segurança, felicidade e, do Salão em diante, ouro.
+- **Alas** (`Data/Kingdom/castelo.json`): cada nível a partir do 2 abre uma vaga (1, 2 e 3). Seis alas, cada uma erguida uma vez: Sala do Tesouro (+15% de impostos, +3 de ouro), Quartel Real (+8 de segurança e um soldado a mais no portão), Jardim Real (+5 de felicidade), Celeiro Real (+20% de comida), Biblioteca Real (+1 de força nas expedições) e Salão de Banquetes (mais famílias chegando).
+- **Brasão da linhagem** (E no castelo → "Brasão da linhagem"): forma do escudo (4), divisão do campo (6: pleno, partido, cortado, esquartelado, banda, chefe), duas cores entre oito tinturas, símbolo (8: coroa, leão, dragão, chama, árvore, espada, torre, lua), cor do símbolo e lema (6). O painel descreve o brasão como os arautos ("Partido de azure e ouro, um dragão de prata") e mostra o pano.
+- As cores e o símbolo aparecem nos **estandartes da praça**, nas **bandeiras do castelo** e no painel do reino (K). O primeiro brasão, cada nível do castelo e cada ala viram páginas nas Crônicas.
+- Fica para depois: a capa do herdeiro nas cores da linhagem, o nome da casa escolhido pelo jogador, interiores do castelo e a sala do trono como lugar para receber os casos do conselho.
+
 ### Depois da 2.0 (para decidir mais tarde)
 - Linhagem: casamento, herdeiros, envelhecimento e sucessão.
 - Facções e diplomacia (anões, elfos, tribos do norte, Ordem Arcana, Culto das Cinzas).
-- Castelo personalizável, brasão e cores da linhagem.
 - Quinta era (Coroa Eterna) como estado pós-história.
 - Moradores que ganham fama e títulos próprios.
 
 ## Notas técnicas
 
-- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`), a 14 para a v9 (`guild.json`) e a 15 para a v10 (`life.json`).
+- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`), a 14 para a v9 (`guild.json`), a 15 para a v10 (`life.json`) e a 16 para a v11 (`castle.json`).
 - Conteúdo (crônicas, títulos, eventos, cargos, estações) em JSON dentro de `Data/`, como missões e diálogos hoje.
 - O roteiro ponta a ponta ganha etapas a cada fase; a arte nova vem do NidraIA em sessão separada.

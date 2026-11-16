@@ -61,7 +61,7 @@ bool evolui(const std::string& n) {
     static const char* prefixos[] = {"terreno_", "arvore_", "arbusto_", "toco", "rocha_", "tumulo_", "tocha_", "cerca_", "castelo_ruina",
                                      "poco", "barraco", "casa_n", "moradia_n", "taverna_n", "mercado_n", "capela_n", "forja_n", "posto_n",
                                      "torre_n", "campo_n", "memorial_n", "jardim_n", "estatua_n", "muralha_", "portao_", "guilda_n",
-                                     "galinheiro_n", "curral_n"};
+                                     "galinheiro_n", "curral_n", "castelo_n"};
     for (const char* p : prefixos)
         if (n.starts_with(p)) return true;
     return false;

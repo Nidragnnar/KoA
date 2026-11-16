@@ -1340,7 +1340,93 @@ void Roteiro::noMundo(WorldScene& cena) {
             if (quadro_ == 400) verificar(false, "a conversa terminou"), proxima();
             return;
         }
-        case 51:
+        // ---------- Fase 16: o castelo, as alas e o brasão ----------
+        case 51: {  // o castelo: E no portão abre o painel; "Reconstruir" levanta a Torre de Menagem
+            if (cena.decisaoAberta() && quadro_ % 5 == 0) in.simularToque(SDL_SCANCODE_ESCAPE);  // caso do conselho: fica para depois
+            const BuildingData* c = w.reino.construcao("castelo");
+            if (quadro_ == 1) {
+                verificar(c && c->level == 1, "o castelo começa em ruínas, como construção do reino");
+                for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 3000);
+                w.inventario.definir("cristal", 60);
+                w.marcar("era:2", "", true);
+                w.marcar("era:3", "", true);
+                w.relogio.minutos = 10 * 60;
+                if (c) w.jogador.pos = w.pontoPorta(*c) + glm::vec2(0, 6), w.jogador.dir = Direcao::Cima;
+            }
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 15) {
+                verificar(cena.painelAberto() == "castelo", "E no portão do castelo abre o painel");
+                capturar("81_painel_castelo");
+            }
+            if (quadro_ == 18) in.simularToque(SDL_SCANCODE_E);  // Reconstruir
+            if (quadro_ == 30) {
+                verificar(w.nivelCastelo() == 2 && w.vagasAlas() == 1, "a Torre de Menagem subiu e abriu a primeira vaga de ala");
+                w.jogador.pos.y += 40.0f;  // um passo atrás, para o castelo caber na tela
+            }
+            if (quadro_ == 45) capturar("82_torre_de_menagem");
+            if (quadro_ == 48) {
+                w.melhorarConstrucao("castelo");
+                w.melhorarConstrucao("castelo");
+            }
+            if (quadro_ == 65) {
+                verificar(w.nivelCastelo() == 4 && w.marcos.contains("castelo_n4"), "com as eras certas, o castelo chega ao Castelo Real");
+                capturar("83_castelo_real");
+            }
+            if (quadro_ == 68) proxima();
+            return;
+        }
+        case 52: {  // alas: tesouro pelo teclado, jardim pelo clique
+            if (cena.decisaoAberta() && quadro_ % 5 == 0) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 1)
+                if (const BuildingData* c = w.reino.construcao("castelo")) w.jogador.pos = w.pontoPorta(*c) + glm::vec2(0, 6), w.jogador.dir = Direcao::Cima;
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 12) in.simularToque(SDL_SCANCODE_E);  // "Alas do castelo" (o primeiro, já no nível máximo)
+            if (quadro_ == 20) verificar(cena.alasAbertas(), "\"Alas do castelo\" abre a lista das alas");
+            if (quadro_ == 22) in.simularToque(SDL_SCANCODE_E);  // Sala do Tesouro
+            if (quadro_ == 30) in.simularClique(ke::BotaoMouse::Esquerdo, {200, 165});  // Jardim Real
+            if (quadro_ == 40) {
+                verificar(w.alas == std::vector<std::string>{"tesouro", "jardim"}, std::format("ergueu {} alas (tesouro pelo E, jardim pelo clique)", w.alas.size()));
+                capturar("84_alas");
+            }
+            if (quadro_ == 42) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 50) {
+                verificar(!cena.alasAbertas(), "Esc fecha as alas");
+                proxima();
+            }
+            return;
+        }
+        case 53: {  // o brasão: teclado e mouse no editor, salvar e ver nos estandartes e nas bandeiras
+            if (cena.decisaoAberta() && quadro_ % 5 == 0) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 1)
+                if (const BuildingData* c = w.reino.construcao("castelo")) w.jogador.pos = w.pontoPorta(*c) + glm::vec2(0, 6), w.jogador.dir = Direcao::Cima;
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 12) in.simularToque(SDL_SCANCODE_S);
+            if (quadro_ == 16) in.simularToque(SDL_SCANCODE_E);  // "Brasão da linhagem"
+            if (quadro_ == 24) verificar(cena.brasaoAberto(), "\"Brasão da linhagem\" abre o editor");
+            // Forma redonda, partido, campo azure, leão (teclado) e depois dragão (clique na seta), símbolo prata, segundo lema
+            const int passos[][2] = {{26, SDL_SCANCODE_D}, {29, SDL_SCANCODE_S}, {32, SDL_SCANCODE_D}, {35, SDL_SCANCODE_S}, {38, SDL_SCANCODE_D},
+                                     {41, SDL_SCANCODE_S}, {44, SDL_SCANCODE_S}, {47, SDL_SCANCODE_D}, {50, SDL_SCANCODE_S}, {53, SDL_SCANCODE_D},
+                                     {56, SDL_SCANCODE_S}, {59, SDL_SCANCODE_D}};
+            for (const auto& [q, tecla] : passos)
+                if (quadro_ == q) in.simularToque(static_cast<SDL_Scancode>(tecla));
+            if (quadro_ == 62) in.simularClique(ke::BotaoMouse::Esquerdo, {335, 178});  // seta ">" do símbolo
+            if (quadro_ == 72) capturar("85_editor_brasao");
+            if (quadro_ == 75) in.simularClique(ke::BotaoMouse::Esquerdo, {265, 308});  // Salvar
+            if (quadro_ == 85) {
+                const Brasao esperado{"redondo", "partido", "azure", "ouro", "dragao", "prata", 1};
+                verificar(!cena.brasaoAberto() && w.brasaoCriado && w.brasao == esperado,
+                          "o brasão montado no editor foi salvo: " + textoBrasao(ctx_.dados.castelo, w.brasao));
+                verificar(w.marcos.contains("brasao"), "o brasão novo vira página nas Crônicas");
+                w.jogador.pos = {31.0f * 16, 19.0f * 16};  // a praça, entre os estandartes
+                w.jogador.dir = Direcao::Baixo;
+            }
+            if (quadro_ == 100) capturar("86_estandartes");
+            if (quadro_ == 102) w.jogador.pos = {32.0f * 16, 10.0f * 16};
+            if (quadro_ == 118) capturar("87_bandeiras_castelo");
+            if (quadro_ == 120) proxima();
+            return;
+        }
+        case 54:
             w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();

@@ -149,6 +149,21 @@
       ]
     },
     {
+      "_castelo": "Fase 16: o castelo dos reis de Valdren (fixo no mapa). Nível 1 são as ruínas (não contam como obra). Cada nível do 2 em diante abre vagas de alas (Data/Kingdom/castelo.json). Por nível, 'requer' = marco que precisa ter acontecido (era:2 = Reino Renascido, era:3 = Alta Fantasia).",
+      "id": "castelo", "aparencia": "castelo", "tamanho": [10, 5], "construivel": false, "limite": 1,
+      "niveis": [
+        { "nivel": 1, "nome": "Ruínas do Castelo", "descricao": "Torres partidas e um portão desabado. Ninguém mora aqui desde a Queda." },
+        { "nivel": 2, "nome": "Torre de Menagem", "descricao": "A torre principal de pé, o portão de novo no lugar e o estandarte da linhagem no alto.",
+          "custo": { "madeira": 80, "pedra": 150, "ouro": 100 }, "efeitos": { "seguranca": 4, "felicidade": 3 } },
+        { "nivel": 3, "nome": "Salão Real", "descricao": "Muralhas inteiras, telhados novos e um salão onde o herdeiro recebe o povo.",
+          "requer": "era:2", "requer_texto": "Precisa do Reino Renascido (a terceira era).",
+          "custo": { "madeira": 120, "pedra": 250, "ouro": 250, "cristal": 8 }, "efeitos": { "seguranca": 6, "felicidade": 6, "ouro_dia": 4 } },
+        { "nivel": 4, "nome": "Castelo Real", "descricao": "Pedra branca, torres com cúpulas azuis e bandeiras em todas elas. Valdren tem um rei de novo.",
+          "requer": "era:3", "requer_texto": "Precisa da Alta Fantasia (a última era).",
+          "custo": { "madeira": 200, "pedra": 400, "ouro": 500, "cristal": 20 }, "efeitos": { "seguranca": 10, "felicidade": 10, "ouro_dia": 10 } }
+      ]
+    },
+    {
       "_monumento": "Fase 9: monumentos registram a história real da campanha (E na frente para ler). 'requer' = marco que libera a obra.",
       "id": "memorial", "aparencia": "memorial", "tamanho": [2, 2], "construivel": true, "limite": 1, "monumento": true,
       "requer": "casa_reconstruida", "requer_texto": "Reconstrua a sua casa primeiro.",

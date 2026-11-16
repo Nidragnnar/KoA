@@ -8,7 +8,7 @@ add_library(KingdomGame STATIC
     Kingdom/Conselho.cpp
     Kingdom/Defesa.cpp
     Kingdom/Guilda.cpp
-    Kingdom/Cotidiano.cpp
+    Kingdom/Cotidiano.cpp Kingdom/Castelo.cpp
     NPC/Npc.cpp
     Economy/Economia.cpp
     Combat/Combate.cpp
@@ -28,6 +28,7 @@ add_executable(KingdomOfAshes WIN32
     Scenes/TitleScene.cpp
     Scenes/WorldScene.cpp
     Render/WorldRenderer.cpp
+    UI/Brasao.cpp
     UI/Hud.cpp
     UI/Menus.cpp
     Demo/Roteiro.cpp

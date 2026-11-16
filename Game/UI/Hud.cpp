@@ -5,6 +5,7 @@
 #include <format>
 
 #include "Game/App/Contexto.h"
+#include "Game/UI/Brasao.h"
 
 namespace koa {
 
@@ -162,9 +163,10 @@ void Hud::painelConstrucao(ke::Renderer2D& r, const World& w, const std::string&
             for (const auto& l : quebrarLinhas(f_, linha, larguraTexto)) descAtual.push_back(l);
     }
     const auto descProx = quebrarLinhas(f_, m.proximo ? m.proximo->descricao : "", larguraTexto);
+    const std::string falta = w.requisitoProximoNivel(*b);  // fase 16: nível que espera uma era
     // A altura do painel acompanha o texto
     const float alt = (d->monumento ? 56.0f : 70.0f) + (descAtual.size() + descProx.size()) * 11.0f +
-                      (m.proximo ? m.custo.size() * 12.0f + 26.0f : 14.0f) + opcoes.size() * 13.0f;
+                      (m.proximo ? m.custo.size() * 12.0f + 26.0f : 14.0f) + opcoes.size() * 13.0f + (falta.empty() ? 0.0f : 13.0f);
     const glm::vec2 s{328, alt}, p{320 - s.x / 2, std::floor(180 - alt / 2)};
     desenharPainel(r, p, s);
     painelClicavel(p, s);
@@ -181,12 +183,12 @@ void Hud::painelConstrucao(ke::Renderer2D& r, const World& w, const std::string&
         for (size_t i = 0; i < opcoes.size(); ++i) {
             const bool s1 = static_cast<int>(i) == sel;
             const float yy = y0 + i * 13.0f + 6.0f;
-            const bool indisponivel = opcoes[i] == "Reconstruir" && !m.possivel;
+            const bool indisponivel = opcoes[i] == "Reconstruir" && (!m.possivel || !falta.empty());
             if (s1) r.retangulo({p.x + 90, yy - 6}, {s.x - 180, 12}, {0.45f, 0.36f, 0.22f, 0.45f});
             cliques.area({p.x + 40, yy - 6}, {s.x - 80, 13}, static_cast<int>(i));
             const float brilho = s1 ? 0.85f + 0.15f * std::sin(tempo * 4.0f) : 1.0f;
             glm::vec4 c = indisponivel ? cor::apagado : s1 ? cor::ouro * glm::vec4(brilho, brilho, brilho, 1) : cor::texto;
-            f_.desenharCentralizado(r, indisponivel ? opcoes[i] + " (faltam recursos)" : opcoes[i], {320, yy}, c);
+            f_.desenharCentralizado(r, indisponivel ? opcoes[i] + (falta.empty() ? " (faltam recursos)" : " (ainda não)") : opcoes[i], {320, yy}, c);
         }
     };
     if (!m.proximo) {
@@ -197,6 +199,7 @@ void Hud::painelConstrucao(ke::Renderer2D& r, const World& w, const std::string&
     f_.desenharCentralizado(r, "Próximo: " + m.proximo->nome, {320, y}, cor::texto);
     y += 12;
     for (const auto& l : descProx) f_.desenharCentralizado(r, l, {320, y}, cor::apagado), y += 11;
+    if (!falta.empty()) f_.desenharCentralizado(r, falta, {320, y + 2}, cor::ruim), y += 13;
     y += 8;
     std::vector<std::string> ids;
     for (const char* recurso : ORDEM_RECURSOS)
@@ -286,10 +289,13 @@ void Hud::dicaColocacao(ke::Renderer2D& r, const std::string& nome, bool valido,
 void Hud::painelReino(ke::Renderer2D& r, const World& w) {
     r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.45f});
     const ResumoReino rr = w.resumo();
-    const glm::vec2 p{140, 36}, s{360, 288};
+    const glm::vec2 p{120, 36}, s{400, 288};  // largo o bastante para os dois escudos não tocarem no subtítulo
     desenharPainel(r, p, s);
     painelClicavel(p, s);
     f_.desenharCentralizado(r, "Reino de Valdren", {320, p.y + 12}, cor::ouro);
+    // Fase 16: o brasão da linhagem nos dois cantos de cima
+    desenharEscudo(r, rec_, w.dadosCastelo(), w.brasao, {p.x + 8, p.y + 6});
+    desenharEscudo(r, rec_, w.dadosCastelo(), w.brasao, {p.x + s.x - 30, p.y + 6});
     f_.desenharCentralizado(r, std::string(nomeEra(w.reino.eraAtual())) + "  -  " + w.titulo().nome, {320, p.y + 24}, cor::apagado);
     float y = p.y + 42;
     const float xR = p.x + 16, xV = p.x + 150;
@@ -1154,6 +1160,97 @@ void Hud::painelCozinha(ke::Renderer2D& r, const World& w, int sel, float tempo)
     f_.desenharCentralizado(r, d.descricao, {320, p.y + s.y - 14}, cor::apagado);
     f_.desenharCentralizado(r, "W/S ou mouse escolher   E ou clique cozinhar   Esc fechar", {320, p.y + s.y + 10}, cor::texto);
     rodapeFechar("Esc fechar", {320 + f_.largura("W/S ou mouse escolher   E ou clique cozinhar   ") / 2.0f, p.y + s.y + 10});
+}
+
+// ---------- Fase 16: o castelo e o brasão ----------
+
+void Hud::painelAlas(ke::Renderer2D& r, const World& w, int sel, float tempo) {
+    const auto& alas = dados_.castelo.alas;
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.45f});
+    const float alt = 70.0f + alas.size() * 30.0f;
+    const glm::vec2 p{70, std::floor(180 - alt / 2)}, s{500, alt};
+    desenharPainel(r, p, s);
+    painelClicavel(p, s);
+    const int vagas = w.vagasAlas(), usadas = static_cast<int>(w.alas.size());
+    f_.desenharCentralizado(r, "Alas do Castelo", {320, p.y + 12}, cor::ouro);
+    f_.desenharCentralizado(r, vagas == 0 ? "Reconstrua a Torre de Menagem para abrir a primeira vaga."
+                                          : std::format("{} de {} vagas usadas (cada nível do castelo abre mais uma)", usadas, vagas),
+                            {320, p.y + 24}, vagas > usadas ? cor::bom : cor::apagado);
+    for (size_t i = 0; i < alas.size(); ++i) {
+        const AlaDef& a = alas[i];
+        const float y = p.y + 40 + i * 30.0f;
+        const bool s1 = static_cast<int>(i) == sel;
+        const bool erguida = std::ranges::find(w.alas, a.id) != w.alas.end();
+        if (s1) r.retangulo({p.x + 8, y - 3}, {s.x - 16, 29}, {0.45f, 0.36f, 0.22f, 0.45f});
+        cliques.area({p.x + 8, y - 3}, {s.x - 16, 29}, static_cast<int>(i));
+        f_.desenhar(r, a.nome, {p.x + 14, y}, erguida ? cor::bom : s1 ? cor::ouro : cor::texto);
+        f_.desenhar(r, textoAla(a.efeitos), {p.x + 150, y}, cor::bom);
+        if (erguida) f_.desenhar(r, "erguida", {p.x + s.x - 14 - f_.largura("erguida"), y + 12}, cor::bom);
+        else custoEmLinha(r, a.custo, w.inventario, {p.x + 24, y + 12});
+    }
+    const AlaDef& d = alas[std::clamp(sel, 0, static_cast<int>(alas.size()) - 1)];
+    const float a = 0.8f + 0.2f * std::sin(tempo * 3.0f);
+    f_.desenharCentralizado(r, d.descricao, {320, p.y + s.y - 14}, cor::apagado * glm::vec4(a, a, a, 1));
+    f_.desenharCentralizado(r, "W/S ou mouse escolher   E ou clique erguer   Esc fechar", {320, p.y + s.y + 10}, cor::texto);
+    rodapeFechar("Esc fechar", {320 + f_.largura("W/S ou mouse escolher   E ou clique erguer   ") / 2.0f, p.y + s.y + 10});
+}
+
+void Hud::editorBrasao(ke::Renderer2D& r, const World& w, const Brasao& b, int sel, float tempo) {
+    const DadosCastelo& dc = dados_.castelo;
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.55f});
+    const glm::vec2 p{50, 26}, s{540, 300};
+    desenharPainel(r, p, s);
+    painelClicavel(p, s);
+    f_.desenharCentralizado(r, "Brasão da Casa de Valdren", {320, p.y + 12}, cor::ouro, true, 1);
+    static const char* rotulos[LINHAS_BRASAO] = {"Forma", "Divisão", "Cor do campo", "Segunda cor", "Símbolo", "Cor do símbolo", "Lema"};
+    const std::string valores[LINHAS_BRASAO] = {dc.nomePeca(0, b.forma),   dc.nomePeca(1, b.divisao), dc.nomePeca(2, b.cor1),
+                                                dc.nomePeca(3, b.cor2),    dc.nomePeca(4, b.simbolo), dc.nomePeca(5, b.corSimbolo),
+                                                std::format("{} de {}", b.lema + 1, dc.lemas.size())};
+    const std::string* cores[LINHAS_BRASAO] = {nullptr, nullptr, &b.cor1, &b.cor2, nullptr, &b.corSimbolo, nullptr};
+    const float xR = p.x + 18, xV = p.x + 142;
+    for (int i = 0; i < LINHAS_BRASAO; ++i) {
+        const float y = p.y + 44 + i * 26.0f;
+        const bool s1 = i == sel;
+        if (s1) r.retangulo({p.x + 10, y - 6}, {286, 22}, {0.45f, 0.36f, 0.22f, 0.45f});
+        cliques.area({p.x + 10, y - 6}, {286, 22}, i);
+        f_.desenhar(r, rotulos[i], {xR, y}, s1 ? cor::ouro : cor::apagado);
+        // < valor >, com as setas clicáveis
+        f_.desenhar(r, "<", {xV, y}, cor::ouro);
+        cliques.area({xV - 5, y - 5}, {16, 18}, 700 + i);
+        float xv = xV + 14;
+        if (cores[i]) {
+            r.retangulo({xv, y - 1}, {10, 10}, corTintura(dc, *cores[i]));
+            r.contorno({xv, y - 1}, {10, 10}, cor::borda);
+            xv += 14;
+        }
+        f_.desenhar(r, valores[i], {xv, y}, cor::texto);
+        f_.desenhar(r, ">", {xV + 140, y}, cor::ouro);
+        cliques.area({xV + 135, y - 5}, {16, 18}, 720 + i);
+    }
+    // Prévia grande do escudo, a descrição dos arautos e o lema
+    const float esc = 5.0f;
+    const glm::vec2 pe{p.x + 410 - TAMANHO_ESCUDO.x * esc / 2, p.y + 34};
+    desenharEscudo(r, rec_, dc, b, pe, esc);
+    float y = pe.y + TAMANHO_ESCUDO.y * esc + 10;
+    for (const auto& l : quebrarLinhas(f_, textoBrasao(dc, b) + ".", 210)) f_.desenharCentralizado(r, l, {p.x + 410, y}, cor::texto), y += 11;
+    if (b.lema >= 0 && b.lema < static_cast<int>(dc.lemas.size()))
+        for (const auto& l : quebrarLinhas(f_, "\"" + dc.lemas[b.lema] + "\"", 210)) f_.desenharCentralizado(r, l, {p.x + 410, y + 4}, cor::ouro), y += 11;
+    // Os estandartes da praça mostram como fica no pano
+    desenharPano(r, rec_, dc, b, {p.x + 30, p.y + 236}, 2.0f);
+    f_.desenhar(r, "Nos estandartes do reino", {p.x + 66, p.y + 250}, cor::apagado);
+    f_.desenhar(r, "e nas bandeiras do castelo", {p.x + 66, p.y + 262}, cor::apagado);
+    // Botões
+    const glm::vec2 bs{p.x + 170, p.y + s.y - 26};
+    const float pulso = 0.85f + 0.15f * std::sin(tempo * 4.0f);
+    r.retangulo(bs, {90, 16}, {0.25f, 0.4f, 0.22f, 0.85f * pulso});
+    cliques.area(bs, {90, 16}, 800);
+    f_.desenharCentralizado(r, "Salvar (E)", bs + glm::vec2(45, 8), cor::texto);
+    const glm::vec2 bc{p.x + 280, p.y + s.y - 26};
+    r.retangulo(bc, {90, 16}, {0.3f, 0.15f, 0.12f, 0.85f});
+    cliques.area(bc, {90, 16}, Cliques::FECHAR);
+    f_.desenharCentralizado(r, "Cancelar (Esc)", bc + glm::vec2(45, 8), cor::texto);
+    f_.desenharCentralizado(r, w.brasaoCriado ? "W/S linha   A/D ou setas trocar" : "W/S linha   A/D ou setas trocar   (o brasão ainda é o dos reis antigos)",
+                            {320, p.y + s.y + 10}, cor::texto);
 }
 
 }

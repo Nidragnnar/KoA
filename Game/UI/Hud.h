@@ -55,6 +55,10 @@ public:
     std::vector<std::string> aventureirosRecrutados(const World& w) const;  // na ordem dos dados
     // Fase 15: o fogão (receitas na ordem dos dados; o botão "Comer" usa o id 500)
     void painelCozinha(ke::Renderer2D& r, const World& w, int sel, float tempo);
+    // Fase 16: alas do castelo (lista na ordem dos dados) e o editor do brasão (linhas 0..6; setas nos ids 700+linha e 720+linha,
+    // "Salvar" no id 800)
+    void painelAlas(ke::Renderer2D& r, const World& w, int sel, float tempo);
+    void editorBrasao(ke::Renderer2D& r, const World& w, const Brasao& rascunho, int sel, float tempo);
 
     // Onde cada opção dos painéis apareceu no último quadro (a cena limpa antes de desenhar)
     Cliques cliques;

@@ -2018,6 +2018,257 @@ void fase15(Lista& l) {
         l.emplace_back(std::format("icone_{}", id), iconeItem(id));
 }
 
+// ---------- Fase 16: o castelo e o brasão ----------
+
+// O castelo reconstruído: 2 = Torre de Menagem (torre esquerda e portão de pé), 3 = Salão Real (tudo inteiro,
+// telhados vermelhos), 4 = Castelo Real (pedra branca, cúpulas azuis e a torre do meio). O castelo fica no alto do
+// mapa: a imagem não passa de 112 px (o que subisse além sairia da tela). As bandeiras são penduradas nas muralhas
+// pelo WorldRenderer (bandeirasCastelo), com as cores do brasão
+Img castelo(int n) {
+    if (n <= 1) return casteloRuina();
+    const int oy = 0;
+    std::mt19937 r(2000 + n);
+    Img t(160, 112 + oy);
+    const bool branca = n >= 4;
+    const Cor pedra = branca ? hex("#cfc9be") : hex("#67635c"), clara = branca ? hex("#ebe6dc") : hex("#7d7970"),
+              escura = branca ? hex("#a59e92") : hex("#47433f"), ouro = hex("#d8b048");
+    auto blocos = [&](int x, int y, int w, int h) {
+        y += oy;
+        t.rect(x, y, w, h, pedra);
+        for (int j = y; j < y + h; j += 5) {
+            t.rect(x, j, w, 1, escura);
+            for (int i = x + ((j / 5) % 2) * 4; i < x + w; i += 8) t.rect(i, j, 1, 5, escura);
+        }
+        t.rect(x, y, w, 2, clara);
+    };
+    // Telhado cônico com a ponta em (cx, topo) e a base em (cx ± meia, base)
+    auto telhado = [&](int cx, int topo, int base, int meia, Cor c) {
+        for (int y = topo; y <= base; ++y) {
+            const int m = (y - topo) * meia / std::max(1, base - topo);
+            t.rect(cx - m, y, 2 * m + 1, 1, (y - topo) % 3 == 2 ? clarear(c, -0.18f) : c);
+            t.px(cx - m, y, clarear(c, 0.2f));
+        }
+        if (branca) t.px(cx, topo, ouro), t.px(cx, topo + 1, ouro);
+    };
+    // Muralha de fundo, agora inteira, com ameias
+    blocos(16, 34, 128, 60);
+    for (int x = 16; x < 144; x += 8) blocos(x, 28, 5, 6);
+    // Torre esquerda (a de menagem) sempre de pé; com telhado, sem ameias
+    blocos(2, 12, 30, 84);
+    if (n < 3)
+        for (int x = 2; x < 32; x += 7) blocos(x, 6, 4, 6);
+    // Torre direita: ainda desabada na Torre de Menagem
+    if (n >= 3) {
+        blocos(128, 12, 30, 84);
+    } else {
+        blocos(130, 30, 28, 66);
+        for (int k = 0; k < 18; ++k) t.px(130 + k * 3 / 2, 30 + oy - (k % 4), TRANSP);
+    }
+    // Castelo Real: a torre do meio, sobre o portão
+    if (n >= 4) blocos(64, 14, 32, 22);
+    // Telhados (da ponta, no alto da imagem, até o topo das torres)
+    if (n >= 3) {
+        const Cor tel = branca ? hex("#3a5aa8") : hex("#8a3a2a");
+        telhado(17, 0, 12, 17, tel);
+        telhado(143, 0, 12, 17, tel);
+        if (n >= 4) telhado(80, 2, 14, 18, tel);
+    }
+    // Janelas: escuras na torre, acesas e com caixilho do Salão Real em diante
+    const Cor vidro = n >= 3 ? hex("#e8b860") : hex("#110d0c");
+    std::vector<std::pair<int, int>> janelas{{12, 30}, {12, 56}, {50, 50}, {104, 50}};
+    if (n >= 3) janelas.push_back({140, 50});
+    for (const auto& [x, y] : janelas) {
+        t.rect(x, y + oy, 6, 10, vidro);
+        t.elipse(x + 3, y + oy, 3, 2, vidro);
+        if (n >= 3) t.rect(x + 2, y + oy - 1, 1, 11, escura), t.rect(x, y + oy + 4, 6, 1, escura);
+    }
+    // Portão: tábuas novas, grade de ferro no Salão Real, porta azul com arco dourado no Castelo Real
+    t.elipse(80, 60 + oy, 14, 9, escura);
+    t.rect(66, 60 + oy, 28, 36, escura);
+    const Cor porta = branca ? hex("#2e4a8a") : hex("#5a4030");
+    t.rect(68, 62 + oy, 24, 34, porta);
+    t.elipse(80, 62 + oy, 12, 7, porta);
+    for (int x = 71; x < 92; x += 4) t.rect(x, 58 + oy, 1, 38, clarear(porta, -0.25f));
+    t.rect(79, 58 + oy, 2, 38, clarear(porta, -0.35f));
+    if (n == 3) for (int y = 64; y < 94; y += 6) t.rect(68, y + oy, 24, 1, hex("#3a3a42"));
+    if (branca) {
+        t.rect(66, 58 + oy, 28, 1, ouro);
+        t.px(76, 78 + oy, ouro), t.px(83, 78 + oy, ouro);
+        for (int x = 16; x < 144; x += 8) t.px(x + 2, 28 + oy, ouro);  // pontas douradas nas ameias
+    }
+    // O que sobrou da ruína: musgo e entulho só na Torre de Menagem
+    if (n == 2) {
+        t.salpicar(r, 70, hex("#4a5440"), 0, 30 + oy, 159, 95 + oy);
+        for (int k = 0; k < 6; ++k) {
+            std::uniform_int_distribution<int> px(110, 155), py(98, 108);
+            t.elipse(px(r), py(r) + oy, 3, 2, k % 2 ? pedra : clara);
+        }
+    } else {
+        t.salpicar(r, 40, clarear(pedra, -0.08f), 0, 30 + oy, 159, 95 + oy);
+    }
+    // Degraus de entrada
+    t.rect(62, 96 + oy, 36, 3, clara);
+    t.rect(58, 99 + oy, 44, 3, pedra);
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Formas do escudo numa grade de 20×24 (desenhada com 1 px de margem, em 22×26)
+bool dentroEscudo(const std::string& forma, int x, int y) {
+    const float cx = 9.5f, dx = std::abs(x - cx);
+    if (forma == "redondo") return y < 12 || (x - cx) * (x - cx) + (y - 12.0f) * (y - 12.0f) <= 10.2f * 10.2f;
+    if (forma == "pontudo") {
+        if (y < 5) return (x - cx) * (x - cx) + (y - 5.0f) * (y - 5.0f) * 4.0f <= 10.5f * 10.5f;
+        return dx <= 10.0f * (1.0f - (y - 5) / 19.5f) + 0.5f;
+    }
+    if (forma == "quadrado") return y < 19 || dx <= 10.0f - (y - 18) * 1.6f;
+    // Clássico: reto em cima e lados que se curvam até a ponta
+    if (y < 11) return true;
+    const float k = (y - 10) / 13.5f;
+    return dx <= 10.0f * std::sqrt(std::max(0.0f, 1.0f - k * k)) + 0.4f;
+}
+
+// Em que parte do campo cai o pixel (false = cor 1, true = cor 2)
+bool segundaCor(const std::string& div, int x, int y, int w, int h) {
+    if (div == "partido") return x >= w / 2;
+    if (div == "cortado") return y >= h / 2;
+    if (div == "esquartelado") return (x >= w / 2) != (y >= h / 2);
+    if (div == "banda") return std::abs(x - y * static_cast<float>(w) / h) <= w / 6.0f;
+    if (div == "chefe") return y < h * 3 / 10;
+    return false;
+}
+
+Img mascaraEscudo(const std::string& forma, const std::string& div, bool b) {
+    Img t(22, 26);
+    for (int y = 0; y < 24; ++y)
+        for (int x = 0; x < 20; ++x)
+            if (dentroEscudo(forma, x, y) && segundaCor(div, x, y, 20, 24) == b) t.px(x + 1, y + 1, hex("#ffffff"));
+    return t;
+}
+
+// Contorno escuro, luz no alto à esquerda e sombra embaixo à direita (por cima das cores)
+Img bordaEscudo(const std::string& forma) {
+    Img t(22, 26);
+    auto dentro = [&](int x, int y) { return x >= 0 && y >= 0 && x < 20 && y < 24 && dentroEscudo(forma, x, y); };
+    for (int y = -1; y <= 24; ++y)
+        for (int x = -1; x <= 20; ++x) {
+            if (!dentro(x, y)) {
+                if (dentro(x - 1, y) || dentro(x + 1, y) || dentro(x, y - 1) || dentro(x, y + 1)) t.px(x + 1, y + 1, CONTORNO);
+                continue;
+            }
+            if (!dentro(x - 1, y) || !dentro(x, y - 1)) t.px(x + 1, y + 1, hex("#ffffff", 70));
+            else if (!dentro(x + 1, y) || !dentro(x, y + 1)) t.px(x + 1, y + 1, hex("#000000", 80));
+        }
+    return t;
+}
+
+// Pano de estandarte 14×22: retângulo com rabo de andorinha embaixo
+bool dentroPano(int x, int y) { return y < 18 || std::abs(x - 6.5f) >= (y - 17) * 1.6f + 0.5f; }
+
+Img mascaraPano(const std::string& div, bool b) {
+    Img t(14, 22);
+    for (int y = 0; y < 22; ++y)
+        for (int x = 0; x < 14; ++x)
+            if (dentroPano(x, y) && segundaCor(div, x, y, 14, 22) == b) t.px(x, y, hex("#ffffff"));
+    return t;
+}
+
+Img bordaPano() {
+    Img t(14, 22);
+    for (int y = 0; y < 22; ++y)
+        for (int x = 0; x < 14; ++x) {
+            if (!dentroPano(x, y)) continue;
+            const bool beira = x == 0 || x == 13 || y == 0 || !dentroPano(x, y + 1) || !dentroPano(x - 1, y) || !dentroPano(x + 1, y);
+            if (beira) t.px(x, y, CONTORNO);
+            else if (y == 1) t.px(x, y, hex("#ffffff", 60));
+            else if (x % 4 == 2 && y > 3) t.px(x, y, hex("#000000", 35));  // dobras do tecido
+        }
+    return t;
+}
+
+// Mastro com a trave de onde o pano pende e a ponta dourada (o pano é desenhado à parte, tingido)
+Img mastro() {
+    Img t(18, 38);
+    t.rect(1, 2, 1, 36, hex("#4a3a2a"));
+    t.rect(1, 3, 16, 1, hex("#5a4632"));
+    t.px(1, 1, hex("#d8b048"));
+    t.px(16, 2, hex("#d8b048"));
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Símbolos 11×11 em branco (tingidos com a cor do símbolo)
+Img simbolo(const std::string& id) {
+    Img t(11, 11);
+    const Cor b = hex("#ffffff");
+    if (id == "coroa") {
+        t.rect(1, 7, 9, 3, b);
+        for (const int x : {1, 5, 9}) t.rect(x, 3, 1, 4, b), t.px(x, 2, b);
+        t.rect(2, 5, 2, 2, b), t.rect(7, 5, 2, 2, b);
+    } else if (id == "leao") {
+        t.rect(3, 4, 5, 4, b);           // corpo de pé
+        t.rect(4, 1, 4, 3, b);           // cabeça e juba
+        t.px(8, 2, b);                   // focinho
+        t.rect(2, 1, 2, 3, b);           // juba atrás
+        t.rect(7, 4, 2, 1, b), t.px(9, 3, b);  // pata erguida
+        t.rect(3, 8, 1, 3, b), t.rect(6, 8, 1, 3, b);  // pernas
+        t.linha(2, 7, 0, 4, b), t.px(0, 3, b);         // rabo
+    } else if (id == "dragao") {
+        t.rect(3, 5, 5, 3, b);            // corpo
+        t.rect(7, 3, 2, 3, b), t.rect(8, 2, 3, 2, b);  // pescoço e cabeça
+        t.linha(3, 5, 0, 1, b), t.linha(4, 5, 2, 1, b), t.rect(0, 1, 3, 1, b);  // asa
+        t.linha(3, 7, 0, 9, b), t.px(0, 10, b);         // cauda
+        t.px(4, 8, b), t.px(7, 8, b), t.px(4, 9, b), t.px(7, 9, b);  // patas
+    } else if (id == "chama") {
+        // Língua do meio, duas menores dos lados e a base larga
+        static const int linhas[11][2] = {{5, 5}, {4, 5}, {4, 6}, {3, 6}, {2, 7}, {2, 8}, {1, 8}, {1, 9}, {1, 9}, {2, 8}, {3, 7}};
+        for (int y = 0; y < 11; ++y) t.rect(linhas[y][0], y, linhas[y][1] - linhas[y][0] + 1, 1, b);
+        t.px(1, 3, b), t.px(1, 4, b), t.px(9, 2, b), t.px(9, 3, b), t.px(8, 4, b);
+        t.px(5, 7, TRANSP), t.px(4, 8, TRANSP), t.px(5, 8, TRANSP), t.px(6, 8, TRANSP);  // o miolo vazado
+    } else if (id == "arvore") {
+        t.elipse(5, 4, 4, 4, b);
+        t.rect(4, 7, 3, 4, b);
+        t.rect(2, 10, 7, 1, b);
+    } else if (id == "espada") {
+        t.rect(5, 0, 1, 7, b);
+        t.rect(2, 7, 7, 1, b);   // guarda
+        t.rect(5, 8, 1, 2, b);   // punho
+        t.px(5, 10, b), t.px(4, 10, b), t.px(6, 10, b);
+        t.rect(4, 1, 3, 5, b);   // lâmina larga
+    } else if (id == "torre") {
+        t.rect(2, 3, 7, 8, b);
+        for (const int x : {1, 4, 7}) t.rect(x, 1, 2, 2, b);
+        t.rect(1, 3, 9, 1, b);
+        t.rect(4, 7, 3, 4, TRANSP);  // porta
+        t.px(5, 5, TRANSP);           // seteira
+    } else {  // lua crescente
+        t.elipse(5, 5, 5, 5, b);
+        for (int y = 0; y < 11; ++y)
+            for (int x = 0; x < 11; ++x)
+                if ((x - 7.5f) * (x - 7.5f) + (y - 4.0f) * (y - 4.0f) <= 4.2f * 4.2f) t.px(x, y, TRANSP);
+    }
+    return t;
+}
+
+void fase16(Lista& l) {
+    for (int n = 1; n <= 4; ++n) l.emplace_back(std::format("castelo_n{}", n), castelo(n));
+    const char* formas[] = {"classico", "redondo", "pontudo", "quadrado"};
+    const char* divisoes[] = {"pleno", "partido", "cortado", "esquartelado", "banda", "chefe"};
+    for (const char* f : formas) {
+        l.emplace_back(std::format("escudo_{}_borda", f), bordaEscudo(f));
+        for (const char* d : divisoes) {
+            l.emplace_back(std::format("escudo_{}_{}_a", f, d), mascaraEscudo(f, d, false));
+            l.emplace_back(std::format("escudo_{}_{}_b", f, d), mascaraEscudo(f, d, true));
+        }
+    }
+    for (const char* d : divisoes) {
+        l.emplace_back(std::format("pano_{}_a", d), mascaraPano(d, false));
+        l.emplace_back(std::format("pano_{}_b", d), mascaraPano(d, true));
+    }
+    l.emplace_back("pano_borda", bordaPano());
+    l.emplace_back("estandarte_mastro", mastro());
+    for (const char* s : {"coroa", "leao", "dragao", "chama", "arvore", "espada", "torre", "lua"}) l.emplace_back(std::format("simbolo_{}", s), simbolo(s));
+}
 std::vector<std::pair<std::string, Img>> gerarTodos() {
     Lista l;
     const char* nomes[] = {"grama", "terra", "lama", "agua", "calcada", "muro"};
@@ -2059,6 +2310,7 @@ std::vector<std::pair<std::string, Img>> gerarTodos() {
     fase11(l);
     fase13(l);
     fase15(l);
+    fase16(l);
     return l;
 }
 

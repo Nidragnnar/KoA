@@ -25,7 +25,7 @@ KingdomEra eraPorDesenvolvimento(int d) {
 int Kingdom::desenvolvimento() const {
     int d = 0;
     for (const auto& c : construcoes)
-        if (c.constructed) d += c.level - (c.defId == "muralha" ? 1 : 0);  // a muralha começa em ruínas (nível 1 não conta)
+        if (c.constructed) d += c.level - (c.defId == "muralha" || c.defId == "castelo" ? 1 : 0);  // muralha e castelo começam em ruínas (nível 1 não conta)
     return std::max(0, d - 1);
 }
 

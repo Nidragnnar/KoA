@@ -60,6 +60,10 @@ public:
     bool guildaAberta() const { return guilda_; }
     // Fase 15
     bool cozinhaAberta() const { return cozinha_; }
+    // Fase 16
+    bool alasAbertas() const { return alas_; }
+    bool brasaoAberto() const { return brasaoEd_; }
+    const Brasao& rascunhoBrasao() const { return rascunho_; }
 
 private:
     void entradaEscolha();
@@ -67,6 +71,8 @@ private:
     void entradaDecisao();
     void entradaGuilda();
     void entradaCozinha();
+    void entradaAlas();
+    void entradaBrasao();
     void darPresenteNaConversa();
     std::string propostoConselho() const;  // candidato que o herdeiro está olhando no cargo selecionado
     std::vector<std::string> opcoesObras() const;
@@ -151,6 +157,10 @@ private:
     // Fase 15: o fogão (cozinhar e comer pratos)
     bool cozinha_ = false;
     int selCozinha_ = 0;
+    // Fase 16: alas do castelo e o editor do brasão (o rascunho só vale ao salvar)
+    bool alas_ = false, brasaoEd_ = false;
+    int selAla_ = 0, selBrasao_ = 0;
+    Brasao rascunho_;
     float transicao_ = -1.0f;  // -1 = nenhuma; 0..2 = escurece, troca o dia (em 1), clareia
     bool desmaio_ = false;
     bool mostrarColisoes_ = false;

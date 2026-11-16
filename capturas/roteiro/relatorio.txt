@@ -227,4 +227,21 @@ captura: 78_relatorio_animais
 captura: 79_presente
 [OK] F dá o favorito: +1 coração para o Bram
 captura: 80_presente_dado
+[OK] o castelo começa em ruínas, como construção do reino
+[OK] E no portão do castelo abre o painel
+captura: 81_painel_castelo
+[OK] a Torre de Menagem subiu e abriu a primeira vaga de ala
+captura: 82_torre_de_menagem
+[OK] com as eras certas, o castelo chega ao Castelo Real
+captura: 83_castelo_real
+[OK] "Alas do castelo" abre a lista das alas
+[OK] ergueu 2 alas (tesouro pelo E, jardim pelo clique)
+captura: 84_alas
+[OK] Esc fecha as alas
+[OK] "Brasão da linhagem" abre o editor
+captura: 85_editor_brasao
+[OK] o brasão montado no editor foi salvo: Partido de azure e ouro, um dragão de prata
+[OK] o brasão novo vira página nas Crônicas
+captura: 86_estandartes
+captura: 87_bandeiras_castelo
 RESULTADO: 0 falha(s)
