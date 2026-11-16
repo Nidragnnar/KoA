@@ -198,4 +198,33 @@ captura: 68_volta_da_expedicao
 captura: 69_reliquias
 [OK] exposta, a Coroa de Ferro Negro revela a maldição
 captura: 70_maldicao
+[OK] E no canteiro vazio planta a semente da estação
+[OK] E de novo rega o canteiro
+captura: 71_horta
+[OK] regados todo dia, 4 de 4 canteiros prontos para colher
+captura: 72_horta_madura
+[OK] E colhe o nabo (+2) e a primeira colheita vai para as Crônicas
+[OK] há água no vilarejo para pescar
+[OK] E de frente para a água lança a linha
+captura: 73_pescando
+captura: 74_mordida
+[OK] o clique na hora da mordida pesca (1 peixe)
+[OK] E na fogueira abre o fogão
+[OK] cozinhou a sopa com os 2 nabos
+captura: 75_cozinha
+[OK] o botão comer cura (+40 de vida)
+[OK] o clique na receita do banquete cozinha
+[OK] F serve o banquete ao povo (página nas Crônicas)
+captura: 76_banquete
+[OK] Esc fecha o fogão
+[OK] galinheiro e curral começaram
+[OK] prontos, chegaram 3 galinhas e 2 vacas
+[OK] E perto da galinha faz carinho
+captura: 77_animais
+[OK] de manhã: +4 ovos (um a mais pelo carinho) e leite
+captura: 78_relatorio_animais
+[OK] a conversa oferece o presente (F dar Ensopado)
+captura: 79_presente
+[OK] F dá o favorito: +1 coração para o Bram
+captura: 80_presente_dado
 RESULTADO: 0 falha(s)

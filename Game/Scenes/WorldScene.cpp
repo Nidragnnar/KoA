@@ -62,7 +62,7 @@ std::vector<std::string> WorldScene::opcoesPainel() const {
     const BuildingData* b = mundo_.reino.construcao(painel_);
     const BuildingDef* d = b ? mundo_.def(*b) : nullptr;
     if (d && d->nivel(b->level + 1)) o.push_back("Reconstruir");
-    if (painel_ == "casa_herdeiro") o.push_back("Dormir até amanhã");
+    if (painel_ == "casa_herdeiro") o.push_back("Dormir até amanhã"), o.push_back("Cozinhar");
     if (b && b->defId == "forja" && b->constructed) o.push_back("Forjar equipamento");
     if (b && b->defId == "guilda" && b->constructed) o.push_back("Abrir a guilda");
     if (b && b->defId == "muralha") {
@@ -154,7 +154,9 @@ void WorldScene::entradaJogo() {
     e.interagirSegurando = in.segurando(SDL_SCANCODE_E) || in.segurando(SDL_SCANCODE_SPACE);
     e.atacar = in.pressionou(SDL_SCANCODE_J);
     // Clique esquerdo: ataca virado para o cursor (o J ataca para onde o herói já olha)
-    if (in.clicou(ke::BotaoMouse::Esquerdo)) {
+    if (in.clicou(ke::BotaoMouse::Esquerdo) && mundo_.pescando()) {
+        e.interagir = true;  // pescando, o clique puxa a linha
+    } else if (in.clicou(ke::BotaoMouse::Esquerdo)) {
         e.atacar = true;
         if (mundo_.jogador.acao <= 0.0f) {
             const glm::vec2 d = cam_.canto() + in.mouse() - (mundo_.jogador.pos - glm::vec2(0, 10));
@@ -459,6 +461,10 @@ void WorldScene::entradaPainel() {
             painel_.clear();
             forja_ = true;
             selForja_ = 0;
+        } else if (o == "Cozinhar") {
+            painel_.clear();
+            cozinha_ = true;
+            selCozinha_ = 0;
         } else if (o == "Abrir a guilda") {
             painel_.clear();
             guilda_ = true;
@@ -507,6 +513,13 @@ void WorldScene::entradaDialogo(float dt) {
     ke::Input& in = ctx_.app.input();
     const int tamanho = Hud::tamanhoUtf8(conversa_->falas[linhaFala_]);
     letras_ = std::min(static_cast<float>(tamanho), letras_ + dt * LETRAS_POR_SEGUNDO);
+    // Fase 15: F (ou clique na dica) dá o presente sem encerrar a conversa
+    if (!conversa_->presente.empty() &&
+        (in.pressionou(SDL_SCANCODE_F) || (in.clicou(ke::BotaoMouse::Esquerdo) && hud_.cliques.em(in.mouse()) == 600))) {
+        darPresenteNaConversa();
+        mundo_.passo(dt, {});
+        return;
+    }
     if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_SPACE) || in.pressionou(SDL_SCANCODE_RETURN) ||
         in.pressionou(SDL_SCANCODE_ESCAPE) || in.clicou(ke::BotaoMouse::Esquerdo)) {
         if (letras_ < tamanho && !in.pressionou(SDL_SCANCODE_ESCAPE)) {
@@ -524,6 +537,32 @@ void WorldScene::entradaDialogo(float dt) {
         }
     }
     mundo_.passo(dt, {});
+}
+
+void WorldScene::darPresenteNaConversa() {
+    if (!mundo_.darPresente(conversa_->npc)) return;
+    conversa_->coracoes = mundo_.coracoesDe(conversa_->npc);
+    conversa_->presente.clear();  // um presente por dia
+}
+
+void WorldScene::entradaCozinha() {
+    ke::Input& in = ctx_.app.input();
+    const auto& receitas = ctx_.dados.cotidiano.receitas;
+    const int n = static_cast<int>(receitas.size());
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_Q) || cliqueFecha(in, hud_.cliques)) {
+        cozinha_ = false;
+        return;
+    }
+    // Botão "comer" (id 500) antes da lista, para o clique nele não cozinhar
+    if (in.pressionou(SDL_SCANCODE_F) || (in.clicou(ke::BotaoMouse::Esquerdo) && hud_.cliques.em(in.mouse()) == 500)) {
+        mundo_.comerPrato(receitas[selCozinha_].id);
+        return;
+    }
+    if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selCozinha_ = (selCozinha_ + n - 1) % n;
+    if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selCozinha_ = (selCozinha_ + 1) % n;
+    const bool clique = listaComMouse(in, hud_.cliques, selCozinha_, n);
+    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique)
+        mundo_.cozinhar(receitas[selCozinha_].id);
 }
 
 void WorldScene::iniciarSono(bool desmaio) {
@@ -687,7 +726,37 @@ void WorldScene::tratarEventos() {
             ke::log::info("missão concluída: {}", e.alvo);
             break;
         case EventoJogo::Tipo::Comeu:
-            textoFlutuante(e.pos - glm::vec2(0, 26), std::format("+{} vida", e.quantidade), cor::bom);
+            if (e.quantidade > 0) textoFlutuante(e.pos - glm::vec2(0, 26), std::format("+{} vida", e.quantidade), cor::bom);
+            som.tocar(ke::Som::Coleta);
+            break;
+        // ---------- Fase 15: vida cotidiana ----------
+        case EventoJogo::Tipo::AbrirCozinha:
+            cozinha_ = true;
+            selCozinha_ = 0;
+            som.tocar(ke::Som::Menu);
+            break;
+        case EventoJogo::Tipo::Mordida:
+            if (e.alvo == "mordeu") {
+                textoFlutuante(e.pos - glm::vec2(0, 12), "!", cor::ouro);
+                hud_.aviso(e.texto, cor::ouro);
+                som.tocar(ke::Som::Acerto);
+                poeira(e.pos, {3, 1}, 8, {0.7f, 0.85f, 1.0f, 1});  // respingo
+            } else {
+                hud_.aviso(e.texto, cor::texto);
+                poeira(e.pos, {2, 1}, 5, {0.7f, 0.85f, 1.0f, 1});
+            }
+            break;
+        case EventoJogo::Tipo::Presente:
+            hud_.aviso(e.texto, e.quantidade > 0 ? cor::ouro : cor::bom);
+            textoFlutuante(mundo_.jogador.pos - glm::vec2(0, 30), e.quantidade > 0 ? "++ amizade" : "+ amizade", cor::bom);
+            som.tocar(ke::Som::Magia);
+            ke::log::info("presente: {} para {}{}", e.recurso, e.alvo, e.quantidade > 0 ? " (favorito)" : "");
+            break;
+        case EventoJogo::Tipo::Carinho:
+            if (e.recurso == "regou") poeira(e.pos - glm::vec2(0, 4), {6, 2}, 14, {0.45f, 0.65f, 0.95f, 1});
+            else if (e.recurso == "plantou") poeira(e.pos - glm::vec2(0, 2), {5, 2}, 12, {0.42f, 0.3f, 0.2f, 1});
+            else textoFlutuante(e.pos, "+ carinho", cor::bom), poeira(e.pos, {4, 3}, 10, {1.0f, 0.55f, 0.65f, 1});
+            som.tocar(e.recurso == "carinho" ? ke::Som::Menu : ke::Som::Coleta);
             break;
         case EventoJogo::Tipo::EraMudou:
             nomeEra_ = e.texto;
@@ -1004,7 +1073,7 @@ void WorldScene::atualizar(double dtD) {
     // O relógio para em menus, painéis, conversas e no sono
     mundo_.relogio.parado = pausa_ || !painel_.empty() || conversa_.has_value() || transicao_ >= 0.0f || menuObras_ || painelReino_ ||
                             relatorio_ || diario_ || forja_ || cronicas_ || !leitura_.empty() || !loja_.empty() || painelRegioes_ ||
-                            !escolha_.empty() || painelConselho_ || decisao_ || guilda_;
+                            !escolha_.empty() || painelConselho_ || decisao_ || guilda_ || cozinha_;
     feridoFlash_ = std::max(0.0f, feridoFlash_ - dt);
     tituloRegiao_ = std::max(0.0f, tituloRegiao_ - dt);
     tituloEra_ = std::max(0.0f, tituloEra_ - dt);
@@ -1044,6 +1113,7 @@ void WorldScene::atualizar(double dtD) {
     else if (decisao_) entradaDecisao();
     else if (painelConselho_) entradaConselho();
     else if (guilda_) entradaGuilda();
+    else if (cozinha_) entradaCozinha();
     else if (painelRegioes_) {
         ke::Input& in = ctx_.app.input();
         if (in.pressionou(SDL_SCANCODE_R) || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques))
@@ -1114,7 +1184,7 @@ void WorldScene::renderizar(float) {
     r.definirMistura(ke::Mistura::Normal);
     if (painel_.empty() && !pausa_ && !conversa_ && transicao_ < 0.0f && colocando_.empty() && !menuObras_ && !painelReino_ &&
         !relatorio_ && !diario_ && !forja_ && !cronicas_ && leitura_.empty() && loja_.empty() && !painelRegioes_ && escolha_.empty() &&
-        !painelConselho_ && !decisao_ && !guilda_)
+        !painelConselho_ && !decisao_ && !guilda_ && !cozinha_)
         rend_.desenharAlvo(r, f, mundo_, tempo_);
     std::string motivoObra;
     bool obraValida = false;
@@ -1193,6 +1263,7 @@ void WorldScene::renderizar(float) {
     if (painelRegioes_) hud_.painelRegioes(r, mundo_);
     if (painelConselho_) hud_.painelConselho(r, mundo_, selConselho_, propostoConselho(), tempo_);
     if (guilda_) hud_.painelGuilda(r, mundo_, abaGuilda_, selGuilda_, passoExpedicao_, destinoSel_, grupoSel_, tempo_);
+    if (cozinha_) hud_.painelCozinha(r, mundo_, selCozinha_, tempo_);
     if (decisao_ && mundo_.decisaoAtual()) {
         hud_.cliques.limpar();  // por cima do conselho: só as opções do caso valem para o mouse
         hud_.painelDecisao(r, mundo_, *mundo_.decisaoAtual(), selDecisao_, tempo_);

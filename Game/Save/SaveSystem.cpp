@@ -71,11 +71,16 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
                    {"expedicao", {{"destino", d.expedicao.destino}, {"grupo", d.expedicao.grupo}, {"partida", d.expedicao.partida},
                                   {"volta", d.expedicao.volta}}},
                    {"reliquias", jReliq}};
+    json jCanteiros = json::array();
+    for (const auto& c : d.canteiros)
+        jCanteiros.push_back({{"cultura", c.cultura}, {"crescidos", c.crescidos}, {"regado_dia", c.regadoDia}, {"maduro", c.maduro}});
+    json vida = {{"canteiros", jCanteiros}, {"buff_dano", d.buffDano}, {"buff_defesa", d.buffDefesa},
+                 {"presente_dia", d.presenteDia}, {"carinhos", d.carinhos}};
 
     const std::pair<const char*, const json*> arquivos[] = {
         {"player.json", &player}, {"inventory.json", &inv}, {"kingdom.json", &reino}, {"world.json", &mundo},
         {"npcs.json", &jNpcs}, {"relationships.json", &jRel}, {"quests.json", &quests}, {"chronicles.json", &cronicas},
-        {"regions.json", &regioes}, {"council.json", &conselho}, {"defense.json", &defesa}, {"guild.json", &guilda},
+        {"regions.json", &regioes}, {"council.json", &conselho}, {"defense.json", &defesa}, {"guild.json", &guilda}, {"life.json", &vida},
         {"metadata.json", &meta}};  // metadata por último: só existe save "válido" quando tudo foi gravado
     for (const auto& [nome, conteudo] : arquivos) {
         if (!ke::fs::gravarTextoSeguro(dir / nome, conteudo->dump(2))) {
@@ -135,6 +140,11 @@ json SaveSystem::migrar(json tudo, int deVersao) {
         tudo["guild"] = json::object();
         deVersao = 9;
     }
+    if (deVersao < 10) {
+        // v9 não tinha vida cotidiana: horta vazia (o jogo dá sementes para começar)
+        tudo["life"] = {{"padrao", true}};
+        deVersao = 10;
+    }
     tudo["metadata"]["versao_formato"] = deVersao;
     return tudo;
 }
@@ -161,9 +171,10 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
         }
         // Arquivos que só existem a partir da v2
         if (versao >= 2) {
-            for (const char* nome : {"npcs", "relationships", "quests", "chronicles", "regions", "council", "defense", "guild"}) {
+            for (const char* nome : {"npcs", "relationships", "quests", "chronicles", "regions", "council", "defense", "guild", "life"}) {
                 if (std::string(nome) == "defense" && versao < 8) continue;
                 if (std::string(nome) == "guild" && versao < 9) continue;
+                if (std::string(nome) == "life" && versao < 10) continue;
                 if (std::string(nome) == "quests" && versao < 4) continue;
                 if (std::string(nome) == "chronicles" && versao < 5) continue;
                 if (std::string(nome) == "regions" && versao < 6) continue;
@@ -249,6 +260,14 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
         d.expedicao.volta = jexp.value("volta", 0);
         for (const auto& jr : jg.value("reliquias", json::array()))
             d.reliquias.push_back({jr.value("id", ""), jr.value("exposta", false), jr.value("conhecida", false), jr.value("purificada", false)});
+        const json& jvida = tudo["life"];
+        d.temCotidiano = !jvida.value("padrao", false);
+        for (const auto& jcan : jvida.value("canteiros", json::array()))
+            d.canteiros.push_back({jcan.value("cultura", ""), std::max(0, jcan.value("crescidos", 0)), std::max(0, jcan.value("regado_dia", 0)), jcan.value("maduro", false)});
+        d.buffDano = std::max(0, jvida.value("buff_dano", 0));
+        d.buffDefesa = std::max(0, jvida.value("buff_defesa", 0));
+        d.presenteDia = jvida.value("presente_dia", std::map<std::string, int>{});
+        d.carinhos = jvida.value("carinhos", std::map<std::string, int>{});
         for (const auto& [id, q] : tudo["inventory"].items())
             if (q.is_number_integer()) d.inventario[id] = std::max(0, q.get<int>());
         const json& r = tudo["kingdom"];

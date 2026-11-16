@@ -8,10 +8,11 @@ namespace {
 
 const char* CONTROLES[][2] = {
     {"WASD / setas", "andar"},
-    {"E / Espaço", "interagir (cortar, abrir, conversar)"},
+    {"E / Espaço", "interagir (cortar, falar, plantar, pescar)"},
     {"segurar E", "continuar golpeando árvores e rochas"},
     {"clique / J", "atacar (o clique vira para o cursor)"},
-    {"H", "comer (3 de comida = +25 de vida)"},
+    {"H", "comer (o melhor prato, ou 3 de comida = +25)"},
+    {"F", "dar presente na conversa; comer no fogão"},
     {"B", "obras: escolher e posicionar"},
     {"K", "painel do reino e impostos"},
     {"R", "terras do reino: corrupção e o que rendem"},
@@ -68,10 +69,10 @@ void TelaOpcoes::desenhar(ke::Renderer2D& r, const ke::BitmapFont& f, const Cont
     r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.6f});
     cliques_.limpar();
     if (controles_) {
-        const glm::vec2 p{80, 28}, s{480, 304};  // cresce com a lista (16 linhas)
+        const glm::vec2 p{80, 20}, s{480, 320};  // cresce com a lista (17 linhas)
         desenharPainel(r, p, s);
         f.desenharCentralizado(r, "Controles", {320, p.y + 12}, cor::ouro);
-        float y = p.y + 32;
+        float y = p.y + 30;
         for (const auto& [tecla, acao] : CONTROLES) {
             f.desenhar(r, tecla, {p.x + 20, y}, cor::ouro);
             f.desenhar(r, acao, {p.x + 124, y}, cor::texto);

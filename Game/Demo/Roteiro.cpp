@@ -39,6 +39,28 @@ int contarEsgotados(World& w) {
     return n;
 }
 
+// Fase 15: herdeiro de frente para a água, sem nada por perto (o E vira "Pescar")
+bool beiraDaAgua(World& w) {
+    for (int y = 1; y + 1 < w.mapa.altura(); ++y)
+        for (int x = 1; x + 1 < w.mapa.largura(); ++x) {
+            if (w.mapa.em(x, y).terreno != T_AGUA || w.mapa.em(x, y - 1).terreno != T_AGUA || w.mapa.em(x, y + 1).terreno == T_AGUA || w.mapa.em(x, y + 1).solido) continue;  // duas fileiras de água: a boia cai longe
+            w.jogador.pos = {x * 16.0f + 8.0f, (y + 1) * 16.0f + 6.0f};
+            w.jogador.dir = Direcao::Cima;
+            w.passo(1.0f / 60.0f, {});
+            if (w.alvo().tipo == TipoInteracao::Pescar) return true;
+        }
+    return false;
+}
+
+int peixes(const World& w) {
+    return w.inventario.quantidade("peixe") + w.inventario.quantidade("truta") + w.inventario.quantidade("peixe_dourado");
+}
+
+// Diante do canteiro i (virado para cima)
+void diante(World& w, glm::vec2 alvo) {
+    w.jogador.pos = alvo + glm::vec2(0, 12);
+    w.jogador.dir = Direcao::Cima;
+}
 }
 
 void Roteiro::capturar(const std::string& nome) {
@@ -1129,7 +1151,196 @@ void Roteiro::noMundo(WorldScene& cena) {
             if (quadro_ == 70) proxima();
             return;
         }
-        case 46:
+        // ---------- Fase 15: a horta, a pesca, o fogão, os animais e um presente ----------
+        case 46: {  // horta: plantar com E, regar, ver crescer e colher (no verão, tudo cresce)
+            if (cena.decisaoAberta() && quadro_ % 5 == 0) in.simularToque(SDL_SCANCODE_ESCAPE);  // caso do conselho: fica para depois
+            const auto& pos = ctx_.dados.cotidiano.canteiros;
+            auto base = [&](int i) { return glm::vec2(pos[i].x * 16.0f + 8.0f, pos[i].y * 16.0f + 14.0f); };
+            if (quadro_ == 1) {
+                while (!(w.relogio.estacao() == Estacao::Verao && w.relogio.diaDaEstacao() == 1)) ++w.relogio.dia;
+                w.relogio.minutos = 9 * 60;
+                for (auto& c : w.canteiros) c = {};
+                w.inventario.definir("semente_nabo", 4);
+                w.inventario.definir("semente_trigo", 1);
+                w.inventario.definir("semente_abobora", 1);
+                w.inventario.definir("nabo", 0);
+                diante(w, base(0));
+            }
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_E);  // planta
+            if (quadro_ == 15) verificar(w.canteiros[0].cultura == "nabo", "E no canteiro vazio planta a semente da estação");
+            if (quadro_ == 20) in.simularToque(SDL_SCANCODE_E);  // rega
+            if (quadro_ == 30) {
+                verificar(w.canteiros[0].regadoDia == w.relogio.dia, "E de novo rega o canteiro");
+                // Os outros três já com idades diferentes, para ver os estágios
+                w.canteiros[1] = {"trigo", 2, 0, false};
+                w.canteiros[2] = {"abobora", 2, 0, false};
+                w.canteiros[3] = {"nabo", 0, 0, false};
+                for (int i = 1; i < 4; ++i) w.usarCanteiro(i);
+                diante(w, base(1) + glm::vec2(8, 0));
+            }
+            if (quadro_ == 40) capturar("71_horta");
+            if (quadro_ == 42) {
+                for (int d = 0; d < 2; ++d) {
+                    for (int i = 0; i < 4; ++i)
+                        if (!w.canteiros[i].maduro && w.canteiros[i].regadoDia != w.relogio.dia) w.usarCanteiro(i);
+                    w.dormir(false);
+                }
+            }
+            if (quadro_ == 55) in.simularToque(SDL_SCANCODE_E);  // fecha o relatório
+            if (quadro_ == 65) {
+                int maduros = 0;
+                for (const auto& c : w.canteiros) maduros += c.maduro;
+                verificar(maduros == 4, std::format("regados todo dia, {} de 4 canteiros prontos para colher", maduros));
+                w.relogio.minutos = 9 * 60;
+                diante(w, base(1) + glm::vec2(8, 0));
+            }
+            if (quadro_ == 75) capturar("72_horta_madura");
+            if (quadro_ == 77) diante(w, base(0));
+            if (quadro_ == 80) in.simularToque(SDL_SCANCODE_E);  // colhe
+            if (quadro_ == 95) {
+                verificar(w.inventario.quantidade("nabo") == 2 && w.marcos.contains("primeira_colheita"), "E colhe o nabo (+2) e a primeira colheita vai para as Crônicas");
+                for (int i = 1; i < 4; ++i) w.usarCanteiro(i);
+                proxima();
+            }
+            return;
+        }
+        case 47: {  // pesca: E de frente para a água, espera a mordida e puxa com o clique
+            if (cena.decisaoAberta() && quadro_ % 5 == 0) in.simularToque(SDL_SCANCODE_ESCAPE);  // caso do conselho: fica para depois
+            if (quadro_ == 1) {
+                w.relogio.minutos = 10 * 60;
+                abatesAntes_ = 0;
+                const bool achou = beiraDaAgua(w);
+                verificar(achou, "há água no vilarejo para pescar");
+                if (!achou) return proxima();
+                comidaAntes_ = peixes(w);
+            }
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 12) verificar(w.pescando(), "E de frente para a água lança a linha");
+            if (quadro_ == 25) capturar("73_pescando");
+            if (quadro_ > 27 && quadro_ < 600 && w.peixeMordendo() && abatesAntes_ == 0) {
+                abatesAntes_ = quadro_;
+                capturar("74_mordida");
+            }
+            if (abatesAntes_ > 0 && quadro_ == abatesAntes_ + 3) in.simularClique(ke::BotaoMouse::Esquerdo, {340, 170});  // o clique puxa (não ataca)
+            if (abatesAntes_ > 0 && quadro_ == abatesAntes_ + 15) {
+                verificar(!w.pescando() && peixes(w) == comidaAntes_ + 1, std::format("o clique na hora da mordida pesca ({} peixe)", peixes(w) - comidaAntes_));
+                abatesAntes_ = 0;
+                proxima();
+            }
+            if (quadro_ == 600) verificar(false, "o peixe mordeu a tempo"), proxima();
+            return;
+        }
+        case 48: {  // o fogão: a fogueira da praça abre a cozinha; sopa, comer pelo botão e o banquete
+            if (cena.decisaoAberta() && quadro_ % 5 == 0) in.simularToque(SDL_SCANCODE_ESCAPE);  // caso do conselho: fica para depois
+            if (quadro_ == 1) {
+                for (auto [e, p, i] : w.reg.view<const Posicao, const Interativo>().each())
+                    if (i.acao == "cozinha") w.jogador.pos = p.v + glm::vec2(0, 14), w.jogador.dir = Direcao::Cima;
+                w.inventario.definir("nabo", 2);
+                for (const char* r : {"peixe", "trigo"}) w.inventario.definir(r, 3);
+                w.inventario.definir("abobora", 1);
+                w.inventario.definir("peixe_dourado", 1);
+                w.inventario.definir("ovo", 3);
+                w.jogador.vida = 40;
+                vidaAntes_ = 40;
+            }
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 15) verificar(cena.cozinhaAberta(), "E na fogueira abre o fogão");
+            if (quadro_ == 18) in.simularToque(SDL_SCANCODE_E);  // sopa de nabo
+            if (quadro_ == 25) {
+                verificar(w.inventario.quantidade("sopa_nabo") == 1 && w.inventario.quantidade("nabo") == 0, "cozinhou a sopa com os 2 nabos");
+                capturar("75_cozinha");
+            }
+            if (quadro_ == 30) in.simularClique(ke::BotaoMouse::Esquerdo, {320, 283});  // botão "comer agora"
+            if (quadro_ == 40) verificar(w.jogador.vida == vidaAntes_ + 40, std::format("o botão comer cura (+{} de vida)", w.jogador.vida - vidaAntes_));
+            if (quadro_ == 45) in.simularClique(ke::BotaoMouse::Esquerdo, {200, 250});  // clique no banquete: cozinha
+            if (quadro_ == 55) {
+                verificar(w.inventario.quantidade("banquete") == 1, "o clique na receita do banquete cozinha");
+                ouroAntes_ = static_cast<int>(w.estado.felicidade);
+            }
+            if (quadro_ == 58) in.simularToque(SDL_SCANCODE_F);  // servir ao povo
+            if (quadro_ == 68) {
+                verificar(w.inventario.quantidade("banquete") == 0 && w.marcos.contains("cozinhou:banquete"), "F serve o banquete ao povo (página nas Crônicas)");
+                capturar("76_banquete");
+            }
+            if (quadro_ == 72) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 80) {
+                verificar(!cena.cozinhaAberta(), "Esc fecha o fogão");
+                proxima();
+            }
+            return;
+        }
+        case 49: {  // galinheiro e curral: de manhã chegam os bichos; carinho rende um ovo a mais
+            if (cena.decisaoAberta() && quadro_ % 5 == 0) in.simularToque(SDL_SCANCODE_ESCAPE);  // caso do conselho: fica para depois
+            if (quadro_ == 1) {
+                for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 400);
+                w.inventario.definir("comida", 200);
+                w.inventario.definir("ovo", 0);
+                const std::string g = w.construir("galinheiro", lugarLivre(w, "galinheiro", {23, 12}));
+                const std::string c = w.construir("curral", lugarLivre(w, "curral", {27, 12}));
+                verificar(!g.empty() && !c.empty(), "galinheiro e curral começaram");
+                w.dormir(false);
+            }
+            if (quadro_ == 10) in.simularToque(SDL_SCANCODE_E);  // relatório
+            if (quadro_ == 20) {
+                int galinhas = 0, vacas = 0;
+                for (auto [e, a] : w.reg.view<const Animal>().each()) (a.tipo == "galinha" ? galinhas : vacas) += 1;
+                verificar(galinhas == 3 && vacas == 2, std::format("prontos, chegaram {} galinhas e {} vacas", galinhas, vacas));
+                w.relogio.minutos = 10 * 60;
+                for (auto [e, p, a] : w.reg.view<Posicao, Animal>().each())
+                    if (a.tipo == "galinha") {
+                        a.espera = 30.0f;  // parada, para o carinho alcançar
+                        diante(w, p.v);
+                        break;
+                    }
+            }
+            if (quadro_ == 25) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 35) {
+                verificar(!w.carinhos.empty(), "E perto da galinha faz carinho");
+                capturar("77_animais");
+            }
+            if (quadro_ == 40) {
+                diaAntes_ = w.inventario.quantidade("ovo");
+                w.dormir(false);
+            }
+            if (quadro_ == 55) {
+                verificar(w.inventario.quantidade("ovo") == diaAntes_ + 4 && w.inventario.quantidade("leite") >= 2,
+                          std::format("de manhã: +{} ovos (um a mais pelo carinho) e leite", w.inventario.quantidade("ovo") - diaAntes_));
+                capturar("78_relatorio_animais");
+            }
+            if (quadro_ == 57) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 65) proxima();
+            return;
+        }
+        case 50: {  // presente: F na conversa dá o prato favorito do Bram
+            if (cena.decisaoAberta() && quadro_ % 5 == 0) in.simularToque(SDL_SCANCODE_ESCAPE);  // caso do conselho: fica para depois
+            const entt::entity bram = w.morador("bram");
+            if (quadro_ == 1) {
+                w.relogio.minutos = 10 * 60;
+                w.inventario.definir("ensopado", 1);
+                w.presenteDia.erase("bram");
+                w.reg.get<Agenda>(bram).dormindo = false;
+                w.reg.get<Movimento>(bram).caminho.clear();
+                w.jogador.pos = w.reg.get<Posicao>(bram).v + glm::vec2(0, 14);
+                w.jogador.dir = Direcao::Cima;
+                popAntes_ = w.coracoesDe("bram");
+            }
+            if (quadro_ == 8) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 25) {
+                verificar(cena.conversa() && cena.conversa()->presente == "ensopado", "a conversa oferece o presente (F dar Ensopado)");
+                capturar("79_presente");
+            }
+            if (quadro_ == 28) in.simularToque(SDL_SCANCODE_F);
+            if (quadro_ == 40) {
+                verificar(w.inventario.quantidade("ensopado") == 0 && w.coracoesDe("bram") == popAntes_ + 1 && w.presenteDia.contains("bram"),
+                          "F dá o favorito: +1 coração para o Bram");
+                capturar("80_presente_dado");
+            }
+            if (quadro_ > 45 && cena.conversa() && quadro_ % 10 == 0) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ > 50 && !cena.conversa()) proxima();
+            if (quadro_ == 400) verificar(false, "a conversa terminou"), proxima();
+            return;
+        }
+        case 51:
             w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();

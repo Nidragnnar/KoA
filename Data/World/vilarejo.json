@@ -10,7 +10,7 @@
   "saidas": [
     { "tile": [63, 17], "tam": [1, 5], "destino": "floresta", "chegada": [3, 17], "dir": "direita" }
   ],
-  "inventario_inicial": { "madeira": 0, "pedra": 0, "ouro": 0, "comida": 20 },
+  "inventario_inicial": { "madeira": 0, "pedra": 0, "ouro": 0, "comida": 20, "semente_nabo": 4 },
   "_reino_inicial": "8 sobreviventes (5 com nome + 3 aldeões) nas ruínas, que abrigam 8. Felicidade 0..100; imposto 0 baixo, 1 médio, 2 alto.",
   "reino_inicial": { "populacao": 8, "populacao_base": 8, "felicidade": 40, "imposto": 1 },
   "construcoes": [

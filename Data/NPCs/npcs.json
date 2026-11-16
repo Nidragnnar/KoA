@@ -95,7 +95,10 @@
         { "id": "comida", "nome": "Saco de grãos (10 comida)", "custo": { "ouro": 15 }, "ganho": { "comida": 10 } },
         { "id": "madeira", "nome": "Feixe de tábuas (10 madeira)", "custo": { "ouro": 25 }, "ganho": { "madeira": 10 } },
         { "id": "pedra", "nome": "Carroça de pedra (10 pedra)", "custo": { "ouro": 35 }, "ganho": { "pedra": 10 } },
-        { "id": "carta", "nome": "Carta selada com o brasão real", "custo": { "ouro": 40 }, "pista": "carta_selada" }
+        { "id": "carta", "nome": "Carta selada com o brasão real", "custo": { "ouro": 40 }, "pista": "carta_selada" },
+        { "id": "semente_nabo", "nome": "Sementes de nabo (5)", "custo": { "ouro": 10 }, "ganho": { "semente_nabo": 5 } },
+        { "id": "semente_trigo", "nome": "Sementes de trigo (5)", "custo": { "ouro": 15 }, "ganho": { "semente_trigo": 5 } },
+        { "id": "semente_abobora", "nome": "Sementes de abóbora (5)", "custo": { "ouro": 25 }, "ganho": { "semente_abobora": 5 } }
       ]
     }
   ]

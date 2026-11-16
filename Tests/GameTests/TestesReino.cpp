@@ -48,7 +48,7 @@ TEST(Obras, DadosDas8Construcoes) {
         construiveis += d.construivel && !d.monumento;
         monumentos += d.monumento;
     }
-    EXPECT_EQ(construiveis, 9);  // as 8 da fase 5 e a guilda (fase 14)
+    EXPECT_EQ(construiveis, 11);  // as 8 da fase 5, a guilda (fase 14), o galinheiro e o curral (fase 15)
     EXPECT_EQ(monumentos, 3);  // memorial, jardim e estátua (fase 9)
     EXPECT_EQ(dados().construcoes.at("taverna").nivel(1)->nome, "Pequena Taverna");
     EXPECT_EQ(dados().construcoes.at("taverna").nivel(3)->nome, "Grande Estalagem");
@@ -185,6 +185,8 @@ TEST(SaveV3, MigraCopiaDeSaveReal) {
     EXPECT_TRUE(d2->temPovo);
     EXPECT_TRUE(d2->temCronicas);
     EXPECT_TRUE(d2->temRegioes);  // fase 11: regiões vivas gravadas
+    EXPECT_TRUE(d2->temCotidiano);  // fase 15: a horta vai para o life.json
+    std::printf("[save real] horta: %zu canteiros, %d sementes de nabo\n", w.canteiros.size(), w.inventario.quantidade("semente_nabo"));
     for (const auto& [id, e] : d2->regioes) std::printf("[save real] região %s: corrupção %.0f, última visita dia %d\n", id.c_str(), e.corrupcao, e.ultimaVisita);
     std::printf("[save real] dia %d, casa nível %d, %zu objetos alterados, %zu moradores, %zu páginas nas Crônicas, título %s\n", d2->dia,
                 w.reino.construcao("casa_herdeiro")->level, d2->objetos.size(), d2->moradores.size(), d2->cronicas.size(),

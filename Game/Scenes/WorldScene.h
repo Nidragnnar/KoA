@@ -58,12 +58,16 @@ public:
     bool decisaoAberta() const { return decisao_; }
     // Fase 14
     bool guildaAberta() const { return guilda_; }
+    // Fase 15
+    bool cozinhaAberta() const { return cozinha_; }
 
 private:
     void entradaEscolha();
     void entradaConselho();
     void entradaDecisao();
     void entradaGuilda();
+    void entradaCozinha();
+    void darPresenteNaConversa();
     std::string propostoConselho() const;  // candidato que o herdeiro está olhando no cargo selecionado
     std::vector<std::string> opcoesObras() const;
     void entradaMenuObras();
@@ -144,6 +148,9 @@ private:
     int abaGuilda_ = 0, selGuilda_ = 0, passoExpedicao_ = 0;
     std::string destinoSel_;
     std::vector<std::string> grupoSel_;
+    // Fase 15: o fogão (cozinhar e comer pratos)
+    bool cozinha_ = false;
+    int selCozinha_ = 0;
     float transicao_ = -1.0f;  // -1 = nenhuma; 0..2 = escurece, troca o dia (em 1), clareia
     bool desmaio_ = false;
     bool mostrarColisoes_ = false;

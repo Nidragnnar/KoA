@@ -97,6 +97,23 @@ struct Interativo {
 // Enfeite que só existe enquanto a região está transformada (some e volta com ela)
 struct EnfeiteRegiao {};
 
+// Fase 15: um canteiro da horta do herdeiro (o solo; a planta é outra entidade com PlantaCanteiro)
+struct Canteiro {
+    int indice = 0;
+};
+struct PlantaCanteiro {
+    int indice = 0;
+};
+
+// Fase 15: galinha ou vaca, que passeia perto do galinheiro/curral
+struct Animal {
+    std::string tipo;   // "galinha" | "vaca"
+    std::string chave;  // "<construção>#<n>" (o carinho do dia fica guardado por ela)
+    glm::vec2 casa{0.0f}, destino{0.0f};
+    float espera = 0.0f, tempoAnim = 0.0f;
+    bool andando = false, olhaEsquerda = false;
+};
+
 // Fonte de luz (tochas)
 struct Luz {
     glm::vec3 cor{1.0f, 0.6f, 0.3f};

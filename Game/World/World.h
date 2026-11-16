@@ -26,7 +26,7 @@ namespace koa {
 enum Terreno : uint16_t { T_GRAMA = 0, T_TERRA, T_LAMA, T_AGUA, T_CALCADA, T_MURO, T_QTD };
 
 // Usar: altar e entulho (fase 11); Decidir: chefe rendido
-enum class TipoInteracao { Nenhuma, Cortar, Quebrar, Saquear, Construcao, Conversar, Ler, Usar, Decidir };
+enum class TipoInteracao { Nenhuma, Cortar, Quebrar, Saquear, Construcao, Conversar, Ler, Usar, Decidir, Pescar };
 
 // Uma conversa pronta para a caixa de diálogo
 struct Conversa {
@@ -36,6 +36,7 @@ struct Conversa {
     bool ganhouAmizade = false;
     std::string missao;  // missão oferecida nesta conversa ("" = nenhuma)
     bool loja = false;   // ao fim da conversa abre a banca (mercador)
+    std::string presente;  // fase 15: o que o herdeiro pode dar agora com F ("" = nada)
 };
 
 struct AlvoInteracao {
@@ -64,7 +65,9 @@ struct EventoJogo {
         // Fase 13
         HordaChegou, Flecha, PortaoGolpeado, PortaoCaiu, Saque, SoldadoCaiu, BatalhaFim,
         // Fase 14
-        Partiu, Reliquia
+        Partiu, Reliquia,
+        // Fase 15
+        Mordida, Presente, AbrirCozinha, Carinho
     };
     Tipo tipo;
     glm::vec2 pos{0.0f};
@@ -256,6 +259,27 @@ public:
     EfeitosReliquia efeitosReliquias() const;  // somados das expostas (com as maldições que valem)
     const EstadoReliquia* estadoReliquia(const std::string& id) const;
 
+    // Fase 15: vida cotidiana
+    std::vector<EstadoCanteiro> canteiros;        // um por canteiro da horta (na ordem dos dados)
+    int buffDano = 0, buffDefesa = 0;             // de pratos, até dormir
+    std::map<std::string, int> presenteDia;       // morador → dia do último presente
+    std::map<std::string, int> carinhos;          // animal → dia do último carinho
+    std::string rotuloCanteiro(int i) const;      // "Plantar Nabo", "Regar Trigo", "Colher Abóbora"...
+    bool usarCanteiro(int i);                     // planta, rega ou colhe (o que couber)
+    const CulturaDef* sementeDaEstacao() const;   // a cultura que dá para plantar hoje (a de mais sementes)
+    bool pescando() const { return pesca_.ativa; }
+    bool peixeMordendo() const { return pesca_.ativa && pesca_.mordeu; }
+    glm::vec2 boiaPesca() const { return pesca_.boia; }
+    bool podeCozinhar(const ReceitaDef& r) const { return inventario.tem(r.ingredientes); }
+    bool cozinhar(const std::string& receita);
+    bool comerPrato(const std::string& prato);
+    bool temPrato() const;  // algum prato que cura no inventário (H come o melhor)
+    std::string presenteParaDar(const std::string& npc) const;  // "" = nada que dê
+    bool darPresente(const std::string& npc);
+    int coracoesDe(const std::string& npc) { const Relacionamento* r = relacao(npc); return r ? r->coracoes() : 0; }
+    bool fazerCarinho(entt::entity animal);
+    void sincronizarAnimais();                    // tantos bichos quanto o galinheiro e o curral pedem
+
     std::vector<ke::AABB> obstaculos() const;
     ke::AABB caixaConstrucao(const BuildingData& b) const;
     glm::vec2 pontoPorta(const BuildingData& b) const;
@@ -336,6 +360,18 @@ private:
     // Fase 14
     void manhaDaGuilda(std::vector<std::string>& notas);
     void voltaDaExpedicao(std::vector<std::string>& notas);
+    // Fase 15
+    void criarCanteiros();
+    void atualizarCanteiros();         // o visual de cada canteiro conforme o estado
+    void atualizarAnimais(float dt);
+    void noiteDoCotidiano(int ontem, std::vector<std::pair<std::string, int>>& variacoes, std::vector<std::string>& notas);
+    void iniciarPesca(glm::vec2 ponto);
+    void atualizarPesca(float dt, const EntradaMundo& in);
+    struct Pesca {
+        bool ativa = false, mordeu = false;
+        float espera = 0.0f, janela = 0.0f;
+        glm::vec2 boia{0.0f};
+    } pesca_;
     bool batalha_ = false;
     int vencidasNaBatalha_ = 0, saquesNaBatalha_ = 0;
     std::map<std::string, float> recargaTorre_;  // id da torre → segundos até a próxima flecha

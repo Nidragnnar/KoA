@@ -1,0 +1,57 @@
+{
+  "_como_funciona": "Fase 15. Horta do herdeiro: canteiros fixos (tiles) no quintal. E num canteiro vazio planta a semente que pode crescer na estação (a de mais sementes); E num canteiro plantado rega (uma vez por dia); de manhã, quem foi regado ontem cresce um dia (no inverno, nada cresce). Maduro, E colhe 'rendimento'. Pesca: E de frente para a água lança a linha; a mordida vem entre espera_min e espera_max segundos e dura 'janela' segundos: E (ou clique) nessa hora pesca. Animais: cada nível do galinheiro/curral tem 'animais'; cada um come 1 de comida à noite e dá 1 'produto' (2 com carinho no dia). Receitas: ingredientes → prato; efeitos ao comer: vida, felicidade (servido ao povo), dano/defesa até dormir. Presentes: F na conversa dá o prato ou ingrediente favorito do morador (uma vez por dia).",
+  "canteiros": [[17, 11], [18, 11], [19, 11], [20, 11]],
+  "culturas": [
+    { "id": "nabo", "nome": "Nabo", "semente": "semente_nabo", "dias": 2, "rendimento": 2,
+      "estacoes": ["primavera", "verao", "outono"] },
+    { "id": "trigo", "nome": "Trigo", "semente": "semente_trigo", "dias": 3, "rendimento": 3,
+      "estacoes": ["primavera", "verao"] },
+    { "id": "abobora", "nome": "Abóbora", "semente": "semente_abobora", "dias": 4, "rendimento": 2,
+      "estacoes": ["verao", "outono"] }
+  ],
+  "pesca": {
+    "espera_min": 1.5, "espera_max": 4.0, "janela": 0.8,
+    "peixes": [
+      { "id": "peixe_dourado", "chance": 0.08, "regioes": ["vilarejo", "floresta", "minas"] },
+      { "id": "truta", "chance": 0.5, "regioes": ["floresta"], "estacoes": ["primavera", "verao", "outono"] },
+      { "id": "peixe", "chance": 1.0, "regioes": ["vilarejo", "floresta", "minas"] }
+    ]
+  },
+  "animais": {
+    "galinheiro": { "animal": "galinha", "produto": "ovo" },
+    "curral": { "animal": "vaca", "produto": "leite" }
+  },
+  "receitas": [
+    { "id": "sopa_nabo", "nome": "Sopa de Nabo", "ingredientes": { "nabo": 2 }, "efeitos": { "vida": 40 },
+      "descricao": "Quente e simples, como a da Edda." },
+    { "id": "peixe_assado", "nome": "Peixe Assado", "ingredientes": { "peixe": 1 }, "efeitos": { "vida": 35 },
+      "descricao": "Na brasa, com sal." },
+    { "id": "omelete", "nome": "Omelete", "ingredientes": { "ovo": 2 }, "efeitos": { "vida": 25, "defesa": 2 },
+      "descricao": "Enche a barriga e endurece a pele até a noite." },
+    { "id": "pao", "nome": "Pão de Trigo", "ingredientes": { "trigo": 2, "ovo": 1 }, "efeitos": { "vida": 50 },
+      "descricao": "O primeiro pão assado em Valdren desde a Queda." },
+    { "id": "ensopado", "nome": "Ensopado do Pescador", "ingredientes": { "peixe": 1, "truta": 1, "nabo": 1, "leite": 1 },
+      "efeitos": { "vida": 30, "dano": 3 }, "descricao": "Dizem que dá força de marinheiro até dormir." },
+    { "id": "torta_abobora", "nome": "Torta de Abóbora", "ingredientes": { "abobora": 1, "trigo": 1, "ovo": 1, "leite": 1 },
+      "efeitos": { "vida": 20 }, "descricao": "Doce de festa. Alguém no vilarejo adoraria ganhar uma." },
+    { "id": "banquete", "nome": "Banquete da Colheita", "ingredientes": { "peixe_dourado": 1, "trigo": 2, "abobora": 1 },
+      "efeitos": { "felicidade": 6 }, "descricao": "Servido na praça, alegra o povo inteiro (+6 de felicidade)." }
+  ],
+  "presentes": {
+    "_": "morador → itens favoritos (o primeiro que o herdeiro tiver é o dado). Favorito vale +100 de amizade; outro prato, +30.",
+    "bram": ["ensopado", "peixe_assado"],
+    "edda": ["torta_abobora", "pao"],
+    "maelis": ["sopa_nabo", "peixe_dourado"],
+    "oswin": ["pao", "ensopado"],
+    "tilda": ["abobora", "torta_abobora"],
+    "corvin": ["peixe_dourado"]
+  },
+  "itens": {
+    "_": "nomes do que não é recurso da tela principal (aparece na cozinha e no diário)",
+    "semente_nabo": "Semente de Nabo", "semente_trigo": "Semente de Trigo", "semente_abobora": "Semente de Abóbora",
+    "nabo": "Nabo", "trigo": "Trigo", "abobora": "Abóbora", "peixe": "Peixe do Lago", "truta": "Truta",
+    "peixe_dourado": "Peixe Dourado", "ovo": "Ovo", "leite": "Leite",
+    "sopa_nabo": "Sopa de Nabo", "peixe_assado": "Peixe Assado", "omelete": "Omelete", "pao": "Pão de Trigo",
+    "ensopado": "Ensopado do Pescador", "torta_abobora": "Torta de Abóbora", "banquete": "Banquete da Colheita"
+  }
+}

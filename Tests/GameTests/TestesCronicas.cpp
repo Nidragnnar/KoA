@@ -235,7 +235,7 @@ TEST(Cenarios, MontarSavesDeTeste) {
     free(pasta);
     auto gravar = [&](World& w, const std::string& slot) {
         DadosSave d = w.capturar();
-        d.versaoJogo = "1.3.0";
+        d.versaoJogo = "1.7.0";
         d.dataHora = "cenário de teste";
         ASSERT_TRUE(s.salvar(d, slot));
     };
@@ -284,74 +284,67 @@ TEST(Cenarios, MontarSavesDeTeste) {
         w.equip.arma = "espada_linhagem";
         w.equip.armadura = "cota_malha";
     };
-    // Guilda pronta no nível pedido, ao lado da praça (os aventureiros chegam na manhã seguinte)
-    auto erguerGuilda = [&](World& w, int nivel) {
-        w.marcar("estabilidade", "", true);
-        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 1000);
-        w.inventario.definir("cristal", 20);
-        obra(w, "guilda", {44, 25});
-        w.dormir(false);
-        for (const auto& b : w.reino.construcoes)
-            if (b.defId == "guilda") {
-                const std::string id = b.id;
-                while (w.reino.construcao(id)->level < nivel) ASSERT_TRUE(w.melhorarConstrucao(id));
-            }
-        w.dormir(false);  // a guilda recruta pelo nível
-    };
-    // Save_002: Guilda dos Aventureiros (nível 2) com 5 aventureiros prontos e comida para as viagens.
-    // E na porta da guilda → "Abrir a guilda": escolher destino, montar o grupo e partir. Uma relíquia guardada
-    // (Ampulheta Partida): expô-la mostra se é amaldiçoada
-    {
-        World w = vilarejo();
+    // Fase 15: verão (todas as culturas crescem), galinheiro e curral prontos, despensa com ingredientes
+    auto vidaNoCampo = [&](World& w, Estacao e, int diaDaEstacao) {
         reinoAvancado(w);
         equipar(w);
-        erguerGuilda(w, 2);
-        w.relogio.minutos = 9 * 60;
-        w.inventario.definir("comida", 150);
+        w.missoes.erase("maos_na_terra");  // a Tilda ainda oferece a missão da horta
+        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 1000);
+        obra(w, "galinheiro", {23, 12});
+        obra(w, "curral", {27, 12});
+        w.dormir(false);
+        while (!(w.relogio.estacao() == e && w.relogio.diaDaEstacao() == diaDaEstacao)) ++w.relogio.dia;
         w.inventario.definir("madeira", 120);
         w.inventario.definir("pedra", 120);
         w.inventario.definir("ouro", 200);
-        w.inventario.definir("cristal", 0);
-        w.ganharReliquia("ampulheta");
+        w.inventario.definir("comida", 150);
         w.hordaDia = 0;
         w.proximaHorda = w.relogio.dia + 12;
+        w.ultimaDecisao = w.relogio.dia;  // nenhum caso do conselho atrapalhando o teste
+    };
+    // Save_002: Verão, 9:00. Horta com um nabo PRONTO (canteiro 1), trigo crescendo e já regado (2), abóbora
+    // sem regar (3) e um canteiro vazio (4); sementes dos três tipos. Galinheiro (3 galinhas) e curral (2 vacas)
+    // ao lado da casa. Na mochila: nabo 2, ovo 3, leite 1, peixe 1, trigo 2 (dá para sopa, omelete e pão)
+    // e um Ensopado do Pescador para dar ao Bram (favorito)
+    {
+        World w = vilarejo();
+        vidaNoCampo(w, Estacao::Verao, 1);
+        w.relogio.minutos = 9 * 60;
+        w.canteiros[0] = {"nabo", 2, w.relogio.dia - 1, true};
+        w.canteiros[1] = {"trigo", 1, w.relogio.dia, false};
+        w.canteiros[2] = {"abobora", 2, w.relogio.dia - 1, false};
+        w.canteiros[3] = {};
+        w.inventario.definir("semente_nabo", 3);
+        w.inventario.definir("semente_trigo", 2);
+        w.inventario.definir("semente_abobora", 2);
+        for (const auto& [item, q] : std::map<std::string, int>{{"nabo", 2}, {"ovo", 3}, {"leite", 1}, {"peixe", 1}, {"trigo", 2}, {"ensopado", 1}})
+            w.inventario.definir(item, q);
         w.tirarEventos();
         gravar(w, "Save_002");
     }
-    // Save_003: Grande Guilda (3 relíquias). A expedição à Biblioteca Afundada volta AMANHÃ (dormir para ver);
-    // Garrick ferido, Kael desaparecido (reaparece em dois dias). O Mapa da Torre do Selo já abriu a Torre.
-    // O Olho da Chama está exposto e já mostrou a maldição; a floresta foi purificada e há 6 cristais: dá para
-    // pedir a Maelis que purifique (P na aba das relíquias)
+    // Save_003: último dia do OUTONO, 18:00, herdeiro ferido (vida 40). Abóbora pronta; nabo regado (cresce
+    // esta noite, ainda é outono); TRIGO regado (fora da estação: amanhã o relatório fala do frio). Amanhã é
+    // inverno: nada se planta. Pratos prontos (pão 2, omelete, ensopado) e ingredientes do Banquete da Colheita
+    // (peixe dourado, trigo 2, abóbora 1). Hoje já houve carinho nas galinhas e presente para a Edda
     {
         World w = vilarejo();
-        reinoAvancado(w);
-        equipar(w);
-        erguerGuilda(w, 3);
+        vidaNoCampo(w, Estacao::Outono, Relogio::DIAS_POR_ESTACAO);
         w.relogio.minutos = 18 * 60;
-        w.inventario.definir("comida", 150);
-        ASSERT_TRUE(w.partir("biblioteca", {"lira", "tomas", "dunstan"}));
-        w.expedicao.partida = w.relogio.dia - 2;
-        w.expedicao.volta = w.relogio.dia + 1;
-        w.aventureiros["garrick"].feridoAte = w.relogio.dia + 2;
-        w.aventureiros["kael"].sumido = true;
-        w.aventureiros["kael"].voltaDia = w.relogio.dia + 2;
-        w.ganharReliquia("mapa_torre");
-        w.ganharReliquia("olho_chama");
-        w.ganharReliquia("escudo_vigias");
-        ASSERT_TRUE(w.exporReliquia("olho_chama", true));
-        ASSERT_TRUE(w.exporReliquia("escudo_vigias", true));
-        w.marcar("purificou:floresta", "Floresta Encantada", true);
-        w.inventario.definir("cristal", 6);
-        w.inventario.definir("madeira", 120);
-        w.inventario.definir("pedra", 120);
-        w.inventario.definir("ouro", 200);
-        w.hordaDia = 0;
-        w.proximaHorda = w.relogio.dia + 12;
+        w.jogador.vida = 40;
+        w.canteiros[0] = {"abobora", 4, w.relogio.dia - 1, true};
+        w.canteiros[1] = {"nabo", 1, w.relogio.dia, false};
+        w.canteiros[2] = {"trigo", 1, w.relogio.dia, false};
+        w.canteiros[3] = {};
+        w.inventario.definir("semente_nabo", 2);
+        for (const auto& [item, q] : std::map<std::string, int>{{"pao", 2}, {"omelete", 1}, {"ensopado", 1}, {"peixe_dourado", 1}, {"trigo", 2}, {"abobora", 1}})
+            w.inventario.definir(item, q);
+        for (auto [e, a] : w.reg.view<const Animal>().each())
+            if (a.tipo == "galinha") w.carinhos[a.chave] = w.relogio.dia;
+        w.presenteDia["edda"] = w.relogio.dia;
         w.tirarEventos();
         gravar(w, "Save_003");
     }
 }
-
 TEST(SaveV5, SaveV4GanhaCronicasDoQueJaAconteceu) {
     const auto pasta = std::filesystem::temp_directory_path() / "koa_teste_save_v4_para_v5";
     std::filesystem::remove_all(pasta);

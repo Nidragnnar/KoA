@@ -10,6 +10,7 @@
 #include "Game/Combat/Combate.h"
 #include "Game/Inventory/Inventory.h"
 #include "Game/Kingdom/Conselho.h"
+#include "Game/Kingdom/Cotidiano.h"
 #include "Game/Kingdom/Defesa.h"
 #include "Game/Kingdom/Guilda.h"
 #include "Game/Kingdom/Estacoes.h"
@@ -67,6 +68,7 @@ struct GameData {
     DadosConselho conselho;                      // fase 12: cargos, leis e decisões políticas
     DadosDefesa defesa;                          // fase 13: hordas e a defesa do portão
     DadosGuilda guilda;                          // fase 14: aventureiros, expedições e relíquias
+    DadosCotidiano cotidiano;                    // fase 15: horta, pesca, animais, cozinha e presentes
 
     const InimigoDef* inimigoPorLetra(char c) const {
         for (const auto& [id, d] : inimigos)

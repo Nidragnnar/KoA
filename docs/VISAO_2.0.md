@@ -81,8 +81,14 @@ A 1.0 provou a base (reino, vida, RPG, eras). A 2.0 dá ao jogo a sua identidade
 - Páginas nas Crônicas (estabilidade, guilda, expedições, relíquias, maldições, desaparecidos). A da Torre do Selo deixa a próxima pergunta: a Chama não escapou, alguém a levou.
 - Fica para depois: mais de uma expedição ao mesmo tempo, aventureiros que morrem, vender relíquias ao Corvin e o segundo ato do mistério.
 
-### Fase 15 — Vida cotidiana
-- Cultivo próprio, pesca, cozinha e animais.
+### Fase 15 — Vida cotidiana (feita, versão 1.7)
+- **Horta do herdeiro** (`Data/World/vida.json`): quatro canteiros fixos ao lado da casa. E num canteiro vazio planta a semente da estação (a de que há mais), E de novo rega (uma vez por dia), e de manhã cresce um dia o que foi regado ontem. Nabo (2 dias; primavera a outono), trigo (3; primavera e verão) e abóbora (4; verão e outono); fora da estação, o frio segura a planta, e no inverno nada se planta. O Corvin vende sementes; o jogo começa com 4 de nabo.
+- **Pesca**: E de frente para a água lança a linha (a boia cai até 2 tiles adiante). A mordida vem em 1,5 a 4 segundos e dura 0,8: E ou clique pesca; cedo demais assusta, andar recolhe. Peixe comum, truta (floresta, primavera a outono) e o raro peixe dourado (página nas Crônicas).
+- **Fogão** (E na fogueira da praça ou "Cozinhar" na casa): sete receitas. Sopa, peixe assado e pão curam; omelete dá defesa e o ensopado dá dano até dormir; o Banquete da Colheita é servido ao povo (+6 de felicidade). O H come o prato que mais cura antes da comida comum.
+- **Animais**: galinheiro (3 e 5 galinhas) e curral (2 e 3 vacas). Cada bicho come 1 de comida à noite e dá ovo ou leite; com carinho no dia (E perto dele), dá dois.
+- **Presentes**: na conversa, F dá o favorito do morador (+100 de amizade) ou qualquer prato (+30), uma vez por dia por morador.
+- Missão nova da Tilda ("Mãos na Terra": a primeira colheita) e páginas nas Crônicas (primeira colheita, peixe dourado, galinheiro, curral, banquete, presentes).
+- Fica para depois: regador e canteiros que se compram, vara de pesca melhor, receitas descobertas, vender pratos e o mercado comprando a colheita.
 
 ### Depois da 2.0 (para decidir mais tarde)
 - Linhagem: casamento, herdeiros, envelhecimento e sucessão.
@@ -93,6 +99,6 @@ A 1.0 provou a base (reino, vida, RPG, eras). A 2.0 dá ao jogo a sua identidade
 
 ## Notas técnicas
 
-- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`) e a 14 para a v9 (`guild.json`).
+- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`), a 14 para a v9 (`guild.json`) e a 15 para a v10 (`life.json`).
 - Conteúdo (crônicas, títulos, eventos, cargos, estações) em JSON dentro de `Data/`, como missões e diálogos hoje.
 - O roteiro ponta a ponta ganha etapas a cada fase; a arte nova vem do NidraIA em sessão separada.

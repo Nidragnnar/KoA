@@ -132,6 +132,17 @@ O plano da 2.0 está em `docs/VISAO_2.0.md`.
 - **Save v9**: arquivo novo `guild.json` (aventureiros, expedição em curso, relíquias). Saves v1 a v8 começam sem guilda.
 - **Testes**: 155 (12 novos da fase 14) e o roteiro com as etapas 42 a 45 (construir e abrir a guilda, montar o grupo, a volta da expedição e a maldição revelada).
 
+## Fase 15 — Vida cotidiana (versão 1.7)
+
+- **Dados** (`Game/Kingdom/Cotidiano.h`, `Data/World/vida.json`): culturas, peixes, animais, receitas, presentes e o nome de cada item novo (o `nomeRecurso` procura neles). `sortearPeixe` e `textoPrato` são puras.
+- **Horta**: `World::criarCanteiros` cria o solo (`Canteiro`, `Interativo "canteiro"`) e a planta (`PlantaCanteiro`) de cada canteiro; o estado fica em `World::canteiros` (cultura, dias crescidos, dia da rega, maduro). O crescimento acontece em `noiteDoCotidiano`, chamada por `dormir` com a estação de ontem. O `WorldRenderer` desenha a terra como chão (antes de tudo) e a planta na ordem de profundidade.
+- **Pesca**: estado `pesca_` no `World` (não vai para o save). Durante a pesca o E e o clique só puxam a linha; o toque que encerra a pesca não fica guardado para relançar.
+- **Animais**: `sincronizarAnimais` cria e remove as entidades `Animal` conforme os galinheiros/currais prontos (chave `<obra>#n`, onde fica o carinho do dia); `atualizarAnimais` faz o passeio em volta do terreiro.
+- **Cozinha e pratos**: `cozinhar`, `comerPrato` (vida, felicidade e os bônus `buffDano`/`buffDefesa`, que somam em `danoArma`/`defesaArmadura` e zeram ao dormir). O painel do fogão é do `Hud` (botão "comer" no id 500).
+- **Presentes**: `presenteParaDar` escolhe o favorito do morador (ou um prato) e `Conversa::presente` mostra a dica "F dar ..." no diálogo (clicável, id 600).
+- **Save v10**: arquivo novo `life.json` (canteiros, bônus dos pratos, presente e carinho do dia). Saves v1 a v9 começam com a horta vazia e ganham 4 sementes de nabo.
+- **Testes**: 171 (16 novos da fase 15) e o roteiro com as etapas 46 a 50 (horta, pesca com o clique, fogão e banquete, animais e carinho, presente ao Bram).
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

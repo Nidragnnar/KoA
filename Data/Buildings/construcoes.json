@@ -104,6 +104,25 @@
       ]
     },
     {
+      "_animais": "Fase 15: galinheiro e curral criam animais (efeito animais) que passeiam por perto; cada um come 1 de comida por noite e dá ovo ou leite (dois com carinho no dia).",
+      "id": "galinheiro", "aparencia": "galinheiro", "tamanho": [3, 2], "construivel": true, "limite": 1,
+      "niveis": [
+        { "nivel": 1, "nome": "Galinheiro", "descricao": "Um poleiro, palha e três galinhas desconfiadas.",
+          "custo": { "madeira": 25, "ouro": 15 }, "efeitos": { "animais": 3 } },
+        { "nivel": 2, "nome": "Galinheiro Grande", "descricao": "Cinco galinhas e um galo que acorda o vilarejo.",
+          "custo": { "madeira": 30, "pedra": 15, "ouro": 30 }, "efeitos": { "animais": 5, "felicidade": 1 } }
+      ]
+    },
+    {
+      "id": "curral", "aparencia": "curral", "tamanho": [4, 3], "construivel": true, "limite": 1,
+      "niveis": [
+        { "nivel": 1, "nome": "Curral", "descricao": "Cerca de madeira, um cocho e duas vacas mansas.",
+          "custo": { "madeira": 40, "pedra": 10, "ouro": 40 }, "efeitos": { "animais": 2, "felicidade": 1 } },
+        { "nivel": 2, "nome": "Estábulo", "descricao": "Teto para o inverno e lugar para mais uma vaca.",
+          "custo": { "madeira": 40, "pedra": 40, "ouro": 80 }, "efeitos": { "animais": 3, "felicidade": 2 } }
+      ]
+    },
+    {
       "_guilda": "Fase 14: a Guilda dos Aventureiros só pode ser construída com o reino estável (marco estabilidade). aventureiros = quantos a guilda recruta; reliquias = quantas relíquias ela expõe.",
       "id": "guilda", "aparencia": "guilda", "tamanho": [4, 3], "construivel": true, "limite": 1,
       "requer": "estabilidade", "requer_texto": "Só com o reino em paz: felicidade 55+, segurança para todos e 14 moradores.",

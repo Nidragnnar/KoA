@@ -8,6 +8,7 @@
 #include <glm/vec2.hpp>
 #include <nlohmann/json_fwd.hpp>
 
+#include "Game/Kingdom/Cotidiano.h"
 #include "Game/Kingdom/Guilda.h"
 #include "Game/Lore/Lore.h"
 #include "Game/World/Regioes.h"
@@ -16,8 +17,8 @@ namespace koa {
 
 // Sobe quando o formato muda (com migração). v2: relógio e moradores; v3: obras e povo; v4: regiões, combate e missões;
 // v5: Crônicas do Reino; v6: regiões vivas (corrupção, segurança, prosperidade); v7: Conselho Real e leis;
-// v8: hordas e a defesa do portão; v9: guilda, expedições e relíquias
-constexpr int VERSAO_SAVE = 9;
+// v8: hordas e a defesa do portão; v9: guilda, expedições e relíquias; v10: vida cotidiana (horta, pratos, presentes)
+constexpr int VERSAO_SAVE = 10;
 
 struct EstadoConstrucao {
     std::string id, def;
@@ -98,6 +99,11 @@ struct DadosSave {
     std::map<std::string, EstadoAventureiro> aventureiros;
     Expedicao expedicao;
     std::vector<EstadoReliquia> reliquias;
+    // life.json (v10). Saves antigos: horta vazia, e o jogo dá 4 sementes de nabo para começar
+    bool temCotidiano = false;
+    std::vector<EstadoCanteiro> canteiros;
+    int buffDano = 0, buffDefesa = 0;
+    std::map<std::string, int> presenteDia, carinhos;
 };
 
 // Saves em pastas (Saves/Save_001/*.json) com backup antes de sobrescrever

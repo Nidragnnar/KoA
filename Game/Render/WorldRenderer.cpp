@@ -91,6 +91,10 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
         return en && (w.eraEm(p) < en->eraMin || (en->festival && !w.festivalAgora()));
     };
 
+    // Fase 15: a terra dos canteiros é chão (fica por baixo de quem pisa nela)
+    for (auto [e, p, v, c] : w.reg.view<const Posicao, const Visual, const Canteiro>().each())
+        r.sprite(rec_.regiao(v.sprite), glm::floor(p.v + glm::vec2(-8.0f, -13.5f)));
+
     // 2) Sombras no chão
     const ke::SpriteRegion& sombra = rec_.regiao("sombra");
     for (auto [e, p, v] : w.reg.view<const Posicao, const Visual>().each()) {
@@ -104,7 +108,7 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     const glm::vec2 margemMin = canto - glm::vec2(96, 32), margemMax = canto + cam.vista + glm::vec2(96, 140);
     auto visivel = [&](glm::vec2 p) { return p.x > margemMin.x && p.x < margemMax.x && p.y > margemMin.y && p.y < margemMax.y; };
     for (auto [e, p, v] : w.reg.view<const Posicao, const Visual>().each()) {
-        if (v.sprite.empty() || !visivel(p.v) || escondido(e, p.v)) continue;
+        if (v.sprite.empty() || !visivel(p.v) || escondido(e, p.v) || w.reg.all_of<Canteiro>(e)) continue;
         const int era = w.eraEm(p.v);
         std::string nome = v.sprite;
         if (const auto* a = w.reg.try_get<Animado>(e))
@@ -156,6 +160,13 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
         r.sprite(sombra, {std::floor(p.v.x) - 8, std::floor(p.v.y) - 3});
         lista.push_back({p.v.y, &s, glm::floor(p.v - glm::vec2(8, 22)), mv.dir == Direcao::Esquerda});
     }
+    // Fase 15: galinhas e vacas passeando no terreiro
+    for (auto [e, p, a] : w.reg.view<const Posicao, const Animal>().each()) {
+        if (!visivel(p.v)) continue;
+        const ke::SpriteRegion& s = rec_.regiao(std::format("{}_{}", a.tipo, a.andando ? static_cast<int>(a.tempoAnim * 6.0f) % 2 : 0));
+        r.sprite(sombra, {std::floor(p.v.x) - 8, std::floor(p.v.y) - 3});
+        lista.push_back({p.v.y, &s, glm::floor(p.v - glm::vec2(s.tamanho.x / 2.0f, s.tamanho.y - 1.0f)), a.olhaEsquerda});
+    }
     // Inimigos: sprite de 2 quadros, virado para o lado em que andam; piscam ao levar golpe
     std::vector<std::pair<glm::vec2, float>> barras;  // vida dos feridos (desenhada por cima)
     // Fase 13: soldados dos postos no portão
@@ -198,6 +209,26 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     for (const auto& [p, fr] : barras) {
         r.retangulo(glm::floor(p - glm::vec2(8, 0)), {16, 3}, {0.1f, 0.05f, 0.05f, 0.9f});
         r.retangulo(glm::floor(p - glm::vec2(7, -1)), {14 * fr, 1}, {0.85f, 0.2f, 0.2f, 1});
+    }
+
+    // Fase 15: linha de pesca da ponta da vara até a boia (que afunda quando o peixe morde)
+    if (w.pescando()) {
+        const Jogador& j = w.jogador;
+        const glm::vec2 dv = j.dir == Direcao::Esquerda ? glm::vec2(-1, 0) : j.dir == Direcao::Direita ? glm::vec2(1, 0)
+                             : j.dir == Direcao::Cima   ? glm::vec2(0, -1) : glm::vec2(0, 1);
+        const glm::vec2 ponta = j.pos + glm::vec2(dv.x * 10.0f, -20.0f + dv.y * 4.0f);
+        const bool morde = w.peixeMordendo();
+        const glm::vec2 boia = w.boiaPesca() + glm::vec2(0, morde ? 2.0f + std::round(std::sin(tempo * 30.0f)) : std::round(std::sin(tempo * 3.0f) * 0.6f));
+        // A linha cai num arco suave
+        const int passos = 16;
+        for (int k = 0; k <= passos; ++k) {
+            const float u = static_cast<float>(k) / passos;
+            const glm::vec2 q = glm::mix(ponta, boia, u) + glm::vec2(0, std::sin(u * 3.14159f) * (morde ? 1.0f : 5.0f));
+            r.retangulo(glm::floor(q), {1, 1}, {0.85f, 0.85f, 0.8f, 0.8f});
+        }
+        r.retangulo(glm::floor(boia - glm::vec2(1, 2)), {3, 2}, {0.9f, 0.2f, 0.15f, 1});
+        r.retangulo(glm::floor(boia - glm::vec2(1, 0)), {3, 1}, {0.95f, 0.95f, 0.9f, 1});
+        if (morde) r.contorno(glm::floor(boia - glm::vec2(4, 2)), {9, 5}, {0.8f, 0.9f, 1.0f, 0.6f + 0.4f * std::sin(tempo * 20.0f)});
     }
 
     // 4) Partículas (poeira, lascas, cinzas)

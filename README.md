@@ -6,7 +6,7 @@ era a era, até a **Alta Fantasia**.
 
 Engine própria em **C++20 + SDL3 + OpenGL 3.3** (Kingdom Engine), com EnTT, Dear ImGui, nlohmann/json e GoogleTest.
 
-## Versão 1.6
+## Versão 1.7
 
 A 2.0 está em andamento (identidade e plano em `docs/VISAO_2.0.md`). A fase 9 trouxe as Crônicas do Reino
 (tecla C), os títulos do herdeiro, o mercador viajante, três monumentos e o começo do mistério da Queda das Cinzas.
@@ -24,6 +24,10 @@ soldados, e o herdeiro luta no portão. Sem ele, as defesas lutam sozinhas; o qu
 A fase 14 trouxe a Guilda dos Aventureiros (com o reino estável): seis aventureiros com nome partem em expedições de
 alguns dias para as ruínas da antiga Valdren e voltam com recursos, feridos, desaparecidos ou com relíquias, que,
 expostas na guilda, ajudam o reino; algumas são amaldiçoadas, e Maelis sabe purificá-las.
+A fase 15 trouxe a vida cotidiana: a horta do herdeiro ao lado da casa (plantar, regar todo dia e colher; cada
+semente tem suas estações), a pesca (E de frente para a água, espere a mordida e puxe), o fogão na fogueira da praça
+(sete receitas que curam, dão força até dormir ou alegram o povo), galinheiro e curral com galinhas e vacas que dão
+ovo e leite, e presentes: na conversa, F dá ao morador o prato ou ingrediente de que ele mais gosta.
 
 As 8 fases do plano de arquitetura da 1.0 estão feitas:
 
@@ -42,7 +46,8 @@ As 8 fases do plano de arquitetura da 1.0 estão feitas:
 | E / Espaço | interagir (segure para continuar golpeando) |
 | clique esquerdo / J | atacar (o clique vira o herói para o cursor) |
 | mouse | escolher e confirmar nos menus e painéis (clicar fora fecha) |
-| H | comer |
+| H | comer (o prato que mais cura, ou 3 de comida) |
+| F | na conversa, dar presente; no fogão, comer o prato escolhido |
 | B / K / R / G / L / C | obras / reino / terras do reino / Conselho Real / diário / Crônicas |
 | Esc | menu (salvar, opções, controles, título, sair) |
 | F5 | salvar |

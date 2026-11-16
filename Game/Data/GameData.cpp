@@ -15,8 +15,9 @@ const NivelConstrucao* BuildingDef::nivel(int n) const {
 }
 
 std::string GameData::nomeRecurso(const std::string& id) const {
-    const auto it = recursos.find(id);
-    return it == recursos.end() ? id : it->second.nome;
+    if (const auto it = recursos.find(id); it != recursos.end()) return it->second.nome;
+    if (const auto it = cotidiano.itens.find(id); it != cotidiano.itens.end()) return it->second;  // fase 15: sementes, peixes, pratos
+    return id;
 }
 
 bool GameData::lerJson(const nlohmann::json& jr, const nlohmann::json& jc, std::string* erro) {
@@ -181,6 +182,36 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
                 if (erro) *erro = "destino " + dest.id + " rende recurso inexistente: " + rec;
                 return false;
             }
+    // Fase 15: vida cotidiana
+    const auto tv = ke::fs::lerTexto(pasta / "World/vida.json");
+    const auto jv = tv ? nlohmann::json::parse(*tv, nullptr, false) : nlohmann::json();
+    if (!tv || jv.is_discarded()) {
+        if (erro) *erro = "Data/World/vida.json ausente ou inválido";
+        return false;
+    }
+    if (!lerCotidiano(jv, cotidiano, erro)) return false;
+    // Todo item citado precisa ter nome (é o que a interface mostra)
+    auto conhecido = [&](const std::string& id) { return recursos.contains(id) || cotidiano.itens.contains(id); };
+    std::vector<std::string> citados;
+    for (const auto& cul : cotidiano.culturas) citados.push_back(cul.semente), citados.push_back(cul.id);
+    for (const auto& p : cotidiano.peixes) citados.push_back(p.id);
+    for (const auto& [b, a] : cotidiano.animais) citados.push_back(a.produto);
+    for (const auto& rec : cotidiano.receitas) {
+        citados.push_back(rec.id);
+        for (const auto& [item, q] : rec.ingredientes) citados.push_back(item);
+    }
+    for (const auto& [npc, lista] : cotidiano.presentes) {
+        if (!npcs.contains(npc)) {
+            if (erro) *erro = "presentes para morador inexistente: " + npc;
+            return false;
+        }
+        for (const auto& item : lista) citados.push_back(item);
+    }
+    for (const auto& id : citados)
+        if (!conhecido(id)) {
+            if (erro) *erro = "vida.json cita item sem nome: " + id;
+            return false;
+        }
     return true;
 }
 

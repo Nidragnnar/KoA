@@ -1,5 +1,5 @@
 ﻿cmake_minimum_required(VERSION 3.25)
-project(KingdomOfAshes VERSION 1.6.0 LANGUAGES C CXX)
+project(KingdomOfAshes VERSION 1.7.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -10,7 +10,7 @@ include(cmake/Dependencias.cmake)
 
 # Avisos e acentos só no nosso código; includes a partir da raiz ("Engine/...", "Game/...")
 function(configurar_alvo alvo)
-    target_compile_options(${alvo} PRIVATE /W4 /utf-8 /permissive-)
+    target_compile_options(${alvo} PRIVATE /W4 /utf-8 /permissive- /bigobj)
     target_compile_definitions(${alvo} PRIVATE NOMINMAX)
     target_include_directories(${alvo} PUBLIC ${CMAKE_SOURCE_DIR})
 endfunction()

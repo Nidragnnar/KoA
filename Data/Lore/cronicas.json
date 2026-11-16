@@ -88,6 +88,13 @@
     "desaparecido:*": "{nome} desapareceu numa expedição. Deixaram uma vela acesa na guilda.",
     "voltou:*": "{nome}, que todos davam por perdido, voltou a Valdren pela estrada leste.",
 
+    "primeira_colheita": "O herdeiro colheu a primeira safra da própria horta. Tilda disse que ainda faltava jeito, mas sorriu.",
+    "pescou:peixe_dourado": "Um peixe dourado mordeu a isca do herdeiro. Os velhos dizem que eles só voltam a águas que perderam o medo.",
+    "construiu:galinheiro": "Galinhas voltaram a ciscar em Valdren. As crianças correram atrás delas a tarde inteira.",
+    "construiu:curral": "Um curral foi erguido, e com ele o primeiro leite fresco desde a Queda.",
+    "cozinhou:banquete": "O herdeiro serviu um Banquete da Colheita na praça. O povo comeu até a lua subir.",
+    "presente:*": "O herdeiro levou um presente a {nome}.",
+
     "misterio:primeiro_ato": "As peças se juntaram: a Queda das Cinzas começou dentro do castelo, pelas mãos do próprio rei. Resta saber para onde foi a Chama."
   }
 }

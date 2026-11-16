@@ -1816,6 +1816,208 @@ void fase13(Lista& l) {
     for (int q = 0; q < 2; ++q) l.emplace_back(std::format("soldado_{}", q), soldado(q));
 }
 
+// ---------- Fase 15: vida cotidiana ----------
+
+// Canteiro da horta: terra arada em sulcos com moldura de tábuas (escura quando regada)
+Img canteiro(bool molhado) {
+    std::mt19937 r(molhado ? 7302 : 7301);
+    Img t(16, 16);
+    const Cor terra = molhado ? hex("#3e2a1c") : hex("#6a4a30"), sulco = molhado ? hex("#2a1c12") : hex("#4e3622");
+    t.rect(0, 0, 16, 16, hex("#5a4430"));  // tábuas
+    t.rect(1, 1, 14, 14, terra);
+    for (int y = 3; y < 15; y += 4) t.rect(2, y, 12, 1, sulco);
+    t.salpicar(r, 10, clarear(terra, 0.15f), 1, 1, 15, 15);
+    if (molhado) t.px(4, 6, hex("#6a8ab0")), t.px(11, 10, hex("#6a8ab0"));  // brilho da água
+    t.rect(0, 0, 16, 1, hex("#7a6040"));
+    return t;
+}
+
+// Planta da horta em 3 estágios (broto, crescendo, pronta)
+Img planta(const std::string& cultura, int estagio) {
+    Img t(16, 20);
+    const Cor folha = hex("#4a8a3a"), folhaClara = hex("#6aaa4a");
+    if (estagio == 0) {  // brotinhos nos sulcos
+        for (const int x : {4, 11}) t.px(x, 17, folha), t.px(x - 1, 16, folhaClara), t.px(x + 1, 16, folha);
+        return t;
+    }
+    if (cultura == "trigo") {
+        const int alto = estagio == 1 ? 8 : 13;
+        for (const int x : {2, 6, 10, 13}) {  // talos separados (o contorno não emenda as espigas)
+            const int topo = 19 - alto + (x % 3);
+            t.rect(x, topo, 1, 19 - topo, estagio == 2 ? hex("#a88838") : folha);
+            if (estagio == 2) t.rect(x, topo - 1, 1, 4, hex("#e8c860")), t.px(x, topo - 2, hex("#f8e090"));
+        }
+    } else if (cultura == "abobora") {
+        t.elipse(8, 16, estagio == 1 ? 5 : 6, 2, folha);  // ramas
+        t.px(3, 15, folhaClara), t.px(13, 15, folhaClara);
+        if (estagio == 2) {
+            t.elipse(8, 15, 5, 4, hex("#d87a2a"));
+            for (const int x : {5, 8, 11}) t.rect(x, 12, 1, 7, hex("#b85a1a"));
+            t.rect(8, 10, 1, 2, hex("#4a6a2a"));  // cabinho
+            t.px(6, 13, hex("#f0a050"));
+        } else {
+            t.elipse(8, 17, 2, 1, hex("#9aa04a"));  // aboborinha verde
+        }
+    } else {  // nabo: folhas para cima e a cabeça roxa e branca aparecendo
+        const int alto = estagio == 1 ? 5 : 8;
+        for (const int x : {5, 8, 11}) t.linha(x, 18, x + (x - 8) / 3, 18 - alto, x == 8 ? folhaClara : folha);
+        if (estagio == 2) {
+            t.elipse(8, 17, 3, 2, hex("#e8e0d8"));
+            t.rect(5, 15, 7, 2, hex("#a04a8a"));
+        }
+    }
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Galinha branca ciscando (2 quadros: cabeça levanta e abaixa)
+Img galinha(int q) {
+    Img t(12, 11);
+    const Cor pena = hex("#ece4d4"), sombraPena = hex("#c8bca8");
+    t.elipse(5, 6, 4, 3, pena);
+    t.rect(1, 4, 2, 3, sombraPena);  // rabo
+    t.rect(4, 7, 4, 1, sombraPena);  // asa
+    const int cy = q == 0 ? 2 : 4;   // cabeça
+    t.rect(8, cy, 3, 3, pena);
+    t.px(9, cy - 1, hex("#d83a2a"));  // crista
+    t.px(11, cy + 1, hex("#e8a838"));  // bico
+    t.px(9, cy + 1, hex("#1a1414"));
+    t.px(4, 10, hex("#e8a838")), t.px(7, 10, hex("#e8a838"));  // pés
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Vaca malhada (2 quadros: pernas alternando)
+Img vaca(int q) {
+    Img t(24, 17);
+    const Cor branco = hex("#e8e2d8"), malha = hex("#3a2a24");
+    t.rect(3, 4, 15, 8, branco);
+    t.rect(6, 5, 4, 3, malha), t.rect(13, 8, 3, 3, malha), t.rect(3, 9, 2, 2, malha);
+    t.rect(18, 3, 5, 6, branco);  // cabeça
+    t.rect(21, 7, 3, 2, hex("#e0a8a0"));  // focinho
+    t.px(20, 5, hex("#1a1414"));
+    t.px(18, 2, hex("#c8bca8")), t.px(22, 2, hex("#c8bca8"));  // chifrinhos
+    t.rect(1, 5, 2, 1, branco), t.px(1, 6, malha);  // rabo
+    for (int k = 0; k < 4; ++k) {
+        const int x = 4 + k * 4 + (k >= 2 ? 1 : 0);
+        t.rect(x, 12, 2, (k + q) % 2 ? 4 : 5, branco);
+        t.px(x, (k + q) % 2 ? 15 : 16, malha);
+    }
+    t.rect(10, 12, 3, 1, hex("#e0a8a0"));  // úbere
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Galinheiro: casinha de tábuas sobre pés, rampa e cerquinha (nível 2: telhado de telha e ninhos)
+Img galinheiro(int n) {
+    std::mt19937 r(7400 + n);
+    Img t(48, 40);
+    const Cor madeira = hex("#7a5a3a"), escura = hex("#4e3826");
+    // Cerquinha em volta do terreiro
+    for (int x = 0; x < 48; x += 4) t.rect(x, 30, 1, 9, madeira);
+    t.rect(0, 32, 48, 1, madeira), t.rect(0, 36, 48, 1, madeira);
+    // Casinha
+    t.rect(10, 14, 26, 16, madeira);
+    for (int x = 12; x < 36; x += 4) t.rect(x, 14, 1, 16, escura);
+    t.rect(10, 28, 2, 6, escura), t.rect(34, 28, 2, 6, escura);  // pés
+    const Cor telha = n >= 2 ? hex("#9a4a32") : hex("#8a7a4a");
+    for (int y = 0; y < 8; ++y) t.rect(8 + y, 13 - y, 30 - 2 * y, 1, y % 2 ? clarear(telha, -0.15f) : telha);
+    t.rect(20, 20, 6, 8, hex("#2a1e16"));  // portinhola
+    t.linha(22, 28, 30, 36, escura);       // rampa
+    t.linha(23, 28, 31, 36, madeira);
+    if (n >= 2) {
+        t.rect(13, 18, 5, 3, hex("#c8a848")), t.px(15, 18, hex("#ece4d4"));  // ninho com ovo
+        t.rect(28, 18, 5, 3, hex("#c8a848"));
+    } else {
+        t.salpicar(r, 10, hex("#5a4030"), 10, 14, 36, 30);  // tábuas velhas
+    }
+    t.salpicar(r, 12, hex("#c8b468"), 0, 34, 48, 40);  // palha no chão
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Curral: cerca de troncos, cocho e um abrigo coberto no fundo (nível 2: celeiro vermelho)
+Img curral(int n) {
+    std::mt19937 r(7500 + n);
+    Img t(64, 52);
+    const Cor madeira = hex("#7a5a3a"), escura = hex("#4e3826");
+    // Abrigo no fundo
+    const Cor parede = n >= 2 ? hex("#9a3a2a") : madeira;
+    t.rect(20, 10, 30, 18, parede);
+    for (int x = 22; x < 50; x += 4) t.rect(x, 10, 1, 18, clarear(parede, -0.2f));
+    for (int y = 0; y < 8; ++y) t.rect(18 + y, 9 - y, 34 - 2 * y, 1, n >= 2 ? hex("#5a3a2a") : hex("#8a7a4a"));
+    t.rect(30, 16, 10, 12, hex("#2a1e16"));
+    if (n >= 2) t.linha(30, 16, 39, 27, hex("#e8e0d0")), t.linha(39, 16, 30, 27, hex("#e8e0d0"));  // porta em X
+    // Cerca em volta
+    for (int x = 0; x < 64; x += 6) t.rect(x, 26, 2, 25, escura);
+    for (const int y : {30, 38, 46}) t.rect(0, y, 64, 2, madeira);
+    t.rect(0, 26, 2, 25, escura), t.rect(62, 26, 2, 25, escura);
+    // Cocho
+    t.rect(6, 40, 12, 4, escura), t.rect(7, 40, 10, 1, hex("#6a8a3a"));
+    t.salpicar(r, 16, hex("#8a7a4a"), 2, 28, 62, 50);
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Ícones 10×10 dos itens da vida cotidiana
+Img iconeItem(const std::string& id) {
+    Img t(10, 10);
+    auto semente = [&](Cor c) {
+        t.rect(2, 2, 6, 7, hex("#c8a878"));  // saquinho
+        t.rect(3, 1, 4, 1, hex("#a8885a"));
+        t.rect(3, 4, 4, 3, c);
+    };
+    if (id == "semente_nabo") semente(hex("#a04a8a"));
+    else if (id == "semente_trigo") semente(hex("#e0c060"));
+    else if (id == "semente_abobora") semente(hex("#d87a2a"));
+    else if (id == "nabo") t.elipse(5, 6, 3, 3, hex("#e8e0d8")), t.rect(2, 4, 7, 2, hex("#a04a8a")), t.linha(4, 2, 3, 0, hex("#4a8a3a")), t.linha(6, 2, 7, 0, hex("#4a8a3a"));
+    else if (id == "trigo") for (int x = 2; x < 9; x += 3) t.rect(x, 3, 1, 7, hex("#a88838")), t.rect(x - 1, 1, 3, 3, hex("#e0c060"));
+    else if (id == "abobora") t.elipse(5, 6, 4, 3, hex("#d87a2a")), t.rect(5, 1, 1, 2, hex("#4a6a2a")), t.rect(3, 4, 1, 5, hex("#b85a1a")), t.rect(7, 4, 1, 5, hex("#b85a1a"));
+    else if (id == "peixe" || id == "truta" || id == "peixe_dourado") {
+        const Cor c = id == "peixe" ? hex("#7a9ab0") : id == "truta" ? hex("#8a9a6a") : hex("#e8b838");
+        t.elipse(4, 5, 3, 2, c);
+        t.rect(7, 4, 1, 3, c), t.rect(8, 3, 1, 5, c);  // rabo
+        t.px(2, 4, hex("#1a1414"));
+        if (id == "truta") t.px(4, 6, hex("#d86a5a")), t.px(5, 4, hex("#d86a5a"));
+        if (id == "peixe_dourado") t.px(4, 4, hex("#fff0a0"));
+    } else if (id == "ovo") t.elipse(5, 5, 3, 4, hex("#f0e8d8")), t.px(4, 3, hex("#ffffff"));
+    else if (id == "leite") t.rect(3, 3, 4, 6, hex("#e8e8f0")), t.rect(4, 1, 2, 2, hex("#c8c8d0")), t.rect(3, 5, 4, 1, hex("#6a8ab0"));
+    else {  // pratos: tigela com a cor da comida
+        const Cor c = id == "sopa_nabo" ? hex("#c8a8c0") : id == "peixe_assado" ? hex("#a87a4a") : id == "omelete" ? hex("#f0d050")
+                    : id == "pao" ? hex("#c8944a") : id == "ensopado" ? hex("#a8603a") : id == "torta_abobora" ? hex("#d87a2a")
+                                                                                            : hex("#e8b838");
+        if (id == "pao") t.elipse(5, 6, 4, 3, c), t.linha(3, 5, 7, 5, hex("#e8c070"));
+        else if (id == "torta_abobora") t.rect(1, 5, 8, 4, hex("#c8944a")), t.rect(2, 4, 6, 2, c);
+        else {
+            t.rect(1, 5, 8, 3, hex("#8a6a48"));  // tigela
+            t.rect(2, 8, 6, 1, hex("#6e5238"));
+            t.rect(2, 4, 6, 1, c);
+            if (id == "banquete") t.rect(1, 2, 2, 2, hex("#d87a2a")), t.rect(7, 2, 2, 2, hex("#c8944a"));  // fartura
+        }
+        t.px(4, 1, hex("#d8d8d8")), t.px(6, 2, hex("#d8d8d8"));  // vapor
+    }
+    t.contornar(CONTORNO);
+    return t;
+}
+
+void fase15(Lista& l) {
+    l.emplace_back("canteiro_seco", canteiro(false));
+    l.emplace_back("canteiro_molhado", canteiro(true));
+    for (const char* c : {"nabo", "trigo", "abobora"})
+        for (int e = 0; e < 3; ++e) l.emplace_back(std::format("planta_{}_{}", c, e), planta(c, e));
+    for (int q = 0; q < 2; ++q) {
+        l.emplace_back(std::format("galinha_{}", q), galinha(q));
+        l.emplace_back(std::format("vaca_{}", q), vaca(q));
+    }
+    for (int n = 1; n <= 2; ++n) {
+        l.emplace_back(std::format("galinheiro_n{}", n), galinheiro(n));
+        l.emplace_back(std::format("curral_n{}", n), curral(n));
+    }
+    for (const char* id : {"semente_nabo", "semente_trigo", "semente_abobora", "nabo", "trigo", "abobora", "peixe", "truta", "peixe_dourado",
+                           "ovo", "leite", "sopa_nabo", "peixe_assado", "omelete", "pao", "ensopado", "torta_abobora", "banquete"})
+        l.emplace_back(std::format("icone_{}", id), iconeItem(id));
+}
+
 std::vector<std::pair<std::string, Img>> gerarTodos() {
     Lista l;
     const char* nomes[] = {"grama", "terra", "lama", "agua", "calcada", "muro"};
@@ -1856,6 +2058,7 @@ std::vector<std::pair<std::string, Img>> gerarTodos() {
     fase10(l);
     fase11(l);
     fase13(l);
+    fase15(l);
     return l;
 }
 

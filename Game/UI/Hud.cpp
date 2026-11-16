@@ -220,7 +220,11 @@ void Hud::painelConstrucao(ke::Renderer2D& r, const World& w, const std::string&
 int Hud::tamanhoUtf8(const std::string& s) { return static_cast<int>(ke::decodificarUtf8(s).size()); }
 
 void Hud::custoEmLinha(ke::Renderer2D& r, const Custo& c, const Inventory& inv, glm::vec2 pos) {
-    for (const char* rid : ORDEM_RECURSOS) {
+    // Recursos na ordem do painel e, depois, os itens da vida cotidiana (nabo, ovo, peixe...)
+    std::vector<std::string> ordem(std::begin(ORDEM_RECURSOS), std::end(ORDEM_RECURSOS));
+    for (const auto& [id, q] : c)
+        if (std::ranges::find(ordem, id) == ordem.end()) ordem.push_back(id);
+    for (const std::string& rid : ordem) {
         const auto it = c.find(rid);
         if (it == c.end()) continue;
         const auto def = dados_.recursos.find(rid);
@@ -359,7 +363,15 @@ void Hud::combate(ke::Renderer2D& r, const World& w, float tempo) {
         const glm::vec4 c = fr > 0.5f ? cor::bom : fr > 0.25f ? cor::ouro : cor::ruim;
         const float pulso = fr <= 0.25f ? 0.75f + 0.25f * std::sin(tempo * 10.0f) : 1.0f;
         barra(r, {46, 90 + dy}, 70, fr, c * glm::vec4(pulso, pulso, pulso, 1));
-        if (w.inventario.quantidade("comida") >= 3 && j.vida < j.vidaMax) f_.desenhar(r, "H: comer", {128, 89 + dy}, cor::apagado);
+        if ((w.inventario.quantidade("comida") >= 3 || w.temPrato()) && j.vida < j.vidaMax) f_.desenhar(r, "H: comer", {128, 89 + dy}, cor::apagado);
+    }
+    // Fase 15: o que o prato do dia ainda dá (até dormir)
+    if (w.buffDano > 0 || w.buffDefesa > 0) {
+        std::string b = "Bem alimentado:";
+        if (w.buffDano > 0) b += std::format(" +{} dano", w.buffDano);
+        if (w.buffDefesa > 0) b += std::format(" +{} defesa", w.buffDefesa);
+        r.retangulo({126, 66 + dy}, {static_cast<float>(f_.largura(b)) + 10, 11}, {0.05f, 0.04f, 0.04f, 0.6f});
+        f_.desenhar(r, b, {131, 68 + dy}, cor::bom);
     }
     // Chefe: barra grande no alto enquanto ele persegue
     for (auto [e, i] : w.reg.view<const Inimigo>().each()) {
@@ -633,6 +645,13 @@ void Hud::caixaDialogo(ke::Renderer2D& r, const Conversa& c, int linha, int letr
     const ke::SpriteRegion& vazio = rec_.regiao("coracao_vazio");
     for (int i = 0; i < 10; ++i) r.sprite(i < c.coracoes ? cheio : vazio, p + glm::vec2(s.x - 92 + i * 8, 11));
     if (c.ganhouAmizade && linha == 0) f_.desenhar(r, "+ amizade", p + glm::vec2(s.x - 172, 10), cor::bom);
+    // Fase 15: presente que o herdeiro pode dar (F ou clique)
+    if (!c.presente.empty()) {
+        const std::string t = "F  dar " + dados_.nomeRecurso(c.presente);
+        const glm::vec2 pt = p + glm::vec2(90, s.y - 14);
+        cliques.area(pt - glm::vec2(4, 3), {static_cast<float>(f_.largura(t)) + 8, 13}, 600);
+        f_.desenhar(r, t, pt, cor::bom);
+    }
 
     // Fala atual, aparecendo letra a letra
     if (linha < static_cast<int>(c.falas.size())) {
@@ -1093,6 +1112,48 @@ void Hud::painelEscolha(ke::Renderer2D& r, const World& w, const EscolhaDef& d, 
         y += 9;
     }
     f_.desenharCentralizado(r, "W/S ou mouse escolher   E ou clique decidir   Esc pensar mais um pouco", {320, p.y + s.y - 12}, cor::apagado);
+}
+
+
+// ---------- Fase 15: o fogão ----------
+
+void Hud::painelCozinha(ke::Renderer2D& r, const World& w, int sel, float tempo) {
+    const auto& receitas = dados_.cotidiano.receitas;
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.45f});
+    const float alt = 84.0f + receitas.size() * 26.0f;
+    const glm::vec2 p{70, std::floor(180 - alt / 2)}, s{500, alt};
+    desenharPainel(r, p, s);
+    painelClicavel(p, s);
+    f_.desenharCentralizado(r, "Fogão do Herdeiro", {320, p.y + 12}, cor::ouro);
+    const Jogador& j = w.jogador;
+    f_.desenharCentralizado(r, std::format("Vida {}/{}   Comida {}", j.vida, j.vidaMax, w.inventario.quantidade("comida")), {320, p.y + 24},
+                            cor::apagado);
+    for (size_t i = 0; i < receitas.size(); ++i) {
+        const ReceitaDef& d = receitas[i];
+        const float y = p.y + 40 + i * 26.0f;
+        const bool s1 = static_cast<int>(i) == sel;
+        const bool pode = w.podeCozinhar(d);
+        const int tem = w.inventario.quantidade(d.id);
+        if (s1) r.retangulo({p.x + 8, y - 3}, {s.x - 16, 25}, {0.45f, 0.36f, 0.22f, 0.45f});
+        cliques.area({p.x + 8, y - 3}, {s.x - 16, 25}, static_cast<int>(i));
+        f_.desenhar(r, d.nome, {p.x + 14, y}, s1 ? cor::ouro : pode ? cor::texto : cor::apagado);
+        f_.desenhar(r, textoPrato(d.efeitos), {p.x + 188, y}, d.efeitos.felicidade != 0.0f ? cor::ouro : cor::bom);
+        const std::string t = tem > 0 ? std::format("você tem {}", tem) : "";
+        f_.desenhar(r, t, {p.x + s.x - 14 - f_.largura(t), y + 11}, cor::texto);
+        custoEmLinha(r, d.ingredientes, w.inventario, {p.x + 24, y + 11});
+    }
+    // Botão de comer o prato selecionado (se houver)
+    const ReceitaDef& d = receitas[std::clamp(sel, 0, static_cast<int>(receitas.size()) - 1)];
+    const bool temEste = w.inventario.quantidade(d.id) > 0;
+    const std::string comer = d.efeitos.felicidade != 0.0f ? "F  servir ao povo" : "F  comer agora";
+    const glm::vec2 bc{320, p.y + s.y - 30};
+    const float lb = static_cast<float>(f_.largura(comer)) + 16;
+    r.retangulo(bc - glm::vec2(lb / 2, 6), {lb, 14}, temEste ? glm::vec4(0.25f, 0.4f, 0.22f, 0.8f + 0.1f * std::sin(tempo * 4.0f)) : glm::vec4(0.15f, 0.13f, 0.12f, 0.8f));
+    if (temEste) cliques.area(bc - glm::vec2(lb / 2, 6), {lb, 14}, 500);
+    f_.desenharCentralizado(r, comer, bc + glm::vec2(0, 1), temEste ? cor::texto : cor::apagado);
+    f_.desenharCentralizado(r, d.descricao, {320, p.y + s.y - 14}, cor::apagado);
+    f_.desenharCentralizado(r, "W/S ou mouse escolher   E ou clique cozinhar   Esc fechar", {320, p.y + s.y + 10}, cor::texto);
+    rodapeFechar("Esc fechar", {320 + f_.largura("W/S ou mouse escolher   E ou clique cozinhar   ") / 2.0f, p.y + s.y + 10});
 }
 
 }
