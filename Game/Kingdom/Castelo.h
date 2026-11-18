@@ -14,6 +14,7 @@ namespace koa {
 struct EfeitosAla {
     float felicidade = 0.0f, impostos = 0.0f, comida = 0.0f;  // impostos e comida: fração (0.15 = +15%)
     int seguranca = 0, viajantes = 0, ouroDia = 0, soldados = 0, expedicao = 0;
+    float diasCeleiro = 0.0f;  // fase 17: dias de comida a mais que cabem no celeiro
 
     EfeitosAla& operator+=(const EfeitosAla& o);
 };

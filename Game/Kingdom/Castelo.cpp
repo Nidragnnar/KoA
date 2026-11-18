@@ -47,6 +47,7 @@ EfeitosAla& EfeitosAla::operator+=(const EfeitosAla& o) {
     ouroDia += o.ouroDia;
     soldados += o.soldados;
     expedicao += o.expedicao;
+    diasCeleiro += o.diasCeleiro;
     return *this;
 }
 
@@ -148,6 +149,7 @@ std::string textoAla(const EfeitosAla& e) {
     if (e.viajantes) junta(std::format("+{} família chegando", e.viajantes));
     if (e.soldados) junta(std::format("+{} soldado no portão", e.soldados));
     if (e.expedicao) junta(std::format("+{} de força nas expedições", e.expedicao));
+    if (e.diasCeleiro != 0.0f) junta(std::format("+{:.0f} dias de comida no celeiro", e.diasCeleiro));
     return t.empty() ? "nada" : t;
 }
 
@@ -169,6 +171,7 @@ bool lerCastelo(const nlohmann::json& j, DadosCastelo& d, std::string* erro) {
             a.efeitos.ouroDia = je.value("ouro_dia", 0);
             a.efeitos.soldados = je.value("soldados", 0);
             a.efeitos.expedicao = je.value("expedicao", 0);
+            a.efeitos.diasCeleiro = je.value("dias_celeiro", 0.0f);
             d.alas.push_back(std::move(a));
         }
         const auto& jb = j.at("brasao");

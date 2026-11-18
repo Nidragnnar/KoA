@@ -49,6 +49,13 @@ struct BuildingDef {
     // Fase 9: monumentos só liberam depois de um acontecimento (marco)
     std::string requer, requerTexto;
     bool monumento = false;
+    // Fase 17: o que antes era regra escrita no código com o id da construção
+    std::string funcao;                   // casa, muralha, castelo, memorial, jardim, estatua ("" = comum)
+    bool ruinas = false;                  // o nível 1 são ruínas: não conta como obra nem como desenvolvimento
+    bool contaComoObra = true;            // false = fora das contas de obras e títulos (a casa do herdeiro)
+    bool janelas = true;                  // janelas acesas à noite
+    std::vector<std::string> acoes;       // opções do painel (dormir, cozinhar, forjar, guilda, alas, brasao, reparar...)
+    std::map<int, glm::vec2> fumaca;      // nível → chaminé no sprite (a partir do canto de cima)
 
     const NivelConstrucao* nivel(int n) const;
     int nivelMax() const { return niveis.empty() ? 0 : niveis.back().nivel; }

@@ -1,0 +1,24 @@
+{
+  "afinidades": {
+    "bram": {
+      "afinidade": 0,
+      "falou_hoje": false
+    },
+    "edda": {
+      "afinidade": 25,
+      "falou_hoje": true
+    },
+    "maelis": {
+      "afinidade": 25,
+      "falou_hoje": true
+    },
+    "oswin": {
+      "afinidade": 25,
+      "falou_hoje": true
+    },
+    "tilda": {
+      "afinidade": 0,
+      "falou_hoje": false
+    }
+  }
+}

@@ -47,6 +47,11 @@ void Hud::atualizar(float dt) {
     tempoDica_ = std::max(0.0f, tempoDica_ - dt);
 }
 
+void Hud::acertarRelogio(const Relogio& r) {
+    const int m = static_cast<int>(r.minutos);
+    quandoVisto_ = std::format("{} {}, {:02}:{:02}", nomeEstacao(r.estacao()), r.diaDaEstacao(), (m / 60) % 24, m % 60);
+}
+
 void Hud::aviso(std::string texto, glm::vec4 c) {
     // O mesmo aviso de novo só renova o que já está na tela
     for (auto& a : avisos_)
@@ -54,6 +59,9 @@ void Hud::aviso(std::string texto, glm::vec4 c) {
             a.vida = 3.0f;
             return;
         }
+    // Fase 17: cada aviso novo também vai para o histórico (N), com dia e hora
+    historico_.push_front({texto, c, quandoVisto_});
+    if (historico_.size() > 60) historico_.pop_back();
     avisos_.push_back({std::move(texto), c, 3.0f});
     if (avisos_.size() > 4) avisos_.erase(avisos_.begin());
 }
@@ -126,16 +134,18 @@ void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
     f_.desenhar(r, era, {634 - l + 6, 22}, cor::ouro);
     f_.desenhar(r, titulo, {634 - l + 6, 33}, cor::apagado);
 
-    // Avisos (centro, em cima)
-    for (size_t i = 0; i < avisos_.size(); ++i) {
-        const Aviso& a = avisos_[i];
+    // Avisos: no canto de baixo, à esquerda, o mais novo embaixo (fase 17: o meio da tela fica para o herói)
+    acertarRelogio(w.relogio);
+    for (size_t k = 0; k < avisos_.size(); ++k) {
+        const Aviso& a = avisos_[avisos_.size() - 1 - k];
         glm::vec4 c = a.cor;
         c.a = std::min(1.0f, a.vida * 2.0f);
-        const float y = 86.0f + i * 12.0f;  // abaixo dos painéis do HUD (recursos e data)
+        const float y = 296.0f - k * 12.0f;  // acima da barra do chefe e da dica de controles
         const float lt = static_cast<float>(f_.largura(a.texto));
-        r.retangulo({320 - lt / 2 - 6, y - 2}, {lt + 12, 12}, {0.05f, 0.04f, 0.04f, 0.7f * c.a});
-        f_.desenharCentralizado(r, a.texto, {320, y + 4}, c);
+        r.retangulo({6, y - 2}, {lt + 12, 12}, {0.05f, 0.04f, 0.04f, 0.7f * c.a});
+        f_.desenhar(r, a.texto, {12, y}, c);
     }
+    if (!historico_.empty() && avisos_.empty() && tempoDica_ <= 0.0f) f_.desenhar(r, "N: mensagens", {12, 296}, cor::apagado * glm::vec4(1, 1, 1, 0.6f));
 
     // Dica de controles nos primeiros segundos
     if (tempoDica_ > 0.0f) {
@@ -1251,6 +1261,30 @@ void Hud::editorBrasao(ke::Renderer2D& r, const World& w, const Brasao& b, int s
     f_.desenharCentralizado(r, "Cancelar (Esc)", bc + glm::vec2(45, 8), cor::texto);
     f_.desenharCentralizado(r, w.brasaoCriado ? "W/S linha   A/D ou setas trocar" : "W/S linha   A/D ou setas trocar   (o brasão ainda é o dos reis antigos)",
                             {320, p.y + s.y + 10}, cor::texto);
+}
+
+// ---------- Fase 17: o histórico das mensagens ----------
+
+void Hud::painelMensagens(ke::Renderer2D& r, int rolagem) {
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.5f});
+    const glm::vec2 p{80, 28}, s{480, 300};
+    desenharPainel(r, p, s);
+    painelClicavel(p, s);
+    f_.desenharCentralizado(r, "Mensagens", {320, p.y + 12}, cor::ouro);
+    float y = p.y + 32;
+    const float fim = p.y + s.y - 24;
+    if (historico_.empty()) f_.desenharCentralizado(r, "Nenhuma mensagem ainda.", {320, y + 20}, cor::apagado);
+    for (int i = std::max(0, rolagem); i < static_cast<int>(historico_.size()); ++i) {
+        const Mensagem& m = historico_[i];
+        const auto linhas = quebrarLinhas(f_, m.texto, static_cast<int>(s.x) - 160);
+        if (y + 11.0f * linhas.size() > fim) break;
+        f_.desenhar(r, m.quando, {p.x + 14, y}, cor::apagado);
+        for (const auto& l : linhas) f_.desenhar(r, l, {p.x + 140, y}, m.cor), y += 11;
+        y += 3;
+    }
+    const std::string rodape = std::format("W/S ou roda rolar   N ou Esc fechar   ({} mensagens)", historico_.size());
+    f_.desenharCentralizado(r, rodape, {320, p.y + s.y - 12}, cor::apagado);
+    rodapeFechar("N ou Esc fechar", {320 + (f_.largura("W/S ou roda rolar   ") - f_.largura(std::format("   ({} mensagens)", historico_.size()))) / 2.0f, p.y + s.y - 12});
 }
 
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include <deque>
 #include <map>
 #include <string>
 #include <vector>
@@ -19,6 +20,7 @@ public:
     void atualizar(float dt);
     void aviso(std::string texto, glm::vec4 cor);
     void pulsar(const std::string& recurso) { pulso_[recurso] = 0.4f; }
+    void acertarRelogio(const Relogio& r);  // fase 17: a hora que vai nas mensagens novas
 
     void desenhar(ke::Renderer2D& r, const World& w, float tempo);
     void painelConstrucao(ke::Renderer2D& r, const World& w, const std::string& id, const std::vector<std::string>& opcoes, int sel,
@@ -59,6 +61,14 @@ public:
     // "Salvar" no id 800)
     void painelAlas(ke::Renderer2D& r, const World& w, int sel, float tempo);
     void editorBrasao(ke::Renderer2D& r, const World& w, const Brasao& rascunho, int sel, float tempo);
+    // Fase 17: o histórico dos avisos (mais novo primeiro), relido com N
+    struct Mensagem {
+        std::string texto;
+        glm::vec4 cor;
+        std::string quando;  // "Verão 5, 10:00"
+    };
+    const std::deque<Mensagem>& historico() const { return historico_; }
+    void painelMensagens(ke::Renderer2D& r, int rolagem);
 
     // Onde cada opção dos painéis apareceu no último quadro (a cena limpa antes de desenhar)
     Cliques cliques;
@@ -85,6 +95,8 @@ private:
     const GameData& dados_;
     std::vector<Aviso> avisos_;
     std::map<std::string, float> pulso_;
+    std::deque<Mensagem> historico_;
+    std::string quandoVisto_;  // o relógio do último quadro, já escrito (para datar as mensagens)
     float tempoDica_ = 12.0f;
 };
 

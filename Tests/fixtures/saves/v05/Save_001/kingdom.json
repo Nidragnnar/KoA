@@ -1,0 +1,40 @@
+{
+  "construcoes": [
+    {
+      "construida": true,
+      "def": "casa",
+      "id": "casa_herdeiro",
+      "nivel": 2,
+      "tile": [
+        20,
+        13
+      ]
+    },
+    {
+      "construida": true,
+      "def": "campo",
+      "id": "campo_1",
+      "nivel": 1,
+      "tile": [
+        17,
+        22
+      ]
+    },
+    {
+      "construida": true,
+      "def": "taverna",
+      "id": "taverna_1",
+      "nivel": 1,
+      "tile": [
+        39,
+        23
+      ]
+    }
+  ],
+  "era_visual": 0.0,
+  "povo": {
+    "felicidade": 42.400001525878906,
+    "imposto": 1,
+    "populacao": 8
+  }
+}

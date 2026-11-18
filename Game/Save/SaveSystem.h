@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include <filesystem>
 #include <map>
 #include <optional>
@@ -19,8 +20,8 @@ namespace koa {
 // Sobe quando o formato muda (com migração). v2: relógio e moradores; v3: obras e povo; v4: regiões, combate e missões;
 // v5: Crônicas do Reino; v6: regiões vivas (corrupção, segurança, prosperidade); v7: Conselho Real e leis;
 // v8: hordas e a defesa do portão; v9: guilda, expedições e relíquias; v10: vida cotidiana (horta, pratos, presentes);
-// v11: o castelo (alas) e o brasão da linhagem
-constexpr int VERSAO_SAVE = 11;
+// v11: o castelo (alas) e o brasão da linhagem; v12: a semente do sorteio (cada save segue a própria sorte)
+constexpr int VERSAO_SAVE = 12;
 
 struct EstadoConstrucao {
     std::string id, def;
@@ -53,6 +54,7 @@ struct DadosSave {
     std::string versaoJogo;
     std::string dataHora;
     double tempoJogado = 0.0;
+    uint32_t semente = 0;  // v12: 0 = save antigo (o jogo usa a semente de sempre)
     // player.json
     glm::vec2 posJogador{0.0f};
     int direcao = 0;
@@ -118,6 +120,7 @@ public:
     explicit SaveSystem(std::filesystem::path pasta) : pasta_(std::move(pasta)) {}
 
     bool existe(const std::string& slot = "Save_001") const;
+    // Grava numa pasta "<slot>.novo" e troca de uma vez: o save anterior vira "<slot>.bak"
     bool salvar(const DadosSave& d, const std::string& slot = "Save_001", std::string* erro = nullptr);
     // Se o save estiver corrompido, tenta o backup (e avisa em `aviso`)
     std::optional<DadosSave> carregar(const std::string& slot = "Save_001", std::string* erro = nullptr, std::string* aviso = nullptr);

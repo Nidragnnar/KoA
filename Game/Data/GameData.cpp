@@ -34,6 +34,13 @@ bool GameData::lerJson(const nlohmann::json& jr, const nlohmann::json& jc, std::
             d.requer = c.value("requer", "");
             d.requerTexto = c.value("requer_texto", "");
             d.monumento = c.value("monumento", false);
+            d.funcao = c.value("funcao", "");
+            d.ruinas = c.value("ruinas", false);
+            d.contaComoObra = c.value("conta_como_obra", true);
+            d.janelas = c.value("janelas", true);
+            d.acoes = c.value("acoes", std::vector<std::string>{});
+            if (c.contains("fumaca"))
+                for (const auto& [nv, ponto] : c["fumaca"].items()) d.fumaca[std::stoi(nv)] = {ponto.at(0).get<float>(), ponto.at(1).get<float>()};
             for (const auto& n : c.at("niveis")) {
                 NivelConstrucao nv;
                 nv.nivel = n.at("nivel").get<int>();

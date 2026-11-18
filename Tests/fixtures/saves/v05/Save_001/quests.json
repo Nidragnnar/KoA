@@ -1,0 +1,24 @@
+{
+  "abates": {
+    "sombra": 5
+  },
+  "marcos": [
+    "casa_reconstruida",
+    "chegada",
+    "construiu:campo",
+    "construiu:taverna",
+    "missao:limpar_estrada",
+    "titulo:senhor_cinzas",
+    "visitou:floresta"
+  ],
+  "missoes": {
+    "limpar_estrada": {
+      "base": 0,
+      "concluida": true
+    }
+  },
+  "visitadas": [
+    "floresta",
+    "vilarejo"
+  ]
+}

@@ -287,6 +287,10 @@ public:
     Brasao brasao;
     bool brasaoCriado = false;                    // o herdeiro já montou o próprio brasão
     const DadosCastelo& dadosCastelo() const { return dados_->castelo; }
+
+    // Fase 17: a sorte da partida (jogo novo sorteia; o save guarda a de cada momento)
+    void semear(uint32_t semente) { sementeBase_ = semente ? semente : 2026u, rng_.seed(sementeBase_); }
+    uint32_t semente() const { return sementeBase_; }
     int nivelCastelo() const;
     int vagasAlas() const;                        // quantas alas o nível do castelo permite (erguidas ou não)
     bool erguerAla(const std::string& id);
@@ -295,10 +299,18 @@ public:
     // O que falta para o próximo nível de uma construção ("" = nada: só os recursos)
     std::string requisitoProximoNivel(const BuildingData& b) const;
 
-    std::vector<ke::AABB> obstaculos() const;
+    const std::vector<ke::AABB>& obstaculos() const;  // fase 17: em cache (refeito só quando algo muda)
+    std::vector<ke::AABB> calcularObstaculos() const;  // o cálculo completo, sem cache (os testes comparam os dois)
+    void sujarObstaculos() const { obstaculosSujos_ = true; }
     ke::AABB caixaConstrucao(const BuildingData& b) const;
     glm::vec2 pontoPorta(const BuildingData& b) const;
     const BuildingDef* def(const BuildingData& b) const;
+    // Fase 17: perguntas pelos dados, sem o id da construção no código
+    const std::string& funcaoDe(const BuildingData& b) const;  // "" = comum
+    const BuildingData* porFuncao(const std::string& funcao) const;
+    float efeitoMaximo(const std::string& qual) const;  // o maior valor entre as construções prontas (nível de forja...)
+    float efeitoTotal(const std::string& qual) const;   // a soma entre as construções prontas (dano das torres...)
+    bool contaComoObra(const BuildingData& b) const;    // pronta, não é ruína e entra nas contas de obras
     glm::vec2 tamanhoPixels() const { return {mapa.largura() * mapa.ladoTile(), mapa.altura() * mapa.ladoTile()}; }
 
     ke::TileMap mapa;
@@ -398,6 +410,10 @@ private:
     bool desmaioPendente_ = false;
     std::vector<uint8_t> bloqueio_;  // grade do A* (tile sólido ou com obstáculo); vazia = refazer
     std::mt19937 rng_{2026};        // determinístico: os testes repetem igual
+    uint32_t sementeBase_ = 2026;   // fase 17: a sorte desta partida (vai para o save)
+    mutable std::vector<ke::AABB> obstaculosCache_;
+    mutable size_t assinaturaObstaculos_ = 0;
+    mutable bool obstaculosSujos_ = true;
     struct RegiaoGuardada {
         ke::TileMap mapa;
         entt::registry reg;

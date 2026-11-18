@@ -19,6 +19,7 @@ const char* CONTROLES[][2] = {
     {"G", "Conselho Real: cargos, leis e decisões"},
     {"L", "diário: missões e equipamento"},
     {"C", "Crônicas do Reino e fragmentos"},
+    {"N", "mensagens: reler os últimos avisos"},
     {"F5", "salvar"},
     {"M", "som ligado/desligado"},
     {"F11", "tela cheia"},
@@ -69,7 +70,7 @@ void TelaOpcoes::desenhar(ke::Renderer2D& r, const ke::BitmapFont& f, const Cont
     r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.6f});
     cliques_.limpar();
     if (controles_) {
-        const glm::vec2 p{80, 20}, s{480, 320};  // cresce com a lista (17 linhas)
+        const glm::vec2 p{80, 20}, s{480, 320};  // cresce com a lista (18 linhas)
         desenharPainel(r, p, s);
         f.desenharCentralizado(r, "Controles", {320, p.y + 12}, cor::ouro);
         float y = p.y + 30;

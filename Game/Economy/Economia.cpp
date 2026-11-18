@@ -42,8 +42,14 @@ ResumoReino calcularResumo(const Kingdom& k, const GameData& dados, const Estado
     r.pedraDia = static_cast<int>(pedra) + mod.pedraDia;
     // Felicidade: base sombria + construções + impostos + proteção
     static const float porImposto[] = {10.0f, 0.0f, -12.0f};
-    float alvo = 35.0f + felicidade + porImposto[static_cast<int>(e.imposto)] + mod.felicidade;
+    // Fase 17: as obras alegram cada vez menos (a soma se aproxima de um teto em vez de crescer sem fim)
+    const float dasObras = felicidade > 0.0f ? FELICIDADE_DAS_OBRAS * (1.0f - std::exp(-felicidade / FELICIDADE_DAS_OBRAS)) : felicidade;
+    float alvo = 35.0f + dasObras + porImposto[static_cast<int>(e.imposto)] + mod.felicidade;
     if (r.seguranca >= e.populacao) alvo += 5.0f;  // povo protegido dorme tranquilo
+    // Fase 17: vilarejo cheio demais reclama (segura o crescimento sem fim do povo)
+    r.aglomeracao = std::max(0, e.populacao - POVO_CONFORTAVEL) * FELICIDADE_POR_MORADOR;
+    alvo -= r.aglomeracao;
+    r.capacidadeCeleiro = static_cast<int>(std::ceil(std::max(r.comidaConsumida, 8) * mod.diasCeleiro));
     r.felicidadeAlvo = std::clamp(alvo, 0.0f, 100.0f);
     return r;
 }
@@ -67,6 +73,14 @@ RelatorioDia simularDia(const Kingdom& k, const GameData& dados, EstadoReino& e,
     const bool fome = estoque < r.comidaConsumida;
     inv.definir("comida", std::max(0, estoque - r.comidaConsumida));
     rel.variacoes.push_back({"comida", r.comidaProduzida - r.comidaConsumida});
+    // Fase 17: o que não cabe no celeiro estraga aos poucos (a comida volta a ter valor no fim do jogo)
+    if (const int sobra = inv.quantidade("comida") - r.capacidadeCeleiro; sobra > 0) {
+        const int perde = static_cast<int>(std::ceil(sobra * ESTRAGA_POR_NOITE));
+        inv.remover("comida", perde);
+        rel.variacoes.push_back({"comida|estragou", -perde});
+        rel.notas.push_back(std::format("O celeiro não dá conta: {} de comida estragou.", perde));
+    }
+    if (r.aglomeracao >= 3.0f) rel.notas.push_back(std::format("O vilarejo está apertado: o povo reclama (-{:.0f} de felicidade).", r.aglomeracao));
 
     float alvo = r.felicidadeAlvo;
     if (fome) alvo = std::max(0.0f, alvo - 25.0f);

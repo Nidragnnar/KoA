@@ -1,0 +1,13 @@
+{
+  "arma": "espada_enferrujada",
+  "armadura": "roupa_exilio",
+  "direcao": 0,
+  "equipamentos": [
+    "espada_enferrujada",
+    "roupa_exilio"
+  ],
+  "regiao": "vilarejo",
+  "vida": 100,
+  "x": 352.0,
+  "y": 268.0
+}

@@ -1,0 +1,29 @@
+{
+  "moradores": [
+    {
+      "conheceu": false,
+      "id": "tilda",
+      "memoria": []
+    },
+    {
+      "conheceu": true,
+      "id": "oswin",
+      "memoria": []
+    },
+    {
+      "conheceu": true,
+      "id": "maelis",
+      "memoria": []
+    },
+    {
+      "conheceu": true,
+      "id": "edda",
+      "memoria": []
+    },
+    {
+      "conheceu": false,
+      "id": "bram",
+      "memoria": []
+    }
+  ]
+}

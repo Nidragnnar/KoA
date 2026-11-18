@@ -1,0 +1,16 @@
+{
+  "alas": [
+    "tesouro",
+    "jardim"
+  ],
+  "brasao": {
+    "cor1": "purpura",
+    "cor2": "sable",
+    "cor_simbolo": "prata",
+    "divisao": "banda",
+    "forma": "classico",
+    "lema": 2,
+    "simbolo": "lua"
+  },
+  "brasao_criado": true
+}

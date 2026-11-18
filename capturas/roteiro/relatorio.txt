@@ -63,11 +63,11 @@ captura: 18_painel_reino
 [OK] K fecha o painel
 [OK] de manhã aparece o relatório
 [OK] as obras ficaram prontas durante a noite
-[OK] comida: 117 (esperado 117 = 120 + 5 do campo - 8 comidos)
+[OK] comida: 108 (esperado 108 = 120 + 5 do campo - 8 comidos)
 captura: 19_relatorio_manha
 [OK] E fecha o relatório
-[OK] a população cresceu: 8 -> 14
-[OK] 9 aldeões andando pelo vilarejo
+[OK] a população cresceu: 8 -> 13
+[OK] 8 aldeões andando pelo vilarejo
 captura: 20_vilarejo_crescendo
 [OK] Oswin entrega a missão Limpar a Estrada
 captura: 21_missao_aceita
@@ -95,7 +95,7 @@ captura: 29_era_3
 captura: 30_era_3_noite_dragao
 [OK] a transformação avança em onda a partir da casa
 captura: 31_onda_de_transformacao
-[OK] as Crônicas registraram a jornada (16 páginas)
+[OK] as Crônicas registraram a jornada (15 páginas)
 [OK] o herdeiro virou Libertador da Magia
 [OK] C abre as Crônicas
 captura: 32_cronicas
@@ -244,4 +244,9 @@ captura: 85_editor_brasao
 [OK] o brasão novo vira página nas Crônicas
 captura: 86_estandartes
 captura: 87_bandeiras_castelo
+[OK] N abre as mensagens e o relógio para
+captura: 88_mensagens
+[OK] N fecha as mensagens e o relógio volta a andar
+[OK] o conselho é o único painel na pilha
+[OK] Esc esvazia a pilha
 RESULTADO: 0 falha(s)

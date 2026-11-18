@@ -1,5 +1,8 @@
 #include "Game/Save/SaveSystem.h"
 
+#include <chrono>
+#include <thread>
+
 #include <nlohmann/json.hpp>
 
 #include "Engine/Platform/FileSystem.h"
@@ -13,17 +16,52 @@ bool SaveSystem::existe(const std::string& slot) const {
     return std::filesystem::exists(pasta_ / slot / "metadata.json", ec);
 }
 
+namespace {
+
+// Fase 17: arquivos que só existem a partir de certa versão do save (o resto existe desde a v1)
+struct ModuloSave {
+    const char* nome;
+    int desde;
+};
+constexpr ModuloSave MODULOS[] = {{"npcs", 2},     {"relationships", 2}, {"quests", 4},  {"chronicles", 5}, {"regions", 6},
+                                  {"council", 7},  {"defense", 8},       {"guild", 9},   {"life", 10},      {"castle", 11}};
+
+std::filesystem::path comSufixo(std::filesystem::path p, const char* sufixo) {
+    p += sufixo;
+    return p;
+}
+
+// Renomear pasta no Windows falha se outro programa (antivírus, indexador) estiver lendo um arquivo: tenta de novo
+bool renomearComPaciencia(const std::filesystem::path& de, const std::filesystem::path& para) {
+    for (int tentativa = 0; tentativa < 5; ++tentativa) {
+        std::error_code ec;
+        std::filesystem::rename(de, para, ec);
+        if (!ec) return true;
+        std::this_thread::sleep_for(std::chrono::milliseconds(15));
+    }
+    return false;
+}
+
+// Uma gravação interrompida entre as duas trocas deixa só a pasta ".novo" completa: ela vira o save
+void terminarTrocaPendente(const std::filesystem::path& dir) {
+    std::error_code ec;
+    const auto novo = comSufixo(dir, ".novo");
+    if (!std::filesystem::exists(dir / "metadata.json", ec) && std::filesystem::exists(novo / "metadata.json", ec)) {
+        std::filesystem::remove_all(dir, ec);
+        renomearComPaciencia(novo, dir);
+    }
+}
+
+}
+
 bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string* erro) {
     const auto dir = pasta_ / slot;
+    const auto novo = comSufixo(dir, ".novo"), bak = comSufixo(dir, ".bak");
     std::error_code ec;
-    // Backup do save anterior antes de sobrescrever
-    if (std::filesystem::exists(dir / "metadata.json", ec)) {
-        auto bak = dir;
-        bak += ".bak";
-        ke::fs::copiarPasta(dir, bak);
-    }
+    terminarTrocaPendente(dir);
 
-    json meta = {{"versao_formato", VERSAO_SAVE}, {"versao_jogo", d.versaoJogo}, {"data_hora", d.dataHora}, {"tempo_jogado", d.tempoJogado}};
+    json meta = {{"versao_formato", VERSAO_SAVE}, {"versao_jogo", d.versaoJogo}, {"data_hora", d.dataHora}, {"tempo_jogado", d.tempoJogado},
+                 {"semente", d.semente}};
     json player = {{"x", d.posJogador.x}, {"y", d.posJogador.y}, {"direcao", d.direcao}, {"regiao", d.regiao}, {"vida", d.vida},
                    {"arma", d.arma}, {"armadura", d.armadura}, {"equipamentos", d.equipamentos}};
     json jMissoes = json::object();
@@ -88,11 +126,26 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
         {"regions.json", &regioes}, {"council.json", &conselho}, {"defense.json", &defesa}, {"guild.json", &guilda}, {"life.json", &vida},
         {"castle.json", &castelo},
         {"metadata.json", &meta}};  // metadata por último: só existe save "válido" quando tudo foi gravado
+    // Fase 17: o save inteiro vai para uma pasta nova e só então troca de lugar com o antigo (que vira o backup).
+    // Uma queda no meio nunca mistura arquivos de dois momentos diferentes
+    std::filesystem::remove_all(novo, ec);
     for (const auto& [nome, conteudo] : arquivos) {
-        if (!ke::fs::gravarTextoSeguro(dir / nome, conteudo->dump(2))) {
+        if (!ke::fs::gravarTextoSeguro(novo / nome, conteudo->dump(2))) {
             if (erro) *erro = std::string("não consegui gravar ") + nome;
             return false;
         }
+    }
+    if (std::filesystem::exists(dir, ec)) {
+        std::filesystem::remove_all(bak, ec);
+        if (!renomearComPaciencia(dir, bak)) {
+            // Sem conseguir mover o antigo: copia por cima, como antes (mais lento, mas não perde nada)
+            ke::fs::copiarPasta(dir, bak);
+            std::filesystem::remove_all(dir, ec);
+        }
+    }
+    if (!renomearComPaciencia(novo, dir)) {
+        if (erro) *erro = "não consegui trocar a pasta do save";
+        return false;
     }
     return true;
 }
@@ -156,6 +209,8 @@ json SaveSystem::migrar(json tudo, int deVersao) {
         tudo["castle"] = {{"padrao", true}};
         deVersao = 11;
     }
+    // v11 → v12: só a semente do sorteio entrou (no metadata; sem ela, o jogo usa a de sempre)
+    if (deVersao < 12) deVersao = 12;
     tudo["metadata"]["versao_formato"] = deVersao;
     return tudo;
 }
@@ -180,23 +235,14 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
             if (erro) *erro = "versão de save desconhecida: " + std::to_string(versao);
             return std::nullopt;
         }
-        // Arquivos que só existem a partir da v2
-        if (versao >= 2) {
-            for (const char* nome : {"npcs", "relationships", "quests", "chronicles", "regions", "council", "defense", "guild", "life", "castle"}) {
-                if (std::string(nome) == "defense" && versao < 8) continue;
-                if (std::string(nome) == "guild" && versao < 9) continue;
-                if (std::string(nome) == "life" && versao < 10) continue;
-                if (std::string(nome) == "castle" && versao < 11) continue;
-                if (std::string(nome) == "quests" && versao < 4) continue;
-                if (std::string(nome) == "chronicles" && versao < 5) continue;
-                if (std::string(nome) == "regions" && versao < 6) continue;
-                if (std::string(nome) == "council" && versao < 7) continue;
-                const auto texto = ke::fs::lerTexto(dir / (std::string(nome) + ".json"));
-                tudo[nome] = texto ? json::parse(*texto, nullptr, false) : json();
-                if (tudo[nome].is_discarded() || !tudo[nome].is_object()) {
-                    if (erro) *erro = std::string("arquivo ausente ou corrompido: ") + nome + ".json";
-                    return std::nullopt;
-                }
+        // Os arquivos de cada módulo, a partir da versão em que ele apareceu
+        for (const ModuloSave& mod : MODULOS) {
+            if (versao < mod.desde) continue;
+            const auto texto = ke::fs::lerTexto(dir / (std::string(mod.nome) + ".json"));
+            tudo[mod.nome] = texto ? json::parse(*texto, nullptr, false) : json();
+            if (tudo[mod.nome].is_discarded() || !tudo[mod.nome].is_object()) {
+                if (erro) *erro = std::string("arquivo ausente ou corrompido: ") + mod.nome + ".json";
+                return std::nullopt;
             }
         }
         if (versao < VERSAO_SAVE) tudo = migrar(std::move(tudo), versao);
@@ -207,6 +253,7 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
         d.versaoJogo = m.value("versao_jogo", "");
         d.dataHora = m.value("data_hora", "");
         d.tempoJogado = std::max(0.0, m.value("tempo_jogado", 0.0));
+        d.semente = m.value("semente", 0u);
         const json& p = tudo["player"];
         d.posJogador = {p.value("x", 0.0f), p.value("y", 0.0f)};
         d.direcao = std::clamp(p.value("direcao", 0), 0, 3);
@@ -336,6 +383,7 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
 }
 
 std::optional<DadosSave> SaveSystem::carregar(const std::string& slot, std::string* erro, std::string* aviso) {
+    terminarTrocaPendente(pasta_ / slot);
     std::string e1;
     if (auto d = lerPasta(pasta_ / slot, &e1)) return d;
     auto bak = pasta_ / slot;

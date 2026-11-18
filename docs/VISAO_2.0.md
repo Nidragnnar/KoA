@@ -97,6 +97,19 @@ A 1.0 provou a base (reino, vida, RPG, eras). A 2.0 dá ao jogo a sua identidade
 - As cores e o símbolo aparecem nos **estandartes da praça**, nas **bandeiras do castelo** e no painel do reino (K). O primeiro brasão, cada nível do castelo e cada ala viram páginas nas Crônicas.
 - Fica para depois: a capa do herdeiro nas cores da linhagem, o nome da casa escolhido pelo jogador, interiores do castelo e a sala do trono como lugar para receber os casos do conselho.
 
+### Fase 17 — Fundações (feita, versão 1.9)
+Saída da auditoria da versão 1.8 (problemas E1 a E11). Nada novo para jogar; o jogo fica mais firme e mais barato de crescer.
+- **Save confiável**: o save inteiro vai para uma pasta nova e troca de lugar de uma vez (o anterior vira o backup); uma queda no meio nunca mistura dois momentos. A gravação dos arquivos é feita em segundo plano (no quadro fica só a captura, 0,4 ms em média). Cada save guarda a própria semente do sorteio (save v12). Um save real de cada versão (v1, v2, v3 e v5 a v11, tirados dos backups) é aberto e regravado pelos testes.
+- **Código do mundo por assunto**: o `World.cpp` foi dividido em 11 arquivos (núcleo, combate, moradores, save, crônicas, regiões, conselho, defesa, guilda, cotidiano e castelo), sem mudar a lógica.
+- **Painéis em pilha**: uma pilha única de telas abertas decide quando o relógio para e quando o alvo some. Os avisos foram para o canto de baixo, e N mostra as últimas 60 mensagens com estação, dia e hora.
+- **Regras nos dados**: cada construção diz a sua função, se começa em ruínas, se conta como obra, se tem janelas, as ações do painel e a chaminé; forja, mercado e guilda dizem o nível pelo efeito. Nenhuma comparação com o id de uma construção ficou no código.
+- **Colisão em cache** (refeita só quando algo muda) e os animais não atravessam mais casas e cercas.
+- **Balanceamento refeito** com um jogador automático que usa todos os sistemas por 120 dias, em 4 ritmos: o celeiro guarda 12 dias de comida (+8 com o Celeiro Real) e 40% do excesso estraga por noite; a felicidade das obras se aproxima de um teto de 35; acima de 40 moradores, cada um tira 0,5 de felicidade. No ritmo médio, o povo se estabiliza perto de 100 (antes passava de 230) e a comida fica entre 1 e 20 dias guardados.
+- Fica para depois (de propósito): o ouro ainda acumula no fim do jogo (vai ter destino no mercado vivo e na Guarda Real); os sistemas ainda guardam o estado dentro do World (a divisão foi por arquivo).
+
+### Próximas fases (plano da auditoria de 18/11/2026)
+- **Fase 18 — Povo com nome e clima.** **Fase 19 — Reputação e as três primeiras facções.** **Fase 20 — Mercado vivo e Livro do Reino.** **Fase 21 — Linhagem.** Detalhes e critérios no relatório da auditoria.
+
 ### Depois da 2.0 (para decidir mais tarde)
 - Linhagem: casamento, herdeiros, envelhecimento e sucessão.
 - Facções e diplomacia (anões, elfos, tribos do norte, Ordem Arcana, Culto das Cinzas).
@@ -105,6 +118,6 @@ A 1.0 provou a base (reino, vida, RPG, eras). A 2.0 dá ao jogo a sua identidade
 
 ## Notas técnicas
 
-- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`), a 14 para a v9 (`guild.json`), a 15 para a v10 (`life.json`) e a 16 para a v11 (`castle.json`).
+- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`), a 14 para a v9 (`guild.json`), a 15 para a v10 (`life.json`), a 16 para a v11 (`castle.json`) e a 17 para a v12 (a semente do sorteio no `metadata.json`).
 - Conteúdo (crônicas, títulos, eventos, cargos, estações) em JSON dentro de `Data/`, como missões e diálogos hoje.
 - O roteiro ponta a ponta ganha etapas a cada fase; a arte nova vem do NidraIA em sessão separada.

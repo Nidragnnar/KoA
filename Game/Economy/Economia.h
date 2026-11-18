@@ -27,7 +27,16 @@ struct ResumoReino {
     int comidaProduzida = 0, comidaConsumida = 0;
     int impostos = 0, ouroProducao = 0;
     int madeiraDia = 0, pedraDia = 0;
+    // Fase 17
+    float aglomeracao = 0.0f;   // felicidade que o vilarejo apertado tira (já descontada do alvo)
+    int capacidadeCeleiro = 0;  // comida que cabe guardada; o excesso estraga aos poucos
 };
+
+// Fase 17: regras do balanceamento (docs/BALANCEAMENTO.md mostra o efeito)
+inline constexpr int POVO_CONFORTAVEL = 40;            // acima disso, cada morador tira um pouco de felicidade
+inline constexpr float FELICIDADE_POR_MORADOR = 0.5f;  // quanto cada morador a mais tira
+inline constexpr float ESTRAGA_POR_NOITE = 0.4f;       // parte do excesso do celeiro que estraga a cada noite
+inline constexpr float FELICIDADE_DAS_OBRAS = 35.0f;   // teto da felicidade que as obras dão (cada obra a mais rende menos)
 
 // O que aconteceu durante a noite (relatório da manhã)
 struct RelatorioDia {

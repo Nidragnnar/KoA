@@ -23,6 +23,8 @@ struct ModificadorDia {
     int seguranca = 0;        // somado à segurança (Marechal, patrulha)
     int ouroDia = 0;          // ouro a mais (ou a menos) por noite (leis)
     int madeiraDia = 0, pedraDia = 0;  // Mestre das Obras
+    // Fase 17: quantos dias de consumo cabem no celeiro (o que passar disso começa a estragar)
+    float diasCeleiro = 12.0f;
 };
 
 struct EstacaoDef {

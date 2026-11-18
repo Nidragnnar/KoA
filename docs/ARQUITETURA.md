@@ -152,6 +152,18 @@ O plano da 2.0 está em `docs/VISAO_2.0.md`.
 - **Save v11**: arquivo novo `castle.json` (alas, brasão, se o herdeiro já criou o dele). O nível do castelo vai no `kingdom.json` como o das outras construções. Saves v1 a v10 começam com o castelo em ruínas, sem alas e com o brasão dos reis antigos.
 - **Testes**: 181 (10 novos da fase 16) e o roteiro com as etapas 51 a 53 (reconstruir pelo painel, alas pelo teclado e pelo clique, o editor do brasão com teclado e mouse, estandartes e bandeiras).
 
+## Fase 17 — Fundações (versão 1.9)
+
+- **World por assunto**: `Game/World/World.cpp` (núcleo: mapa, passo, interação, eras, a noite) e `World<Domínio>.cpp` para combate, moradores, save, crônicas, regiões, conselho, defesa, guilda, cotidiano e castelo. O que eles dividem (`LADO`, `baseTile`) está em `WorldInterno.h`. A lógica não mudou: só mudou de arquivo.
+- **Save**: `SaveSystem::salvar` grava em `<slot>.novo` e troca com `<slot>` por renomeação (o anterior vira `<slot>.bak`); `carregar` termina uma troca interrompida. Os módulos opcionais e a versão em que apareceram estão numa tabela (`MODULOS`). Save v12: `semente` no `metadata.json` (`World::semear`; jogo novo sorteia, o roteiro e os testes seguem com 2026). A cena grava em segundo plano (`std::async`), uma gravação por vez, e espera a última ao fechar.
+- **Saves-modelo**: `Tests/fixtures/saves/vNN/Save_001` (v1, v2, v3, v5 a v11, saves reais dos backups) e o teste `SavesModelo.TodasAsVersoesAbremEGravamNaAtual`.
+- **Cena**: `enum class Painel` e `pilha_` em `WorldScene`; `abrir`/`fechar` (fechar limpa o conteúdo: id da construção, fragmento, banca, escolha, conversa). O relógio para com a pilha não vazia; o alvo some com a pilha não vazia ou durante a colocação de obra.
+- **Mensagens**: os avisos vão para o canto de baixo à esquerda e para `Hud::historico()` (60 mais recentes, com estação, dia e hora); `N` abre o painel.
+- **Regras nos dados**: `BuildingDef` ganhou `funcao`, `ruinas`, `contaComoObra`, `janelas`, `acoes` e `fumaca`; `World::funcaoDe`, `porFuncao`, `efeitoMaximo` e `efeitoTotal` respondem pelos dados (nível da forja = `nivel_forja`, dano das torres = soma de `dano_torre`...). `Kingdom::defsEmRuinas` vem dos dados. Um teste garante que nenhum `defId == "..."` volte ao código do jogo.
+- **Colisão**: `World::obstaculos()` devolve um cache refeito quando a assinatura muda (colisores, região, obras e níveis) ou quando algo marca `sujarObstaculos()` (coleta, renascimento, noite, carregamento); `calcularObstaculos()` é o cálculo completo que os testes comparam.
+- **Balanceamento**: `Tools/Balanceamento/JogadorAutomatico` (usado pela ferramenta e pelo teste `Balanceamento.RitmoMedioDentroDasFaixas`) e `alarmes()` com as faixas. Regras novas na `Economia`: capacidade do celeiro (`ModificadorDia::diasCeleiro`, 12 dias, +8 com o Celeiro Real) e 40% do excesso estragando por noite (`comida|estragou` no relatório); felicidade das obras com teto (`FELICIDADE_DAS_OBRAS`); aglomeração acima de 40 moradores.
+- **Testes**: 191 (10 novos da fase 17) e o roteiro com a etapa 54 (mensagens e pilha de painéis).
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

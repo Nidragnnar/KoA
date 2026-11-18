@@ -1,0 +1,90 @@
+{
+  "construcoes": [
+    {
+      "construida": true,
+      "def": "casa",
+      "id": "casa_herdeiro",
+      "nivel": 2,
+      "tile": [
+        20,
+        13
+      ]
+    },
+    {
+      "construida": true,
+      "def": "campo",
+      "id": "campo_1",
+      "nivel": 1,
+      "tile": [
+        17,
+        22
+      ]
+    },
+    {
+      "construida": true,
+      "def": "taverna",
+      "id": "taverna_1",
+      "nivel": 1,
+      "tile": [
+        39,
+        23
+      ]
+    },
+    {
+      "construida": true,
+      "def": "moradia",
+      "id": "moradia_1",
+      "nivel": 1,
+      "tile": [
+        12,
+        10
+      ]
+    },
+    {
+      "construida": true,
+      "def": "moradia",
+      "id": "moradia_2",
+      "nivel": 1,
+      "tile": [
+        45,
+        12
+      ]
+    },
+    {
+      "construida": true,
+      "def": "mercado",
+      "id": "mercado_1",
+      "nivel": 1,
+      "tile": [
+        42,
+        28
+      ]
+    },
+    {
+      "construida": true,
+      "def": "forja",
+      "id": "forja_1",
+      "nivel": 3,
+      "tile": [
+        39,
+        14
+      ]
+    },
+    {
+      "construida": true,
+      "def": "capela",
+      "id": "capela_1",
+      "nivel": 1,
+      "tile": [
+        47,
+        19
+      ]
+    }
+  ],
+  "era_visual": 1.0,
+  "povo": {
+    "felicidade": 46.0,
+    "imposto": 1,
+    "populacao": 8
+  }
+}

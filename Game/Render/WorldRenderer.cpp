@@ -47,10 +47,12 @@ const ke::SpriteRegion& WorldRenderer::spriteConstrucao(const World& w, const Bu
 bool WorldRenderer::chamine(const World& w, const BuildingData& b, glm::vec2& saida) {
     const ke::AABB c = w.caixaConstrucao(b);
     const glm::vec2 topoSprite{(c.min.x + c.max.x) * 0.5f - 32.0f, c.max.y - 88.0f};
-    if (b.defId != "casa" || !b.constructed) return false;  // por enquanto só a casa do herdeiro solta fumaça
-    if (b.level == 2) saida = topoSprite + glm::vec2(47, 8);
-    else if (b.level == 3) saida = topoSprite + glm::vec2(13, 4);
-    else return false;
+    // Fase 17: a chaminé de cada nível vem dos dados ("fumaca"); hoje só a casa do herdeiro tem
+    const BuildingDef* d = w.def(b);
+    if (!d || !b.constructed) return false;
+    const auto it = d->fumaca.find(b.level);
+    if (it == d->fumaca.end()) return false;
+    saida = topoSprite + it->second;
     return true;
 }
 
@@ -144,7 +146,7 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     }
     for (const auto& b : w.reino.construcoes) {
         if (!w.noVilarejo()) break;  // as construções do reino ficam no vilarejo
-        if (b.defId == "muralha") {
+        if (w.funcaoDe(b) == "muralha") {
             // Fase 13: um trecho de muro por fileira e o portão no vão da estrada (ruínas no nível 1)
             const float x = b.tile.x * static_cast<float>(lado);
             for (int f = 0; f < 7; ++f) {
@@ -166,7 +168,7 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
         const ke::AABB c = w.caixaConstrucao(b);
         const glm::vec2 cantoSprite{std::floor((c.min.x + c.max.x) * 0.5f - s.tamanho.x / 2), c.max.y - s.tamanho.y};
         lista.push_back({c.max.y, &s, cantoSprite});
-        if (b.defId == "castelo" && b.constructed)  // fase 16: as bandeiras da linhagem no alto das torres
+        if (w.funcaoDe(b) == "castelo" && b.constructed)  // fase 16: as bandeiras da linhagem no alto das torres
             for (const glm::vec2 m : bandeirasCastelo(b.level))
                 lista.push_back({c.max.y + 0.01f, nullptr, {}, false, 0.0f, [&r, &w, pano = cantoSprite + m, this] {
                                      r.retangulo(pano - glm::vec2(1, 2), {16, 2}, {0.29f, 0.23f, 0.16f, 1});  // a vara de onde o pano pende
@@ -287,9 +289,9 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     const float escuro = w.relogio.escuridao();
     if (escuro > 0.0f && w.noVilarejo()) {
         for (const auto& b : w.reino.construcoes) {
-            if (b.level < 2 || b.defId == "muralha") continue;  // muralha não tem janela
+            if (b.level < 2 || !w.def(b) || !w.def(b)->janelas) continue;  // a muralha não tem janela
             const ke::AABB c = w.caixaConstrucao(b);
-            if (b.defId == "castelo") {  // fase 16: o castelo acende as janelas a partir do Salão Real
+            if (w.funcaoDe(b) == "castelo") {  // fase 16: o castelo acende as janelas a partir do Salão Real
                 if (b.level < 3 || !b.constructed) continue;
                 const ke::SpriteRegion& s = spriteConstrucao(w, b);
                 const glm::vec2 cantoSprite{(c.min.x + c.max.x) * 0.5f - s.tamanho.x / 2, c.max.y - s.tamanho.y};
@@ -366,9 +368,9 @@ void WorldRenderer::desenharLuzes(ke::Renderer2D& r, const World& w, const ke::C
     }
     // Janelas acesas das casas reconstruídas
     for (const auto& b : w.reino.construcoes) {
-        if (b.level < 2 || !b.constructed || !w.noVilarejo() || b.defId == "muralha") continue;
+        if (b.level < 2 || !b.constructed || !w.noVilarejo() || !w.def(b) || !w.def(b)->janelas) continue;
         const ke::AABB c = w.caixaConstrucao(b);
-        if (b.defId == "castelo") {
+        if (w.funcaoDe(b) == "castelo") {
             if (b.level < 3) continue;
             const ke::SpriteRegion& s = spriteConstrucao(w, b);
             const glm::vec2 cantoSprite{(c.min.x + c.max.x) * 0.5f - s.tamanho.x / 2, c.max.y - s.tamanho.y};

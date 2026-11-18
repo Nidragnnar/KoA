@@ -8,6 +8,7 @@
 #include "Game/World/World.h"
 
 using namespace koa;
+namespace fs = std::filesystem;
 
 namespace {
 
@@ -235,7 +236,7 @@ TEST(Cenarios, MontarSavesDeTeste) {
     free(pasta);
     auto gravar = [&](World& w, const std::string& slot) {
         DadosSave d = w.capturar();
-        d.versaoJogo = "1.8.0";
+        d.versaoJogo = "1.9.0";
         d.dataHora = "cenário de teste";
         ASSERT_TRUE(s.salvar(d, slot));
     };
@@ -284,62 +285,47 @@ TEST(Cenarios, MontarSavesDeTeste) {
         w.equip.arma = "espada_linhagem";
         w.equip.armadura = "cota_malha";
     };
-    // Fase 16: reino avançado, 10:00, ao pé do castelo
-    auto aoPeDoCastelo = [&](World& w) {
-        reinoAvancado(w);
-        equipar(w);
-        w.relogio.minutos = 10 * 60;
-        if (const BuildingData* c = w.reino.construcao("castelo")) {
-            w.jogador.pos = w.pontoPorta(*c) + glm::vec2(0, 8);
-            w.jogador.dir = Direcao::Cima;
-        }
-        w.hordaDia = 0;
-        w.proximaHorda = w.relogio.dia + 12;
-        w.ultimaDecisao = w.relogio.dia;  // nenhum caso do conselho atrapalhando o teste
-    };
-    // Save_002: no Despertar, diante das RUÍNAS do castelo, com recursos para a Torre de Menagem (e uma ala).
-    // E no portão: Reconstruir, depois "Alas do castelo" e "Brasão da linhagem". O Salão Real ainda pede o Reino Renascido
+    // Save_002 (fase 17): reino grande e APERTADO, 18:00. Seis moradias de pedra, 90 moradores e 3.000 de comida:
+    // dormir mostra no relatório a comida estragando (o celeiro guarda 12 dias) e o povo reclamando da aglomeração.
+    // Galinheiro e curral do lado da casa (os bichos não atravessam mais paredes). N relê as mensagens
     {
         World w = vilarejo();
-        aoPeDoCastelo(w);
-        w.inventario.definir("madeira", 160);
-        w.inventario.definir("pedra", 230);
-        w.inventario.definir("ouro", 220);
+        reinoAvancado(w);
+        equipar(w);
+        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 9000);
+        const glm::ivec2 lugares[] = {{12, 10}, {45, 12}, {48, 28}, {20, 30}, {52, 8}, {8, 22}};
+        for (const glm::ivec2 p : lugares) obra(w, "moradia", p);
+        obra(w, "galinheiro", {23, 12});
+        obra(w, "curral", {27, 12});
+        w.dormir(false);
+        for (const auto& b : std::vector<BuildingData>(w.reino.construcoes))
+            if (b.defId == "moradia")
+                while (w.def(b)->nivel(w.reino.construcao(b.id)->level + 1)) ASSERT_TRUE(w.melhorarConstrucao(b.id));
+        w.estado.populacao = std::min(90, w.resumo().populacaoMax);
+        w.estado.felicidade = 70.0f;
+        w.relogio.minutos = 18 * 60;
+        w.inventario.definir("comida", 3000);
+        w.inventario.definir("madeira", 150);
+        w.inventario.definir("pedra", 150);
+        w.inventario.definir("ouro", 300);
+        w.hordaDia = 0;
+        w.proximaHorda = w.relogio.dia + 12;
+        w.ultimaDecisao = w.relogio.dia;
+        std::printf("[cenário] Save_002: %d moradores (máximo %d), aglomeração %.0f\n", w.estado.populacao, w.resumo().populacaoMax, w.resumo().aglomeracao);
         w.tirarEventos();
         gravar(w, "Save_002");
     }
-    // Save_003: Reino Renascido, castelo no SALÃO REAL com a Sala do Tesouro e uma vaga livre; brasão já trocado
-    // (esquartelado de azure e prata, um leão de ouro). 21:00: janelas do castelo acesas. Recursos para mais uma ala
-    // e para o Castelo Real, que ainda pede a Alta Fantasia
+    // Save_003 (fase 17): um save ANTIGO de verdade (v10, da fase 15), copiado dos saves-modelo dos testes.
+    // Carregar mostra a migração v10 → v12 no jogo; salvar grava no formato novo (e o anterior vira .bak)
     {
-        World w = vilarejo();
-        aoPeDoCastelo(w);
-        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 5000);
-        w.inventario.definir("cristal", 60);
-        // Tudo no nível máximo (o castelo até o Salão Real): o desenvolvimento chega ao Reino Renascido
-        for (bool subiu = true; subiu;) {
-            subiu = false;
-            for (const auto& b : std::vector<BuildingData>(w.reino.construcoes))
-                if (b.defId != "castelo" && b.defId != "muralha" && b.constructed && w.def(b) && w.def(b)->nivel(b.level + 1) &&
-                    w.requisitoProximoNivel(b).empty())
-                    subiu = w.melhorarConstrucao(b.id) || subiu;
-        }
-        ASSERT_TRUE(w.melhorarConstrucao("castelo"));
-        w.marcar("era:2", "Reino Renascido", true);
-        ASSERT_TRUE(w.melhorarConstrucao("castelo"));
-        EXPECT_GE(static_cast<int>(w.reino.eraAlvo()), 2) << "desenvolvimento " << w.reino.desenvolvimento();
-        w.reino.eraVisual = 2.0f;
-        std::printf("[cenário] Save_003: desenvolvimento %d, era alvo %d\n", w.reino.desenvolvimento(), static_cast<int>(w.reino.eraAlvo()));
-        ASSERT_TRUE(w.erguerAla("tesouro"));
-        w.definirBrasao({"classico", "esquartelado", "azure", "prata", "leao", "ouro", 3});
-        w.relogio.minutos = 21 * 60;
-        w.inventario.definir("madeira", 300);
-        w.inventario.definir("pedra", 500);
-        w.inventario.definir("ouro", 600);
-        w.inventario.definir("cristal", 25);
-        w.inventario.definir("comida", 150);
-        w.tirarEventos();
-        gravar(w, "Save_003");
+        const fs::path destino = fs::path(s.pasta()) / "Save_003";
+        std::error_code ec;
+        fs::remove_all(destino, ec);
+        fs::remove_all(fs::path(s.pasta()) / "Save_003.bak", ec);
+        fs::copy(fs::path(PASTA_FIXTURES) / "saves/v10/Save_001", destino, fs::copy_options::recursive, ec);
+        ASSERT_FALSE(ec) << ec.message();
+        const auto d = s.carregar("Save_003");
+        ASSERT_TRUE(d) << "o save antigo precisa abrir";
     }
 }
 TEST(SaveV5, SaveV4GanhaCronicasDoQueJaAconteceu) {

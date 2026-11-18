@@ -1,0 +1,15 @@
+{
+  "arma": "espada_linhagem",
+  "armadura": "cota_malha",
+  "direcao": 3,
+  "equipamentos": [
+    "cota_malha",
+    "espada_enferrujada",
+    "espada_linhagem",
+    "roupa_exilio"
+  ],
+  "regiao": "floresta",
+  "vida": 100,
+  "x": 56.0,
+  "y": 284.0
+}

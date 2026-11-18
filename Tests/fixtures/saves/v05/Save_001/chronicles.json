@@ -1,0 +1,46 @@
+{
+  "cronicas": [
+    {
+      "dia": 1,
+      "era": 0,
+      "marco": "chegada",
+      "texto": "O último herdeiro voltou a Valdren depois de anos de exílio. Encontrou cinzas, ruínas e oito sobreviventes."
+    },
+    {
+      "dia": 1,
+      "era": 0,
+      "marco": "casa_reconstruida",
+      "texto": "O herdeiro reergueu a casa dos antepassados. Pela primeira vez em anos, saiu fumaça de uma chaminé em Valdren."
+    },
+    {
+      "dia": 1,
+      "era": 0,
+      "marco": "titulo:senhor_cinzas",
+      "texto": "O povo passou a chamar o herdeiro de Senhor das Cinzas."
+    },
+    {
+      "dia": 2,
+      "era": 0,
+      "marco": "construiu:campo",
+      "texto": "A primeira horta foi arada em terra que não via semente desde a Queda."
+    },
+    {
+      "dia": 2,
+      "era": 0,
+      "marco": "construiu:taverna",
+      "texto": "A taverna reabriu as portas. Naquela noite, alguém cantou na praça."
+    },
+    {
+      "dia": 2,
+      "era": 0,
+      "marco": "visitou:floresta",
+      "texto": "O herdeiro seguiu a estrada leste e entrou na Floresta Amaldiçoada, onde as árvores sussurram."
+    },
+    {
+      "dia": 2,
+      "era": 0,
+      "marco": "missao:limpar_estrada",
+      "texto": "A estrada leste foi limpa das sombras. Logo os viajantes voltariam a usá-la."
+    }
+  ]
+}

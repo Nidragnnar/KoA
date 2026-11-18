@@ -339,7 +339,9 @@ void Roteiro::noMundo(WorldScene& cena) {
                 bool prontas = true;
                 for (const auto& b : w.reino.construcoes) prontas = prontas && b.constructed;
                 verificar(prontas, "as obras ficaram prontas durante a noite");
-                const int esperado = comidaAntes_ + 5 - popAntes_;
+                int esperado = comidaAntes_ + 5 - popAntes_;
+                // Fase 17: o que não cabe no celeiro (12 dias de consumo) estraga em parte
+                if (const int cap = std::max(popAntes_, 8) * 12; esperado > cap) esperado -= static_cast<int>(std::ceil((esperado - cap) * ESTRAGA_POR_NOITE));
                 verificar(w.inventario.quantidade("comida") == esperado,
                           std::format("comida: {} (esperado {} = {} + 5 do campo - {} comidos)", w.inventario.quantidade("comida"), esperado,
                                       comidaAntes_, popAntes_));
@@ -1426,7 +1428,27 @@ void Roteiro::noMundo(WorldScene& cena) {
             if (quadro_ == 120) proxima();
             return;
         }
-        case 54:
+        // ---------- Fase 17: a pilha de painéis e as mensagens ----------
+        case 54: {  // N abre o histórico; o relógio para com qualquer painel e volta a andar quando a pilha esvazia
+            if (cena.decisaoAberta() && quadro_ % 5 == 0) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 1) w.relogio.minutos = 11 * 60;
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_N);
+            if (quadro_ == 14) {
+                verificar(cena.aberto(Painel::Mensagens) && w.relogio.parado, "N abre as mensagens e o relógio para");
+                capturar("88_mensagens");
+            }
+            if (quadro_ == 18) in.simularToque(SDL_SCANCODE_N);
+            if (quadro_ == 26) verificar(cena.pilha().empty() && !w.relogio.parado, "N fecha as mensagens e o relógio volta a andar");
+            if (quadro_ == 30) in.simularToque(SDL_SCANCODE_G);
+            if (quadro_ == 38) verificar(cena.pilha().size() == 1 && cena.aberto(Painel::Conselho), "o conselho é o único painel na pilha");
+            if (quadro_ == 40) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 48) {
+                verificar(cena.pilha().empty(), "Esc esvazia a pilha");
+                proxima();
+            }
+            return;
+        }
+        case 55:
             w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();

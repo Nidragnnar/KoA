@@ -1,0 +1,53 @@
+{
+  "aventureiros": {
+    "garrick": {
+      "ferido_ate": 0,
+      "fora": false,
+      "nivel": 1,
+      "sumido": false,
+      "volta_dia": 0
+    },
+    "kael": {
+      "ferido_ate": 0,
+      "fora": false,
+      "nivel": 1,
+      "sumido": false,
+      "volta_dia": 0
+    },
+    "lira": {
+      "ferido_ate": 0,
+      "fora": false,
+      "nivel": 1,
+      "sumido": false,
+      "volta_dia": 0
+    },
+    "tomas": {
+      "ferido_ate": 0,
+      "fora": false,
+      "nivel": 1,
+      "sumido": false,
+      "volta_dia": 0
+    },
+    "ysolde": {
+      "ferido_ate": 0,
+      "fora": false,
+      "nivel": 1,
+      "sumido": false,
+      "volta_dia": 0
+    }
+  },
+  "expedicao": {
+    "destino": "",
+    "grupo": [],
+    "partida": 0,
+    "volta": 0
+  },
+  "reliquias": [
+    {
+      "conhecida": false,
+      "exposta": false,
+      "id": "ampulheta",
+      "purificada": false
+    }
+  ]
+}

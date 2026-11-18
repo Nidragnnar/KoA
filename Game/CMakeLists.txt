@@ -15,6 +15,16 @@ add_library(KingdomGame STATIC
     Buildings/Building.cpp
     Player/Player.cpp
     World/World.cpp
+    World/WorldCombate.cpp
+    World/WorldMoradores.cpp
+    World/WorldSave.cpp
+    World/WorldCronicas.cpp
+    World/WorldRegioes.cpp
+    World/WorldConselho.cpp
+    World/WorldDefesa.cpp
+    World/WorldGuilda.cpp
+    World/WorldCotidiano.cpp
+    World/WorldCastelo.cpp
     World/Regioes.cpp
     Save/SaveSystem.cpp
     Lore/Lore.cpp)

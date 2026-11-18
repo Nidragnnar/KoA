@@ -1,0 +1,380 @@
+{
+  "objetos": [
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_20_34"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_19_34"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_17_34"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_26_33"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_25_33"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_22_33"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_19_33"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_18_33"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_17_33"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_16_33"
+    },
+    {
+      "aberto": false,
+      "esgotado": false,
+      "hp": 2,
+      "id": "arvore_54_32"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_25_32"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_18_32"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_57_31"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_56_31"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_55_31"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_50_31"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_24_31"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_20_31"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_19_31"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_17_31"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_15_31"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_56_30"
+    },
+    {
+      "aberto": true,
+      "esgotado": false,
+      "hp": 0,
+      "id": "bau_55_30"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_53_30"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_49_30"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_36_30"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_21_30"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_57_29"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_55_29"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_51_29"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_60_28"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_57_28"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_55_28"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_53_28"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_25_28"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_21_28"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_57_27"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_51_27"
+    },
+    {
+      "aberto": true,
+      "esgotado": false,
+      "hp": 0,
+      "id": "bau_40_27"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_24_27"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_23_27"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_58_26"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_54_26"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_53_26"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_60_25"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_55_25"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_59_24"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_52_24"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_58_23"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_53_23"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_48_23"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_6_17"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_3_16"
+    },
+    {
+      "aberto": true,
+      "esgotado": false,
+      "hp": 0,
+      "id": "bau_58_15"
+    },
+    {
+      "aberto": true,
+      "esgotado": false,
+      "hp": 0,
+      "id": "bau_10_13"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_8_13"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_3_13"
+    },
+    {
+      "aberto": false,
+      "esgotado": false,
+      "hp": 2,
+      "id": "arvore_42_11"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "rocha_12_9"
+    },
+    {
+      "aberto": true,
+      "esgotado": false,
+      "hp": 0,
+      "id": "bau_50_8"
+    },
+    {
+      "aberto": false,
+      "esgotado": true,
+      "hp": 0,
+      "id": "arvore_40_8"
+    }
+  ],
+  "relogio": {
+    "dia": 1,
+    "minutos": 469.78271484375
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "construcoes": [
+    {
+      "construida": true,
+      "def": "casa",
+      "id": "casa_herdeiro",
+      "nivel": 2,
+      "tile": [
+        20,
+        13
+      ]
+    }
+  ],
+  "era_visual": 0.0,
+  "povo": {
+    "felicidade": 40.0,
+    "imposto": 1,
+    "populacao": 8
+  }
+}

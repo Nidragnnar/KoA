@@ -6,7 +6,7 @@ era a era, até a **Alta Fantasia**.
 
 Engine própria em **C++20 + SDL3 + OpenGL 3.3** (Kingdom Engine), com EnTT, Dear ImGui, nlohmann/json e GoogleTest.
 
-## Versão 1.8
+## Versão 1.9
 
 A 2.0 está em andamento (identidade e plano em `docs/VISAO_2.0.md`). A fase 9 trouxe as Crônicas do Reino
 (tecla C), os títulos do herdeiro, o mercador viajante, três monumentos e o começo do mistério da Queda das Cinzas.
@@ -32,6 +32,11 @@ A fase 16 trouxe o castelo dos reis e o brasão da linhagem: as ruínas no alto 
 níveis (Torre de Menagem, Salão Real e Castelo Real, os dois últimos esperando as eras), cada nível abre vaga para
 uma ala (tesouro, quartel, jardim, celeiro, biblioteca ou salão de banquetes), e no painel do castelo se monta o
 brasão: forma, divisão, cores, símbolo e lema. As cores aparecem nos estandartes da praça e nas bandeiras do castelo.
+A fase 17 arrumou as fundações (depois da auditoria da versão 1.8): o save é gravado inteiro de uma vez e em segundo
+plano, cada save guarda a própria sorte, um save real de cada versão antiga é testado, o código do mundo foi dividido
+por assunto, os painéis viraram uma pilha só, os avisos foram para o canto (N relê as mensagens), as regras das obras
+saíram do código para os dados, e o balanceamento foi refeito com um jogador automático que usa todos os sistemas:
+o celeiro tem limite (a comida que sobra estraga), as obras alegram cada vez menos e o vilarejo apertado reclama.
 
 As 8 fases do plano de arquitetura da 1.0 estão feitas:
 
@@ -53,6 +58,7 @@ As 8 fases do plano de arquitetura da 1.0 estão feitas:
 | H | comer (o prato que mais cura, ou 3 de comida) |
 | F | na conversa, dar presente; no fogão, comer o prato escolhido |
 | B / K / R / G / L / C | obras / reino / terras do reino / Conselho Real / diário / Crônicas |
+| N | mensagens (os últimos avisos, com dia e hora) |
 | Esc | menu (salvar, opções, controles, título, sair) |
 | F5 | salvar |
 | F11 | tela cheia |

@@ -1,4 +1,5 @@
 #pragma once
+#include <set>
 #include <string>
 #include <vector>
 
@@ -20,6 +21,7 @@ struct Kingdom {
     bool magiaLiberta = false;  // o Cavaleiro Caído foi derrotado: a Alta Fantasia fica possível
 
     int desenvolvimento() const;
+    std::set<std::string> defsEmRuinas;  // fase 17: vem dos dados (construções com "ruinas": true)
     KingdomEra eraAlvo() const;
     KingdomEra eraAtual() const { return static_cast<KingdomEra>(static_cast<int>(eraVisual + 0.5f)); }
     void atualizarEra(float dt);
