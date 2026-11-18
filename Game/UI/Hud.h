@@ -69,6 +69,10 @@ public:
     };
     const std::deque<Mensagem>& historico() const { return historico_; }
     void painelMensagens(ke::Renderer2D& r, int rolagem);
+    // Fase 18: a ficha de um habitante e a lista do povo (ids das linhas = índice em World::povo)
+    void fichaHabitante(ke::Renderer2D& r, const World& w, int id);
+    void painelPovo(ke::Renderer2D& r, const World& w, int sel, int rolagem);
+    static int linhasPovo() { return 18; }
 
     // Onde cada opção dos painéis apareceu no último quadro (a cena limpa antes de desenhar)
     Cliques cliques;

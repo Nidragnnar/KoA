@@ -1,0 +1,16 @@
+{
+  "_como_funciona": "Fase 18. O tempo de cada dia é sorteado de forma fixa (pelo dia e pela sorte da partida) com os pesos da estação, e anunciado no relatório da manhã. chuva/tempestade regam a horta; tempestade tira felicidade no dia; neve deixa o herói e as criaturas mais lentos (velocidade); neblina deixa o mundo cinza e a horda mais forte (forca_horda). luz = cor da luz do dia (multiplica); particulas = quantas gotas/flocos por tela.",
+  "estacoes": {
+    "primavera": { "limpo": 50, "chuva": 35, "neblina": 15 },
+    "verao": { "limpo": 60, "chuva": 15, "tempestade": 20, "neblina": 5 },
+    "outono": { "limpo": 40, "chuva": 30, "neblina": 25, "tempestade": 5 },
+    "inverno": { "limpo": 35, "neve": 45, "neblina": 20 }
+  },
+  "tempos": [
+    { "id": "limpo", "nome": "céu limpo", "aviso": "" },
+    { "id": "chuva", "nome": "chuva", "aviso": "Chove: a horta está regada.", "rega": true, "luz": [0.82, 0.86, 0.95], "particulas": 140 },
+    { "id": "tempestade", "nome": "tempestade", "aviso": "Tempestade: a horta está regada, mas o povo fica em casa (-2 de felicidade).", "rega": true, "felicidade": -2, "luz": [0.62, 0.66, 0.8], "particulas": 260, "raios": true },
+    { "id": "neve", "nome": "neve", "aviso": "Neve: todo mundo anda mais devagar, criaturas também.", "velocidade": 0.8, "luz": [0.95, 0.97, 1.05], "particulas": 90 },
+    { "id": "neblina", "nome": "neblina", "aviso": "Neblina: se uma horda vier hoje, virá escondida (mais forte).", "forca_horda": 1.2, "luz": [0.8, 0.82, 0.85], "nevoa": 0.5 }
+  ]
+}

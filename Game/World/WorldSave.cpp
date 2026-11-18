@@ -73,6 +73,10 @@ DadosSave World::capturar() const {
     d.temBrasao = true;
     d.brasaoCriado = brasaoCriado;
     d.brasao = brasao;
+    // Fase 18
+    d.temPovoNomeado = true;
+    d.povo = povo;
+    d.proximoHabitante = proximoHabitante;
     return d;
 }
 
@@ -213,6 +217,23 @@ void World::aplicar(const DadosSave& d) {
         if (dados().castelo.ala(id) && std::ranges::find(alas, id) == alas.end() && static_cast<int>(alas.size()) < vagasAlas()) alas.push_back(id);
     brasao = dados().castelo.validar(d.temBrasao ? d.brasao : dados().castelo.inicial);
     brasaoCriado = d.temBrasao && d.brasaoCriado;
+    // Fase 18: a era já conquistada (pelos marcos era:N) não volta atrás
+    for (int e = 3; e >= 1; --e)
+        if (marcos.contains(std::format("era:{}", e))) {
+            reino.eraConquistada = e;
+            break;
+        }
+    // Fase 18: o povo com nome (saves antigos: gerado agora, pela sorte do save, do tamanho da população)
+    if (d.temPovoNomeado) {
+        povo = d.povo;
+        proximoHabitante = std::max(d.proximoHabitante, 1);
+        for (const Habitante& h : povo) proximoHabitante = std::max(proximoHabitante, h.id + 1);
+        std::vector<std::string> notas;
+        ajustarPovo(false, notas);  // se a população salva não bate (save editado), acerta
+    } else {
+        gerarPovoInicial();
+    }
+    sincronizarAldeoes();
     sincronizarAnimais();
     renascerInimigos();  // o chefe derrotado não volta (e a corrupção salva decide quantas criaturas há)
     bloqueio_.clear();

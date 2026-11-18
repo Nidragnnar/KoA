@@ -97,6 +97,7 @@ struct Relacionamento {
 // Aldeões sem nome: aparecem conforme a população cresce e passeiam pelo vilarejo
 struct Aldeao {
     int variante = 0;
+    int habitante = 0;  // fase 18: quem é (id em World::povo; 0 = ninguém)
     float espera = 0.0f;  // segundos parado antes de escolher outro lugar
     bool dormindo = false;
 };

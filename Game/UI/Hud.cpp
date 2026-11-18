@@ -116,12 +116,16 @@ void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
         const int faltam = w.expedicao.volta - w.relogio.dia;
         expedicao = faltam <= 1 ? "Expedição volta amanhã" : std::format("Expedição volta em {} dias", faltam);
     }
+    // Fase 18: o tempo de hoje (fora de casa)
+    const std::string tempoDia = w.tempoAqui().id == "limpo" ? "" : "Tempo: " + w.tempoAqui().nome;
     const float l = static_cast<float>(std::max({f_.largura(era), f_.largura(data) + 50, f_.largura(titulo), f_.largura(hoje), f_.largura(horda),
-                                                 f_.largura(expedicao)})) + 12.0f;
-    const float alt = 41.0f + (hoje.empty() ? 0.0f : 11.0f) + (horda.empty() ? 0.0f : 11.0f) + (expedicao.empty() ? 0.0f : 11.0f);
+                                                 f_.largura(expedicao), f_.largura(tempoDia)})) + 12.0f;
+    const float alt = 41.0f + (hoje.empty() ? 0.0f : 11.0f) + (horda.empty() ? 0.0f : 11.0f) + (expedicao.empty() ? 0.0f : 11.0f) +
+                      (tempoDia.empty() ? 0.0f : 11.0f);
     desenharPainel(r, {634 - l, 6}, {l, alt});
     float yLinha = 44;
     if (!hoje.empty()) f_.desenhar(r, hoje, {634 - l + 6, yLinha}, corHoje), yLinha += 11;
+    if (!tempoDia.empty()) f_.desenhar(r, tempoDia, {634 - l + 6, yLinha}, cor::apagado), yLinha += 11;
     if (!horda.empty()) {
         const float a = 0.8f + 0.2f * std::sin(tempo * 4.0f);
         f_.desenhar(r, horda, {634 - l + 6, yLinha}, cor::ruim * glm::vec4(a, a, a, 1));
@@ -1285,6 +1289,107 @@ void Hud::painelMensagens(ke::Renderer2D& r, int rolagem) {
     const std::string rodape = std::format("W/S ou roda rolar   N ou Esc fechar   ({} mensagens)", historico_.size());
     f_.desenharCentralizado(r, rodape, {320, p.y + s.y - 12}, cor::apagado);
     rodapeFechar("N ou Esc fechar", {320 + (f_.largura("W/S ou roda rolar   ") - f_.largura(std::format("   ({} mensagens)", historico_.size()))) / 2.0f, p.y + s.y - 12});
+}
+
+// ---------- Fase 18: o povo com nome ----------
+
+namespace {
+
+// Corta o texto na largura (sem partir letra acentuada) e põe reticências
+std::string caber(const ke::BitmapFont& f, std::string t, int largura) {
+    if (f.largura(t) <= largura) return t;
+    while (!t.empty() && f.largura(t + "...") > largura) {
+        t.pop_back();
+        while (!t.empty() && (static_cast<unsigned char>(t.back()) & 0xC0) == 0x80) t.pop_back();
+        if (!t.empty() && static_cast<unsigned char>(t.back()) >= 0xC0) t.pop_back();
+    }
+    return t + "...";
+}
+
+std::string oficioDe(const DadosPovo& d, const Habitante& h) {
+    const ProfissaoDef* p = d.profissao(h.profissao);
+    const TracoDef* t = d.traco(h.traco);
+    return std::format("{}, {}", p ? p->nome : "sem ofício", t ? t->nome : "comum");
+}
+
+}
+
+void Hud::fichaHabitante(ke::Renderer2D& r, const World& w, int id) {
+    const Habitante* h = w.habitante(id);
+    if (!h) return;
+    const DadosPovo& dp = dados_.povo;
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.35f});
+    const glm::vec2 p{150, 74}, s{340, 196};
+    desenharPainel(r, p, s);
+    painelClicavel(p, s);
+    // Retrato: o aldeão com a roupa dele, ampliado
+    const ke::SpriteRegion& sp = rec_.regiao(std::format("aldeao_{}_baixo_0", h->variante));
+    if (sp.textura) {
+        r.retangulo(p + glm::vec2(12, 12), {52, 60}, {0.12f, 0.10f, 0.09f, 1});
+        r.contorno(p + glm::vec2(12, 12), {52, 60}, cor::borda);
+        r.sprite(sp, p + glm::vec2(14, 14), glm::vec4(1.0f), false, 2.0f);
+    }
+    const float x = p.x + 76;
+    float y = p.y + 14;
+    f_.desenhar(r, h->nomeCompleto(), {x, y}, cor::ouro);
+    y += 12;
+    f_.desenhar(r, oficioDe(dp, *h), {x, y}, cor::apagado);
+    y += 12;
+    const Relogio chegada{h->chegou};
+    f_.desenhar(r, std::format("Mora aqui desde {}, dia {}", nomeEstacao(chegada.estacao()), chegada.diaDaEstacao()), {x, y}, cor::apagado);
+    y += 16;
+    const auto familia = w.parentes(*h);
+    std::string nomes;
+    for (size_t i = 0; i < familia.size() && i < 4; ++i) nomes += (i ? ", " : "") + familia[i]->nome;
+    if (familia.size() > 4) nomes += std::format(" e mais {}", familia.size() - 4);
+    for (const auto& l : quebrarLinhas(f_, familia.empty() ? "Família: chegou sozinho." : "Família: " + nomes, static_cast<int>(p.x + s.x - x - 12)))
+        f_.desenhar(r, l, {x, y}, cor::texto), y += 11;
+    y = std::max(y + 6, p.y + 84);
+    const DesejoDef* d = dp.desejo(h->desejo);
+    const TracoDef* t = dp.traco(h->traco);
+    if (d) {
+        f_.desenhar(r, "Deseja " + d->texto + ".", {p.x + 14, y}, cor::texto);
+        y += 12;
+        const bool impaciente = t && h->esperando > t->paciencia;
+        const std::string estado = h->cumprido ? "Desejo realizado." : std::format("Esperando há {} dia{}{}", h->esperando, h->esperando == 1 ? "" : "s",
+                                                                                        impaciente ? " (perdendo a paciência)" : "");
+        f_.desenhar(r, estado, {p.x + 14, y}, h->cumprido ? cor::bom : impaciente ? cor::ruim : cor::ouro);
+        y += 16;
+    }
+    const std::string fala = h->cumprido || !d ? "\"Valdren é a minha casa agora.\"" : "\"" + d->fala + "\"";
+    for (const auto& l : quebrarLinhas(f_, fala, static_cast<int>(s.x) - 28)) f_.desenhar(r, l, {p.x + 14, y}, cor::ouro), y += 11;
+    f_.desenharCentralizado(r, "E ou Esc fechar", {320, p.y + s.y - 12}, cor::apagado);
+    rodapeFechar("E ou Esc fechar", {320, p.y + s.y - 12});
+}
+
+void Hud::painelPovo(ke::Renderer2D& r, const World& w, int sel, int rolagem) {
+    const DadosPovo& dp = dados_.povo;
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.5f});
+    const glm::vec2 p{50, 22}, s{540, 316};
+    desenharPainel(r, p, s);
+    painelClicavel(p, s);
+    int realizados = 0;
+    for (const Habitante& h : w.povo) realizados += h.cumprido;
+    f_.desenharCentralizado(r, std::format("O povo de Valdren: {} pessoas, {} desejos realizados", w.povo.size() + w.moradoresComNome(), realizados),
+                            {320, p.y + 12}, cor::ouro);
+    f_.desenharCentralizado(r, "Os moradores do conselho e da praça não entram na lista", {320, p.y + 24}, cor::apagado);
+    float y = p.y + 42;
+    const int n = static_cast<int>(w.povo.size());
+    for (int i = std::max(0, rolagem); i < n && i < rolagem + linhasPovo(); ++i) {
+        const Habitante& h = w.povo[i];
+        const bool s1 = i == sel;
+        if (s1) r.retangulo({p.x + 8, y - 3}, {s.x - 16, 13}, {0.45f, 0.36f, 0.22f, 0.45f});
+        cliques.area({p.x + 8, y - 3}, {s.x - 16, 13}, i);
+        f_.desenhar(r, caber(f_, h.nomeCompleto(), 150), {p.x + 14, y}, s1 ? cor::ouro : cor::texto);
+        f_.desenhar(r, caber(f_, oficioDe(dp, h), 140), {p.x + 172, y}, cor::apagado);
+        const DesejoDef* d = dp.desejo(h.desejo);
+        const std::string desejo = d ? (h.cumprido ? "realizou: " : "deseja ") + d->texto : "";
+        f_.desenhar(r, caber(f_, desejo, static_cast<int>(s.x) - 330), {p.x + 320, y}, h.cumprido ? cor::bom : cor::apagado);
+        y += 14;
+    }
+    if (n == 0) f_.desenharCentralizado(r, "Ainda não chegou ninguém além dos sobreviventes.", {320, y + 20}, cor::apagado);
+    f_.desenharCentralizado(r, "W/S ou roda   E ou clique: ficha   P ou Esc fechar", {320, p.y + s.y - 12}, cor::apagado);
+    rodapeFechar("P ou Esc fechar", {320 + f_.largura("W/S ou roda   E ou clique: ficha   ") / 2.0f, p.y + s.y - 12});
 }
 
 }

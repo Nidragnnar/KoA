@@ -25,6 +25,7 @@ struct ModificadorDia {
     int madeiraDia = 0, pedraDia = 0;  // Mestre das Obras
     // Fase 17: quantos dias de consumo cabem no celeiro (o que passar disso começa a estragar)
     float diasCeleiro = 12.0f;
+    int comidaDia = 0;  // fase 18: comida que o povo traz (lavradores, pescadores, pastores)
 };
 
 struct EstacaoDef {

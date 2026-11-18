@@ -32,7 +32,7 @@ std::vector<std::string> World::regioesComVida() const {
     return v;
 }
 
-ModificadorDia World::modificadorReino(Estacao e) const {
+ModificadorDia World::modificadorReino(Estacao e, int dia) const {
     ModificadorDia m = dados().estacoes.de(e).mod;
     for (const auto& id : regioesComVida())
         if (const TransformacaoRegiao* t = transformacao(id)) m.felicidade += t->felicidade;  // o povo sente o pacto
@@ -65,6 +65,14 @@ ModificadorDia World::modificadorReino(Estacao e) const {
     m.viajantes += a.viajantes;
     m.ouroDia += a.ouroDia;
     m.diasCeleiro += a.diasCeleiro;
+    // Fase 18: o que o povo rende pelas profissões (e a alegria dos desejos cumpridos) e o tempo do dia
+    const EfeitosPovo p = efeitosDoPovo(dados().povo, povo);
+    m.madeiraDia += static_cast<int>(p.madeiraDia);
+    m.pedraDia += static_cast<int>(p.pedraDia);
+    m.comidaDia += static_cast<int>(p.comidaDia);
+    m.ouroDia += static_cast<int>(p.ouroDia);
+    m.seguranca += static_cast<int>(p.seguranca);
+    m.felicidade += p.felicidade + tempoDoDia(dia < 0 ? relogio.dia : dia).felicidade;
     return m;
 }
 

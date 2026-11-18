@@ -1,0 +1,38 @@
+{
+  "_como_funciona": "Fase 18. Cada habitante além dos moradores com nome do npcs.json é uma pessoa gerada: nome, família (sobrenome; quem chega na mesma noite é da mesma família), profissão, traço e um desejo. A profissão rende um pouco por noite (efeitos somados de todos: madeira_dia, pedra_dia, comida_dia, ouro_dia, seguranca, felicidade); o traço multiplica o rendimento ('rende') e diz quantos dias a pessoa aguenta infeliz com o desejo esperando ('paciencia'). O desejo é conferido toda manhã: cumprido, vira página nas Crônicas (textos em Data/Lore/cronicas.json, chave desejo_<id>:*) e a pessoa fica contente (cada desejo cumprido no reino dá +0,2 de felicidade, até +5). Com a felicidade abaixo de 50 e o desejo esperando mais dias que a paciência, a pessoa vai embora (no máximo uma por noite) e o relatório diz por quê. Condições dos desejos: obra (alvo, nivel), marco (alvo), felicidade (valor), seguranca (segurança para todos), comida_dias (valor), castelo (valor = nível), brasao.",
+  "nomes": ["Aldo", "Bertrand", "Cassio", "Doran", "Elric", "Fausto", "Gael", "Hugo", "Ivo", "Joran", "Lauro", "Marek", "Nilo", "Otavio", "Pedro", "Rurik", "Silvio", "Teodoro", "Ulric", "Valter",
+            "Ada", "Brida", "Celia", "Dalva", "Elza", "Flora", "Greta", "Helga", "Irene", "Joana", "Lia", "Marta", "Nadia", "Olga", "Petra", "Rosa", "Selma", "Tessa", "Uma", "Vera"],
+  "sobrenomes": ["Cinzaforte", "do Vale", "Pedraluz", "Tocha-Fria", "Ventoleste", "da Ponte", "Brasaviva", "Moinho", "Corvo-Branco", "Raizfunda", "do Poço", "Lamparina", "Ferro-Velho", "Orvalho", "Serrano", "Pastoril"],
+  "profissoes": [
+    { "id": "lenhador", "nome": "lenhador", "peso": 3, "efeitos": { "madeira_dia": 0.25 } },
+    { "id": "pedreiro", "nome": "pedreiro", "peso": 3, "efeitos": { "pedra_dia": 0.25 } },
+    { "id": "lavrador", "nome": "lavrador", "peso": 4, "efeitos": { "comida_dia": 0.3 } },
+    { "id": "pescador", "nome": "pescador", "peso": 2, "efeitos": { "comida_dia": 0.2 } },
+    { "id": "guarda", "nome": "guarda", "peso": 2, "requer": "posto_guarda", "efeitos": { "seguranca": 0.5 } },
+    { "id": "ferreiro", "nome": "ferreiro", "peso": 1, "requer": "forja", "efeitos": { "seguranca": 0.2, "ouro_dia": 0.1 } },
+    { "id": "mercador", "nome": "mercador", "peso": 2, "requer": "mercado", "efeitos": { "ouro_dia": 0.3 } },
+    { "id": "curandeira", "nome": "curandeira", "peso": 1, "requer": "capela", "efeitos": { "felicidade": 0.15 } },
+    { "id": "taberneiro", "nome": "taberneiro", "peso": 1, "requer": "taverna", "efeitos": { "felicidade": 0.1, "ouro_dia": 0.1 } },
+    { "id": "pastor", "nome": "pastor", "peso": 1, "requer": "curral", "efeitos": { "comida_dia": 0.3 } }
+  ],
+  "tracos": [
+    { "id": "trabalhador", "nome": "trabalhador", "rende": 1.5, "paciencia": 10 },
+    { "id": "rabugento", "nome": "rabugento", "rende": 1.0, "paciencia": 4 },
+    { "id": "paciente", "nome": "paciente", "rende": 1.0, "paciencia": 16 },
+    { "id": "sonhador", "nome": "sonhador", "rende": 0.8, "paciencia": 8 },
+    { "id": "devoto", "nome": "devoto", "rende": 1.0, "paciencia": 12 },
+    { "id": "festeiro", "nome": "festeiro", "rende": 1.0, "paciencia": 7 }
+  ],
+  "desejos": [
+    { "id": "casa_pedra", "texto": "morar numa casa de pedra", "fala": "Um dia ainda durmo atrás de paredes de pedra.", "condicao": { "tipo": "obra", "alvo": "moradia", "nivel": 3 } },
+    { "id": "taverna", "texto": "beber numa taverna de verdade", "fala": "Falta um lugar para cantar à noite.", "condicao": { "tipo": "obra", "alvo": "taverna", "nivel": 2 } },
+    { "id": "capela", "texto": "rezar numa capela", "fala": "Os mortos merecem um lugar de prece.", "condicao": { "tipo": "obra", "alvo": "capela", "nivel": 1 } },
+    { "id": "seguranca", "texto": "dormir sem medo", "fala": "Toda noite escuto as criaturas na estrada.", "condicao": { "tipo": "seguranca" } },
+    { "id": "fartura", "texto": "ver a despensa cheia", "fala": "Já passei fome demais.", "condicao": { "tipo": "comida_dias", "valor": 6 } },
+    { "id": "alegria", "texto": "ver o povo feliz", "fala": "Quero ouvir risada na praça de novo.", "condicao": { "tipo": "felicidade", "valor": 70 } },
+    { "id": "horta", "texto": "comer da horta do herdeiro", "fala": "Dizem que o herdeiro planta com as próprias mãos.", "condicao": { "tipo": "marco", "alvo": "primeira_colheita" } },
+    { "id": "castelo", "texto": "ver o castelo de pé", "fala": "Meu avô dizia que o castelo brilhava.", "condicao": { "tipo": "castelo", "valor": 2 } },
+    { "id": "brasao", "texto": "ver o estandarte da linhagem", "fala": "Um reino precisa de um brasão para seguir.", "condicao": { "tipo": "brasao" } },
+    { "id": "mercado", "texto": "comprar coisas de longe", "fala": "Sinto falta de especiarias.", "condicao": { "tipo": "obra", "alvo": "mercado", "nivel": 1 } }
+  ]
+}

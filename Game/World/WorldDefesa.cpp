@@ -52,6 +52,8 @@ int World::forcaProximaHorda() const {
     int f = forcaHorda(dados().defesa, hordaNumero + 1, it == estadoRegioes.end() ? 70.0f : it->second.corrupcao);
     if (const EventoDef* ev = eventoDoDia(hordaDia > 0 ? hordaDia : relogio.dia); ev && ev->id == "lua_sangue")
         f = f * 3 / 2;  // horda em noite de Lua de Sangue vem maior
+    // Fase 18: na neblina a horda chega escondida (e maior)
+    f = static_cast<int>(std::round(f * tempoDoDia(hordaDia > 0 ? hordaDia : relogio.dia).forcaHorda));
     return f;
 }
 

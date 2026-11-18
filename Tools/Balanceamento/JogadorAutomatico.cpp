@@ -129,7 +129,9 @@ void JogadorAutomatico::construirEMelhorar() {
             const BuildingDef& def = dados_.construcoes.at(d);
             const int tem = w_.contarConstrucoes(d);
             const bool precisa = (std::string(d) == "moradia" && w_.estado.populacao >= r.populacaoMax - 1) ||
-                                 (std::string(d) == "campo" && r.comidaProduzida - r.comidaConsumida < 2) || tem == 0;
+                                 (std::string(d) == "campo" && (r.comidaProduzida - r.comidaConsumida < 2 ||
+                                                                  (w_.inventario.quantidade("comida") < 2 * r.comidaConsumida && r.comidaProduzida - r.comidaConsumida < 5))) ||  // reserva mínima
+                                 tem == 0;
             if (!precisa || (def.limite > 0 && tem >= def.limite) || !w_.monumentoLiberado(def) || !w_.inventario.tem(def.nivel(1)->custo)) continue;
             const glm::ivec2 t = lugarLivre(w_, d);
             if (t.x >= 0 && !w_.construir(d, t).empty()) fez = true;
@@ -213,6 +215,7 @@ Amostra JogadorAutomatico::jogarDia() {
     a.nivelCastelo = w_.nivelCastelo();
     a.alas = static_cast<int>(w_.alas.size());
     a.expedicoes = expedicoes_;
+    for (const auto& m : w_.marcos) a.desejos += m.starts_with("desejo_"), a.partiram += m.starts_with("partiu:");
     historico_.push_back(a);
     return a;
 }

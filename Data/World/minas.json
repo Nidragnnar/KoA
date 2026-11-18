@@ -1,5 +1,5 @@
 {
-  "nome": "Minas Abandonadas",
+  "nome": "Minas Abandonadas", "subterranea": true,
   "mapa": "minas.txt",
   "_legenda": "K = veio de cristal, M = aranha, Q = o Golem de Cinzas (chefe com escolha), U = escada para a floresta",
   "escuridao_min": 0.75,
@@ -17,7 +17,7 @@
       { "tipo": "aranha", "tile": [20, 3] }, { "tipo": "aranha", "tile": [29, 4] }, { "tipo": "aranha", "tile": [22, 5] }
     ],
     "transformacoes": [
-      { "marco": "escolha:golem_cinzas:purificar", "nome": "Minas Arcanas",
+      { "marco": "escolha:golem_cinzas:purificar", "nome": "Minas Arcanas", "subterranea": true,
         "escuridao_min": 0.5, "ambiente": [0.32, 0.58, 0.95], "hostil": false,
         "sem_inimigos": ["aranha", "esqueleto"], "voltam_acima": 60,
         "rendimento_veio": 2, "prosperidade": 1.0, "producao": { "pedra": 0.05, "cristal": 0.04 },
@@ -31,11 +31,11 @@
           { "sprite": "cristal", "tile": [23, 4], "luz": [0.45, 0.75, 1.0, 44] },
           { "sprite": "cristal", "tile": [27, 4], "luz": [0.45, 0.75, 1.0, 44] }
         ] },
-      { "marco": "escolha:golem_cinzas:derrotar", "nome": "Minas de Valdren",
+      { "marco": "escolha:golem_cinzas:derrotar", "nome": "Minas de Valdren", "subterranea": true,
         "escuridao_min": 0.6, "ambiente": [0.5, 0.47, 0.44], "hostil": true,
         "rendimento_veio": 1, "prosperidade": 0.8, "producao": { "pedra": 0.08, "cristal": 0.015 },
         "dica": "As minas foram reabertas. Mantenha as aranhas longe e elas rendem pedra todas as noites." },
-      { "marco": "escolha:golem_cinzas:pacto", "nome": "Minas da Chama",
+      { "marco": "escolha:golem_cinzas:pacto", "nome": "Minas da Chama", "subterranea": true,
         "escuridao_min": 0.65, "ambiente": [0.72, 0.36, 0.26], "hostil": true,
         "piso_corrupcao": 50, "felicidade": -4, "lua_sangue": 2.0,
         "rendimento_veio": 2, "prosperidade": 0.9, "producao": { "cristal": 0.04, "ouro": 0.15 },

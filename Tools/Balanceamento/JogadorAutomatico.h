@@ -21,6 +21,7 @@ struct Amostra {
     int ouro = 0, madeira = 0, pedra = 0, comida = 0, cristal = 0;
     float diasDeComida = 0.0f;  // estoque dividido pelo consumo de um dia
     int obras = 0, nivelCastelo = 0, alas = 0, expedicoes = 0, hordas = 0, saques = 0, estragou = 0;
+    int desejos = 0, partiram = 0;  // fase 18: desejos realizados e gente que desistiu de esperar (desde o começo)
 };
 
 class JogadorAutomatico {

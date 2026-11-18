@@ -1,5 +1,7 @@
 #include "Game/Data/GameData.h"
 
+#include <functional>
+
 #include <algorithm>
 
 #include <nlohmann/json.hpp>
@@ -175,6 +177,28 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
     for (const auto& [tipo, pontos] : defesa.custo)
         if (!inimigos.contains(tipo)) {
             if (erro) *erro = "horda usa criatura inexistente: " + tipo;
+            return false;
+        }
+    // Fase 18: o povo com nome e o clima
+    for (const auto& [arq, ler] : std::initializer_list<std::pair<const char*, std::function<bool(const nlohmann::json&)>>>{
+             {"NPCs/povo.json", [&](const nlohmann::json& jj) { return lerPovo(jj, povo, erro); }},
+             {"World/clima.json", [&](const nlohmann::json& jj) { return lerClima(jj, clima, erro); }}}) {
+        const auto texto = ke::fs::lerTexto(pasta / arq);
+        const auto jj = texto ? nlohmann::json::parse(*texto, nullptr, false) : nlohmann::json();
+        if (!texto || jj.is_discarded()) {
+            if (erro) *erro = std::string("Data/") + arq + " ausente ou inválido";
+            return false;
+        }
+        if (!ler(jj)) return false;
+    }
+    for (const ProfissaoDef& p : povo.profissoes)
+        if (!p.requer.empty() && !construcoes.contains(p.requer)) {
+            if (erro) *erro = "profissão " + p.id + " pede construção inexistente: " + p.requer;
+            return false;
+        }
+    for (const DesejoDef& des : povo.desejos)
+        if (des.condicao.tipo == "obra" && !construcoes.contains(des.condicao.alvo)) {
+            if (erro) *erro = "desejo " + des.id + " pede construção inexistente: " + des.condicao.alvo;
             return false;
         }
     // Fase 16: castelo, alas e brasão

@@ -75,6 +75,7 @@ InfoRegiao World::lerInfoRegiao(const std::string& id, const nlohmann::json& j) 
     if (j.contains("ambiente")) info.ambiente = {j["ambiente"][0].get<float>(), j["ambiente"][1].get<float>(), j["ambiente"][2].get<float>()};
     info.hostil = j.value("hostil", false);
     info.curaComEra = j.value("cura_com_era", false);
+    info.subterranea = j.value("subterranea", false);
     for (const auto& s : j.value("saidas", nlohmann::json::array())) {
         Saida x;
         x.tile = {s.at("tile")[0].get<int>(), s.at("tile")[1].get<int>()};
@@ -322,6 +323,7 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
             }
     criarMoradores();
     posicionarMoradores();
+    gerarPovoInicial();  // fase 18: os sobreviventes sem nome do mapa ganham nome
     sincronizarAldeoes();
     criarCanteiros();
     marcar("chegada", "", true);  // a primeira página das Crônicas
@@ -415,14 +417,18 @@ std::string World::construir(const std::string& defId, glm::ivec2 tile) {
 }
 
 void World::sincronizarAldeoes() {
-    // O mercador é visitante: não conta como morador
-    const int nomeados = static_cast<int>(std::ranges::count_if(dados().npcs, [](const auto& n) { return !n.second.visitante(); }));
-    const int alvo = std::clamp(estado.populacao - nomeados, 0, 16);
+    // Fase 18: cada aldeão na rua é uma pessoa do povo (no máximo 16 andando ao mesmo tempo)
+    const int alvo = std::min(static_cast<int>(povo.size()), 16);
     std::vector<entt::entity> existentes;
     for (auto [e, a] : reg.view<Aldeao>().each()) existentes.push_back(e);
     while (static_cast<int>(existentes.size()) > alvo) {
         reg.destroy(existentes.back());
         existentes.pop_back();
+    }
+    for (size_t i = 0; i < existentes.size(); ++i) {
+        Aldeao& a = reg.get<Aldeao>(existentes[i]);
+        a.habitante = povo[i].id;
+        a.variante = povo[i].variante;
     }
     std::vector<glm::ivec2> pontos;
     for (const auto& [n, t] : locais) pontos.push_back(t);
@@ -433,7 +439,7 @@ void World::sincronizarAldeoes() {
         const glm::ivec2 t = pontos[qual(rng_)];
         reg.emplace<Posicao>(e, glm::vec2{t.x * LADO + LADO / 2.0f, t.y * LADO + 12.0f});
         reg.emplace<Movimento>(e).velocidade = 30.0f;
-        reg.emplace<Aldeao>(e, i % 4, 1.0f + i * 0.7f, false);
+        reg.emplace<Aldeao>(e, povo[i].variante, povo[i].id, 1.0f + i * 0.7f, false);
     }
 }
 
@@ -726,6 +732,9 @@ AlvoInteracao World::procurarAlvo() const {
             melhor = {e, TipoInteracao::Conversar, "Falar com " + d.nome, p.v + glm::vec2(0, -6)};
         }
     }
+    // Fase 18: o povo com nome também conversa (quem estiver mais perto da frente do herdeiro)
+    for (auto [e, p, a] : reg.view<const Posicao, const Aldeao>().each())
+            if (const Habitante* h = habitante(a.habitante); h && !a.dormindo) considerar(e, p.v + glm::vec2(0, -6), 14.0f, TipoInteracao::Habitante, "Falar com " + h->nome);
     // Fase 15: nada por perto e água logo à frente: dá para pescar
     if (melhor.tipo == TipoInteracao::Nenhuma) {
         const glm::ivec2 t{static_cast<int>(ponto.x) / LADO, static_cast<int>(ponto.y) / LADO};
@@ -812,6 +821,13 @@ void World::executar(const AlvoInteracao& a) {
         break;
     }
     case TipoInteracao::Pescar: iniciarPesca(a.ponto); break;
+    case TipoInteracao::Habitante:
+        if (auto* al = reg.try_get<Aldeao>(a.entidade)) {
+            if (auto* mv = reg.try_get<Movimento>(a.entidade)) mv->caminho.clear(), mv->andando = false;
+            al->espera = 6.0f;  // para e conversa
+            eventos_.push_back({EventoJogo::Tipo::AbrirFicha, a.ponto, "", "", al->habitante});
+        }
+        break;
     case TipoInteracao::Decidir:
         if (const EscolhaDef* d = escolhaDe(a.entidade)) eventos_.push_back({EventoJogo::Tipo::AbrirEscolha, a.ponto, d->id});
         break;
@@ -827,7 +843,12 @@ void World::passo(float dt, const EntradaMundo& in) {
         jogador.empurrao *= std::max(0.0f, 1.0f - 10.0f * dt);
     }
     jogador.invulneravel = std::max(0.0f, jogador.invulneravel - dt);
-    moverJogador(jogador, jogador.vida > 0 ? in.mover : glm::vec2(0.0f), dt, mapa, obst);
+    {  // fase 18: na neve todo mundo anda mais devagar
+        const float velocidade = jogador.velocidade;
+        jogador.velocidade *= tempoAqui().velocidade;
+        moverJogador(jogador, jogador.vida > 0 ? in.mover : glm::vec2(0.0f), dt, mapa, obst);
+        jogador.velocidade = velocidade;
+    }
     if (jogador.acao <= 0.0f) jogador.atacando = false;
     if (in.atacar && jogador.acao <= 0.0f && jogador.vida > 0) golpearComEspada();
     // Fase 15: ferido, o H come o prato que mais cura (e só depois a comida comum)
@@ -891,6 +912,7 @@ void World::passo(float dt, const EntradaMundo& in) {
         eraAnunciada_ = alvoEra;
         eventos_.push_back({EventoJogo::Tipo::EraMudou, jogador.pos, "", "", alvoEra, nomeEra(reino.eraAlvo())});
         for (int e = 1; e <= alvoEra; ++e) marcar(std::format("era:{}", e), nomeEra(static_cast<KingdomEra>(e)));
+        reino.eraConquistada = std::max(reino.eraConquistada, alvoEra);
     }
     // Fase 10: o acontecimento da noite e o festival começam (anunciados uma vez por dia)
     if (const EventoDef* ev = eventoHoje(); ev && eventoAgora(ev->id) && avisoEvento_ != relogio.dia) {
@@ -1059,7 +1081,11 @@ void World::dormir(bool desmaio) {
         }
     // A noite do reino: impostos, produção, comida, felicidade e população
     // (a noite foi da estação de ontem: a primeira noite do inverno ainda é de outono)
-    ultimoRelatorio = simularDia(reino, dados(), estado, inventario, modificadorReino(Relogio{ontem}.estacao()));
+    const int povoAntes = estado.populacao;
+    ultimoRelatorio = simularDia(reino, dados(), estado, inventario, modificadorReino(Relogio{ontem}.estacao(), ontem));
+    // Fase 18: quem chegou e quem partiu tem nome (a fome e o descontentamento escolhem quem vai)
+    ajustarPovo(estado.populacao < povoAntes && std::ranges::any_of(ultimoRelatorio.notas, [](const std::string& n) { return n.starts_with("Faltou comida"); }),
+                ultimoRelatorio.notas);
     for (const auto& [chave, n] : producaoRegioes) {
         inventario.adicionar(chave.substr(0, chave.find('|')), n);
         ultimoRelatorio.variacoes.push_back({chave, n});  // "madeira|Floresta Encantada"
@@ -1068,6 +1094,7 @@ void World::dormir(bool desmaio) {
     // Fase 15: a horta e os bichos durante a noite
     sincronizarAnimais();
     noiteDoCotidiano(ontem, ultimoRelatorio.variacoes, ultimoRelatorio.notas);
+    manhaDoPovo(ultimoRelatorio.notas);  // fase 18: depois da horta crescer (a chuva de hoje rega para amanhã)
     notasDaManha(ontem);
     noiteDoConselho(ultimoRelatorio.notas);
     manhaDaDefesa();

@@ -49,6 +49,9 @@ int main(int argc, char** argv) {
     const char* nomes[] = {"Reino das Cinzas", "O Despertar da Coroa", "Reino Renascido", "Reino da Alta Fantasia"};
     for (int e = 1; e < 4; ++e)
         resumo += diaEra[e] > 0 ? std::format("- {}: dia {}\n", nomes[e], diaEra[e]) : std::format("- {}: não alcançado\n", nomes[e]);
+    if (!jogador.historico().empty())
+        resumo += std::format("- Desejos realizados: {} (dia 60: {}); desistiram de esperar: {}\n", jogador.historico().back().desejos,
+                              jogador.historico().size() >= 60 ? jogador.historico()[59].desejos : 0, jogador.historico().back().partiram);
     const auto al = alarmes(jogador.historico(), ritmo);
     resumo += al.empty() ? "- Alarmes: nenhum\n" : std::format("- Alarmes: {}\n", al.size());
     for (size_t i = 0; i < al.size() && i < 6; ++i) resumo += "  - " + al[i] + "\n";

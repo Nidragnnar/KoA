@@ -26,7 +26,7 @@ namespace koa {
 enum Terreno : uint16_t { T_GRAMA = 0, T_TERRA, T_LAMA, T_AGUA, T_CALCADA, T_MURO, T_QTD };
 
 // Usar: altar e entulho (fase 11); Decidir: chefe rendido
-enum class TipoInteracao { Nenhuma, Cortar, Quebrar, Saquear, Construcao, Conversar, Ler, Usar, Decidir, Pescar };
+enum class TipoInteracao { Nenhuma, Cortar, Quebrar, Saquear, Construcao, Conversar, Ler, Usar, Decidir, Pescar, Habitante };
 
 // Uma conversa pronta para a caixa de diálogo
 struct Conversa {
@@ -69,7 +69,9 @@ struct EventoJogo {
         // Fase 15
         Mordida, Presente, AbrirCozinha, Carinho,
         // Fase 16
-        AlaErguida, BrasaoNovo
+        AlaErguida, BrasaoNovo,
+        // Fase 18
+        AbrirFicha
     };
     Tipo tipo;
     glm::vec2 pos{0.0f};
@@ -105,6 +107,7 @@ struct InfoRegiao {
     std::vector<Saida> saidas;
     std::vector<std::pair<std::string, glm::ivec2>> spawns;  // inimigos (renascem a cada manhã)
     bool curaComEra = false;        // a floresta clareia conforme o reino prospera
+    bool subterranea = false;       // fase 18: o tempo (chuva, neve, neblina) não chega lá
     VidaRegiaoDef vida;             // fase 11: corrupção, segurança, prosperidade e transformações
 };
 
@@ -195,7 +198,7 @@ public:
     std::string nomeRegiao(const std::string& regiao) const;
     bool regiaoHostil() const;    // a região ativa (a floresta purificada deixa de ser)
     float escuridaoMinAtual() const;
-    ModificadorDia modificadorReino(Estacao e) const;  // estação + efeitos das regiões (o pacto pesa no povo)
+    ModificadorDia modificadorReino(Estacao e, int dia = -1) const;  // estação + regiões + conselho + alas + povo + o tempo do dia (-1 = hoje)
     std::vector<std::string> regioesComVida() const;   // na ordem do mapa
     bool usarCoracao();           // o rito do Coração da Floresta
     bool escorarEntulho();        // abre a passagem das minas
@@ -291,6 +294,19 @@ public:
     // Fase 17: a sorte da partida (jogo novo sorteia; o save guarda a de cada momento)
     void semear(uint32_t semente) { sementeBase_ = semente ? semente : 2026u, rng_.seed(sementeBase_); }
     uint32_t semente() const { return sementeBase_; }
+
+    // Fase 18: o povo com nome e o clima
+    std::vector<Habitante> povo;  // cada habitante além dos moradores com nome do npcs.json
+    int proximoHabitante = 1;
+    const Habitante* habitante(int id) const;
+    std::vector<const Habitante*> parentes(const Habitante& h) const;  // a mesma família, sem a própria pessoa
+    int moradoresComNome() const;                                     // os do npcs.json que moram aqui (o mercador não)
+    bool desejoCumprido(const DesejoDef& d) const;                    // a condição vale hoje?
+    const TempoDef& tempoDoDia(int dia) const;
+    const TempoDef& tempoHoje() const { return tempoDoDia(relogio.dia); }
+    const TempoDef& tempoAqui() const;  // o de hoje, ou céu limpo debaixo da terra
+    void ajustarPovo(bool fome, std::vector<std::string>& notas);  // chegadas e partidas para bater com a população
+    void gerarPovoInicial();  // jogo novo (depois de sortear a semente) e saves de antes do povo com nome
     int nivelCastelo() const;
     int vagasAlas() const;                        // quantas alas o nível do castelo permite (erguidas ou não)
     bool erguerAla(const std::string& id);
@@ -298,6 +314,7 @@ public:
     void definirBrasao(const Brasao& b);
     // O que falta para o próximo nível de uma construção ("" = nada: só os recursos)
     std::string requisitoProximoNivel(const BuildingData& b) const;
+    void manhaDoPovo(std::vector<std::string>& notas);  // fase 18: desejos que se cumprem e quem desiste de esperar
 
     const std::vector<ke::AABB>& obstaculos() const;  // fase 17: em cache (refeito só quando algo muda)
     std::vector<ke::AABB> calcularObstaculos() const;  // o cálculo completo, sem cache (os testes comparam os dois)

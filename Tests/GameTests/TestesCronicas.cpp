@@ -236,7 +236,7 @@ TEST(Cenarios, MontarSavesDeTeste) {
     free(pasta);
     auto gravar = [&](World& w, const std::string& slot) {
         DadosSave d = w.capturar();
-        d.versaoJogo = "1.9.0";
+        d.versaoJogo = "1.10.0";
         d.dataHora = "cenário de teste";
         ASSERT_TRUE(s.salvar(d, slot));
     };
@@ -285,47 +285,52 @@ TEST(Cenarios, MontarSavesDeTeste) {
         w.equip.arma = "espada_linhagem";
         w.equip.armadura = "cota_malha";
     };
-    // Save_002 (fase 17): reino grande e APERTADO, 18:00. Seis moradias de pedra, 90 moradores e 3.000 de comida:
-    // dormir mostra no relatório a comida estragando (o celeiro guarda 12 dias) e o povo reclamando da aglomeração.
-    // Galinheiro e curral do lado da casa (os bichos não atravessam mais paredes). N relê as mensagens
-    {
-        World w = vilarejo();
+    // Fase 18: um reino de meio de jogo, com o povo para conhecer (E perto de um aldeão; P para a lista)
+    auto comPovo = [&](World& w, const std::string& tempo, int minutos) {
         reinoAvancado(w);
         equipar(w);
-        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 9000);
-        const glm::ivec2 lugares[] = {{12, 10}, {45, 12}, {48, 28}, {20, 30}, {52, 8}, {8, 22}};
-        for (const glm::ivec2 p : lugares) obra(w, "moradia", p);
-        obra(w, "galinheiro", {23, 12});
-        obra(w, "curral", {27, 12});
-        w.dormir(false);
-        for (const auto& b : std::vector<BuildingData>(w.reino.construcoes))
-            if (b.defId == "moradia")
-                while (w.def(b)->nivel(w.reino.construcao(b.id)->level + 1)) ASSERT_TRUE(w.melhorarConstrucao(b.id));
-        w.estado.populacao = std::min(90, w.resumo().populacaoMax);
-        w.estado.felicidade = 70.0f;
-        w.relogio.minutos = 18 * 60;
-        w.inventario.definir("comida", 3000);
-        w.inventario.definir("madeira", 150);
-        w.inventario.definir("pedra", 150);
-        w.inventario.definir("ouro", 300);
+        w.estado.populacao = std::min(26, w.resumo().populacaoMax);
+        std::vector<std::string> notas;
+        w.ajustarPovo(false, notas);
+        while (w.tempoDoDia(w.relogio.dia).id != tempo) ++w.relogio.dia;
+        w.relogio.minutos = static_cast<float>(minutos);
         w.hordaDia = 0;
         w.proximaHorda = w.relogio.dia + 12;
         w.ultimaDecisao = w.relogio.dia;
-        std::printf("[cenário] Save_002: %d moradores (máximo %d), aglomeração %.0f\n", w.estado.populacao, w.resumo().populacaoMax, w.resumo().aglomeracao);
+    };
+    // Save_002 (fase 18): DIA DE CHUVA, 9:00, ~20 pessoas com nome. A primeira da lista (P) quer uma capela e há
+    // recursos para erguê-la: construa e durma para ver o desejo realizado nas Crônicas. A segunda é rabugenta,
+    // espera o castelo há 6 dias e o povo está a 45 de felicidade: amanhã ela vai embora, e o relatório diz por quê
+    {
+        World w = vilarejo();
+        comPovo(w, "chuva", 9 * 60);
+        ASSERT_GE(w.povo.size(), 2u);
+        w.povo[0].desejo = "capela";
+        w.povo[0].esperando = 3;
+        w.povo[1].desejo = "castelo";
+        w.povo[1].traco = "rabugento";
+        w.povo[1].esperando = 6;
+        w.estado.felicidade = 45.0f;
+        w.inventario.definir("madeira", 200);
+        w.inventario.definir("pedra", 200);
+        w.inventario.definir("ouro", 200);
+        w.inventario.definir("comida", 150);
+        std::printf("[cenário] Save_002: %zu pessoas com nome, tempo %s\n", w.povo.size(), w.tempoHoje().nome.c_str());
         w.tirarEventos();
         gravar(w, "Save_002");
     }
-    // Save_003 (fase 17): um save ANTIGO de verdade (v10, da fase 15), copiado dos saves-modelo dos testes.
-    // Carregar mostra a migração v10 → v12 no jogo; salvar grava no formato novo (e o anterior vira .bak)
+    // Save_003 (fase 18): INVERNO COM NEVE, 10:00 (todos andam 20% mais devagar, as criaturas também).
+    // A próxima horda vem no próximo dia de neblina (mais forte); o painel da data mostra o tempo
     {
-        const fs::path destino = fs::path(s.pasta()) / "Save_003";
-        std::error_code ec;
-        fs::remove_all(destino, ec);
-        fs::remove_all(fs::path(s.pasta()) / "Save_003.bak", ec);
-        fs::copy(fs::path(PASTA_FIXTURES) / "saves/v10/Save_001", destino, fs::copy_options::recursive, ec);
-        ASSERT_FALSE(ec) << ec.message();
-        const auto d = s.carregar("Save_003");
-        ASSERT_TRUE(d) << "o save antigo precisa abrir";
+        World w = vilarejo();
+        comPovo(w, "neve", 10 * 60);
+        int neblina = w.relogio.dia + 1;
+        while (w.tempoDoDia(neblina).id != "neblina" && neblina < w.relogio.dia + 40) ++neblina;
+        w.hordaDia = neblina;
+        w.inventario.definir("comida", 150);
+        std::printf("[cenário] Save_003: neve hoje; horda no dia %d (%s)\n", neblina, w.tempoDoDia(neblina).nome.c_str());
+        w.tirarEventos();
+        gravar(w, "Save_003");
     }
 }
 TEST(SaveV5, SaveV4GanhaCronicasDoQueJaAconteceu) {

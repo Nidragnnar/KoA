@@ -10,6 +10,8 @@
 #include "Game/Combat/Combate.h"
 #include "Game/Inventory/Inventory.h"
 #include "Game/Kingdom/Castelo.h"
+#include "Game/Kingdom/Clima.h"
+#include "Game/Kingdom/Povo.h"
 #include "Game/Kingdom/Conselho.h"
 #include "Game/Kingdom/Cotidiano.h"
 #include "Game/Kingdom/Defesa.h"
@@ -78,6 +80,8 @@ struct GameData {
     DadosDefesa defesa;                          // fase 13: hordas e a defesa do portão
     DadosGuilda guilda;                          // fase 14: aventureiros, expedições e relíquias
     DadosCastelo castelo;                        // fase 16: alas do castelo e o brasão da linhagem
+    DadosPovo povo;                              // fase 18: nomes, profissões, traços e desejos do povo
+    DadosClima clima;                            // fase 18: o tempo de cada estação
     DadosCotidiano cotidiano;                    // fase 15: horta, pesca, animais, cozinha e presentes
 
     const InimigoDef* inimigoPorLetra(char c) const {

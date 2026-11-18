@@ -164,6 +164,16 @@ O plano da 2.0 está em `docs/VISAO_2.0.md`.
 - **Balanceamento**: `Tools/Balanceamento/JogadorAutomatico` (usado pela ferramenta e pelo teste `Balanceamento.RitmoMedioDentroDasFaixas`) e `alarmes()` com as faixas. Regras novas na `Economia`: capacidade do celeiro (`ModificadorDia::diasCeleiro`, 12 dias, +8 com o Celeiro Real) e 40% do excesso estragando por noite (`comida|estragou` no relatório); felicidade das obras com teto (`FELICIDADE_DAS_OBRAS`); aglomeração acima de 40 moradores.
 - **Testes**: 191 (10 novos da fase 17) e o roteiro com a etapa 54 (mensagens e pilha de painéis).
 
+## Fase 18 — Povo com nome e clima (versão 1.10)
+
+- **Regras puras**: `Game/Kingdom/Povo.h` (`gerarHabitante`, `efeitosDoPovo`, `misturar` para sorteios fixos) e `Game/Kingdom/Clima.h` (`tempoDoDia`: o tempo vem do dia e da semente da partida, então não vai para o save).
+- **No mundo** (`Game/World/WorldPovo.cpp`): `World::povo` (as pessoas), `ajustarPovo` (depois da economia da noite: chegadas em famílias de 2 a 4, desejos já cumpridos sorteados de novo; partidas escolhidas por quem mais esperou), `manhaDoPovo` (depois da horta crescer: a chuva rega, os desejos são conferidos, quem desiste vai embora), `desejoCumprido`, `tempoAqui` (céu limpo nas regiões com `"subterranea": true`). O `modificadorReino` soma o que o povo rende e o tempo do dia; `ModificadorDia::comidaDia` é a comida do povo.
+- **Aldeões**: cada um na rua é uma pessoa (`Aldeao::habitante`, no máximo 16 andando); `TipoInteracao::Habitante` e o evento `AbrirFicha`. Painéis `Ficha` e `Povo` na pilha da cena.
+- **Clima na tela**: chuva e neve desenhadas na tela por fórmula (sem estado), a tinta da cena multiplicada pela luz do tempo, a névoa do renderer somada à neblina, e raios na tempestade.
+- **Eras**: `Kingdom::eraConquistada` (dos marcos `era:N`) impede a era de voltar atrás; o Reino Renascido pede 26 de desenvolvimento.
+- **Save v13**: arquivo novo `people.json` (pessoas e o próximo id). Saves v1 a v12 ganham o povo ao carregar, do tamanho da população, pela sorte do save.
+- **Testes**: 204 (13 novos da fase 18) e o roteiro com a etapa 55 (chuva com 46 pessoas a 120 quadros por segundo, ficha, lista do povo e neve).
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

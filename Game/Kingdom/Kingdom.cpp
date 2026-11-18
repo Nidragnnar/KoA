@@ -16,7 +16,7 @@ const char* nomeEra(KingdomEra e) {
 
 KingdomEra eraPorDesenvolvimento(int d) {
     if (d >= 40) return KingdomEra::HighFantasy;
-    if (d >= 22) return KingdomEra::Prosperity;
+    if (d >= 26) return KingdomEra::Prosperity;  // fase 18: era 22 (mais obras desde a fase 9 aceleravam demais)
     if (d >= 8) return KingdomEra::Restoration;
     return KingdomEra::DarkAge;
 }
@@ -34,7 +34,8 @@ KingdomEra Kingdom::eraAlvo() const {
     const KingdomEra e = eraPorDesenvolvimento(desenvolvimento());
     // A magia só volta de vez quando o Cavaleiro Caído é derrotado na cripta
     if (e == KingdomEra::HighFantasy && !magiaLiberta) return KingdomEra::Prosperity;
-    return e;
+    // Fase 18: a era que o reino já alcançou não volta atrás (saves antigos não perdem a era com o limiar novo)
+    return std::max(e, static_cast<KingdomEra>(std::clamp(eraConquistada, 0, 3)));
 }
 
 void Kingdom::atualizarEra(float dt) {

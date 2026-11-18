@@ -22,6 +22,11 @@ de 40 moradores, cada um tira 0,5 de felicidade (aglomeração).
 felicidade a partir do dia 20 acima de 40; no ritmo de 25 coletas, Reino Renascido entre os dias 10 e 22.
 O ouro ainda acumula no fim do jogo (sem destino): fica para o mercado vivo e a Guarda Real.
 
+**Fase 18:** o povo com nome rende pelas profissões (madeira, pedra, comida, ouro, segurança) e cada desejo realizado
+alegra um pouco o reino; o tempo do dia (chuva rega a horta, neve deixa todos mais lentos, neblina reforça a horda)
+vale na simulação. O limiar do Reino Renascido subiu de 22 para 26 de desenvolvimento (a era já alcançada não volta
+atrás). O jogador automático constrói hortas também quando a reserva fica abaixo de 2 dias.
+
 **Suposições (estimativas, não medidas de gente jogando):** cada coleta leva uns 10 s de jogo
 (andar + golpes), então 12/25/40 coletas por dia ≈ 2/4/7 minutos de coleta num dia de 14 minutos.
 O jogador automático não luta: a derrota do Cavaleiro Caído é marcada num dia fixo.

@@ -22,6 +22,7 @@ struct Kingdom {
 
     int desenvolvimento() const;
     std::set<std::string> defsEmRuinas;  // fase 17: vem dos dados (construções com "ruinas": true)
+    int eraConquistada = 0;              // fase 18: a maior era já alcançada (vem dos marcos era:N)
     KingdomEra eraAlvo() const;
     KingdomEra eraAtual() const { return static_cast<KingdomEra>(static_cast<int>(eraVisual + 0.5f)); }
     void atualizarEra(float dt);

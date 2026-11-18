@@ -42,6 +42,7 @@ ke::ColorGrade WorldScene::grade() const {
     // Cada estação puxa a cor um pouco para o seu lado
     static const glm::vec3 tintas[4] = {{1.00f, 1.00f, 1.00f}, {1.03f, 1.01f, 0.95f}, {1.06f, 0.97f, 0.88f}, {0.92f, 0.97f, 1.06f}};
     g.tinta *= tintas[static_cast<int>(mundo_.relogio.estacao())];
+    g.tinta *= mundo_.tempoAqui().luz;  // fase 18: chuva e tempestade escurecem, neve clareia
     return g;
 }
 
@@ -199,6 +200,11 @@ void WorldScene::entradaJogo() {
         return;
     }
     if (in.pressionou(SDL_SCANCODE_F5)) salvar();
+    if (in.pressionou(SDL_SCANCODE_P)) {  // fase 18: o povo de Valdren
+        abrir(Painel::Povo);
+        selPovo_ = rolagemPovo_ = 0;
+        return;
+    }
     if (in.pressionou(SDL_SCANCODE_N)) {  // fase 17: as últimas mensagens, para reler
         abrir(Painel::Mensagens);
         rolagemMensagens_ = 0;
@@ -619,6 +625,64 @@ void WorldScene::fechar(Painel p) {
     }
 }
 
+void WorldScene::entradaFicha() {
+    ke::Input& in = ctx_.app.input();
+    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_SPACE) || in.pressionou(SDL_SCANCODE_RETURN) ||
+        cliqueFecha(in, hud_.cliques) || (in.clicou(ke::BotaoMouse::Esquerdo) && hud_.cliques.em(in.mouse()) == Cliques::PAINEL))
+        fechar(Painel::Ficha);
+}
+
+void WorldScene::entradaPovo() {
+    ke::Input& in = ctx_.app.input();
+    if (in.pressionou(SDL_SCANCODE_P) || in.pressionou(SDL_SCANCODE_ESCAPE) || cliqueFecha(in, hud_.cliques)) {
+        fechar(Painel::Povo);
+        return;
+    }
+    const int n = static_cast<int>(mundo_.povo.size());
+    if (n == 0) return;
+    const int visiveis = Hud::linhasPovo();
+    if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selPovo_ = std::max(0, selPovo_ - 1);
+    if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selPovo_ = std::min(n - 1, selPovo_ + 1);
+    if (in.roda() > 0.0f) rolagemPovo_ = std::max(0, rolagemPovo_ - 3);
+    if (in.roda() < 0.0f) rolagemPovo_ = std::min(std::max(0, n - visiveis), rolagemPovo_ + 3);
+    // A seleção arrasta a rolagem; o mouse escolhe a linha (ids = índice no povo)
+    if (selPovo_ < rolagemPovo_) rolagemPovo_ = selPovo_;
+    if (selPovo_ >= rolagemPovo_ + visiveis) rolagemPovo_ = selPovo_ - visiveis + 1;
+    const int id = hud_.cliques.em(in.mouse());
+    bool abrirFicha = in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE);
+    if (id >= 0 && id < n) {
+        if (in.mouseMoveu()) selPovo_ = id;
+        if (in.clicou(ke::BotaoMouse::Esquerdo)) selPovo_ = id, abrirFicha = true;
+    }
+    if (abrirFicha) {
+        fichaId_ = mundo_.povo[selPovo_].id;
+        abrir(Painel::Ficha);
+    }
+}
+
+void WorldScene::desenharClima(ke::Renderer2D& r) {
+    const TempoDef& t = mundo_.tempoAqui();
+    if (t.particulas <= 0) return;
+    const bool magica = mundo_.eraEm(mundo_.jogador.pos) >= 3;  // na Alta Fantasia a chuva é de luz e a neve brilha
+    const bool neve = t.id == "neve";
+    if (magica) r.definirMistura(ke::Mistura::Aditiva);
+    for (int i = 0; i < t.particulas; ++i) {
+        const float s1 = std::fmod(i * 0.6180339f, 1.0f), s2 = std::fmod(i * 0.4142135f + 0.3f, 1.0f);
+        if (neve) {
+            const float y = std::fmod(s2 * 370.0f + tempo_ * (16.0f + 12.0f * s1), 370.0f) - 5.0f;
+            const float x = std::fmod(s1 * 640.0f + std::sin(tempo_ * 1.3f + i) * 6.0f + std::fmod(tempo_ * 5.0f, 640.0f) + 640.0f, 640.0f);
+            r.retangulo(glm::floor(glm::vec2{x, y}), {2, 2}, magica ? glm::vec4(0.7f, 0.9f, 1.0f, 0.8f) : glm::vec4(0.95f, 0.97f, 1.0f, 0.85f));
+        } else {
+            const float vel = t.raios ? 430.0f : 300.0f;
+            const float y = std::fmod(s2 * 390.0f + tempo_ * vel, 390.0f) - 10.0f;
+            const float x = std::fmod(s1 * 700.0f + 700.0f - std::fmod(tempo_ * vel * 0.25f, 700.0f), 700.0f) - 30.0f;
+            const glm::vec4 c = magica ? (i % 2 ? glm::vec4(1.0f, 0.85f, 0.4f, 0.7f) : glm::vec4(0.5f, 0.9f, 1.0f, 0.7f)) : glm::vec4(0.65f, 0.75f, 0.95f, 0.45f);
+            r.retangulo(glm::floor(glm::vec2{x, y}), {1, 5}, c);
+        }
+    }
+    if (magica) r.definirMistura(ke::Mistura::Normal);
+}
+
 void WorldScene::entradaMensagens() {
     ke::Input& in = ctx_.app.input();
     if (in.pressionou(SDL_SCANCODE_N) || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques)) {
@@ -836,6 +900,14 @@ void WorldScene::tratarEventos() {
         case EventoJogo::Tipo::Comeu:
             if (e.quantidade > 0) textoFlutuante(e.pos - glm::vec2(0, 26), std::format("+{} vida", e.quantidade), cor::bom);
             som.tocar(ke::Som::Coleta);
+            break;
+        // ---------- Fase 18: o povo com nome ----------
+        case EventoJogo::Tipo::AbrirFicha:
+            if (mundo_.habitante(e.quantidade)) {
+                fichaId_ = e.quantidade;
+                abrir(Painel::Ficha);
+                som.tocar(ke::Som::Menu);
+            }
             break;
         // ---------- Fase 16: o castelo e o brasão ----------
         case EventoJogo::Tipo::AlaErguida:
@@ -1204,6 +1276,17 @@ void WorldScene::atualizar(double dtD) {
 
                             aberto(Painel::Escolha) || aberto(Painel::Conselho) || aberto(Painel::Decisao) || aberto(Painel::Guilda) || aberto(Painel::Cozinha) || aberto(Painel::Alas) || aberto(Painel::Brasao);
     feridoFlash_ = std::max(0.0f, feridoFlash_ - dt);
+    // Fase 18: raios na tempestade (um clarão e o trovão de vez em quando)
+    if (mundo_.tempoAqui().raios && pilha_.empty()) {
+        proximoRaio_ -= dt;
+        if (proximoRaio_ <= 0.0f) {
+            std::uniform_real_distribution<float> u(6.0f, 16.0f);
+            proximoRaio_ = u(rng_);
+            flash_ = std::max(flash_, 0.55f);
+            cam_.tremor = std::max(cam_.tremor, 1.0f);
+            ctx_.app.audio().tocar(ke::Som::Construir);
+        }
+    }
     tituloRegiao_ = std::max(0.0f, tituloRegiao_ - dt);
     tituloEra_ = std::max(0.0f, tituloEra_ - dt);
     if (tituloEra_ <= 0.0f) tituloNovo_ = std::max(0.0f, tituloNovo_ - dt);  // o título espera a era terminar de ser anunciada
@@ -1246,6 +1329,8 @@ void WorldScene::atualizar(double dtD) {
     else if (aberto(Painel::Alas)) entradaAlas();
     else if (aberto(Painel::Brasao)) entradaBrasao();
     else if (aberto(Painel::Mensagens)) entradaMensagens();
+    else if (aberto(Painel::Ficha)) entradaFicha();
+    else if (aberto(Painel::Povo)) entradaPovo();
     else if (aberto(Painel::Regioes)) {
         ke::Input& in = ctx_.app.input();
         if (in.pressionou(SDL_SCANCODE_R) || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques))
@@ -1364,6 +1449,7 @@ void WorldScene::renderizar(float) {
     }
     if (flash_ > 0.0f) r.retangulo({0, 0}, {640, 360}, {1.0f, 0.95f, 0.85f, flash_ * 0.6f});
     if (feridoFlash_ > 0.0f) r.retangulo({0, 0}, {640, 360}, {0.7f, 0.05f, 0.05f, feridoFlash_ * 0.45f});
+    desenharClima(r);  // fase 18: por cima do mundo, por baixo da interface
     hud_.desenhar(r, mundo_, tempo_);
     hud_.combate(r, mundo_, tempo_);
     if (tituloEra_ > 0.0f) {
@@ -1400,6 +1486,8 @@ void WorldScene::renderizar(float) {
     if (aberto(Painel::Alas)) hud_.painelAlas(r, mundo_, selAla_, tempo_);
     if (aberto(Painel::Brasao)) hud_.editorBrasao(r, mundo_, rascunho_, selBrasao_, tempo_);
     if (aberto(Painel::Mensagens)) hud_.painelMensagens(r, rolagemMensagens_);
+    if (aberto(Painel::Povo)) hud_.painelPovo(r, mundo_, selPovo_, rolagemPovo_);
+    if (aberto(Painel::Ficha)) hud_.fichaHabitante(r, mundo_, fichaId_);
     if (aberto(Painel::Decisao) && mundo_.decisaoAtual()) {
         hud_.cliques.limpar();  // por cima do conselho: só as opções do caso valem para o mouse
         hud_.painelDecisao(r, mundo_, *mundo_.decisaoAtual(), selDecisao_, tempo_);

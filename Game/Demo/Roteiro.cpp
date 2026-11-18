@@ -1448,7 +1448,69 @@ void Roteiro::noMundo(WorldScene& cena) {
             }
             return;
         }
-        case 55:
+        // ---------- Fase 18: o povo com nome e o clima ----------
+        case 55: {  // um dia de chuva com o vilarejo cheio: medir o quadro, conversar com um aldeão, a lista do povo e a neve
+            if (cena.decisaoAberta() && quadro_ % 5 == 0) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 1) {
+                w.inventario.definir("comida", 400);
+                w.estado.populacaoBase += 40;  // casas a mais só para medir o vilarejo cheio
+                w.estado.populacao = std::min(45, w.resumo().populacaoMax);
+                w.estado.felicidade = 75.0f;
+                w.dormir(false);
+                while (w.tempoDoDia(w.relogio.dia).id != "chuva") ++w.relogio.dia;
+                w.relogio.minutos = 10 * 60;
+                w.jogador.pos = {31.0f * 16, 21.0f * 16};
+                abatesAntes_ = 0;
+            }
+            if (quadro_ == 8) in.simularToque(SDL_SCANCODE_E);  // fecha o relatório
+            if (quadro_ == 30) {
+                int ruas = 0;
+                for (auto [e, a] : w.reg.view<const Aldeao>().each()) ruas += w.habitante(a.habitante) != nullptr;
+                verificar(static_cast<int>(w.povo.size()) == w.estado.populacao - w.moradoresComNome() && ruas == std::min(16, static_cast<int>(w.povo.size())),
+                          std::format("{} pessoas com nome; {} andando pela vila, cada uma com a sua ficha", w.povo.size(), ruas));
+                verificar(w.tempoAqui().id == "chuva", "hoje chove (a horta foi regada pela chuva)");
+                capturar("89_chuva");
+            }
+            if (quadro_ == 640) {  // 600 quadros de chuva com o vilarejo cheio
+                verificar(ctx_.app.fps() >= 100.0, std::format("{:.0f} quadros por segundo com {} pessoas e chuva", ctx_.app.fps(), w.estado.populacao));
+                // Uma aldeã num lugar livre, parada para conversar
+                for (auto [e, p, a] : w.reg.view<Posicao, Aldeao>().each()) {
+                    p.v = {30.0f * 16 + 8, 25.0f * 16};
+                    a.espera = 99.0f;
+                    if (auto* mv = w.reg.try_get<Movimento>(e)) mv->caminho.clear();
+                    w.jogador.pos = p.v + glm::vec2(0, 8);
+                    w.jogador.dir = Direcao::Cima;
+                    break;
+                }
+            }
+            if (quadro_ == 645) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 660) {
+                verificar(cena.aberto(Painel::Ficha), "E perto de uma aldeã abre a ficha dela");
+                capturar("90_ficha");
+            }
+            if (quadro_ == 662) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 670) in.simularToque(SDL_SCANCODE_P);
+            if (quadro_ == 680) {
+                verificar(cena.aberto(Painel::Povo), "P abre a lista do povo");
+                capturar("91_povo");
+            }
+            if (quadro_ == 682) in.simularClique(ke::BotaoMouse::Esquerdo, {200, 64 + 14 * 2});  // a terceira pessoa
+            if (quadro_ == 692) verificar(cena.aberto(Painel::Ficha), "o clique na lista abre a ficha");
+            if (quadro_ == 694) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 698) in.simularToque(SDL_SCANCODE_P);
+            if (quadro_ == 706) {
+                verificar(cena.pilha().empty(), "Esc e P fecham a ficha e a lista");
+                while (w.tempoDoDia(w.relogio.dia).id != "neve") ++w.relogio.dia;
+                w.jogador.pos = {31.0f * 16, 21.0f * 16};
+            }
+            if (quadro_ == 740) {
+                verificar(w.tempoAqui().id == "neve", "um dia de neve no inverno");
+                capturar("92_neve");
+            }
+            if (quadro_ == 742) proxima();
+            return;
+        }
+        case 56:
             w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();

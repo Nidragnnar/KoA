@@ -224,7 +224,7 @@ void World::atualizarInimigos(float dt, const std::vector<ke::AABB>& obst) {
             const glm::vec2 dirv = destino - p.v;
             i.andando = false;
             if (glm::length(dirv) > 2.0f) {
-                const glm::vec2 feito = ke::moverComColisao(mapa, caixa, glm::normalize(dirv) * d.velocidade * dt, barreiras, 3.0f);
+                const glm::vec2 feito = ke::moverComColisao(mapa, caixa, glm::normalize(dirv) * d.velocidade * tempoAqui().velocidade * dt, barreiras, 3.0f);  // fase 18: a neve segura a horda
                 p.v += feito;
                 i.andando = glm::length(feito) > 0.01f;
                 if (std::abs(dirv.x) > std::abs(dirv.y)) i.dir = dirv.x < 0 ? Direcao::Esquerda : Direcao::Direita;
@@ -265,7 +265,7 @@ void World::atualizarInimigos(float dt, const std::vector<ke::AABB>& obst) {
         if (i.perseguindo && (dist > d.visao * 2.2f || longeDeCasa || jogador.vida <= 0)) i.perseguindo = false;
 
         glm::vec2 alvo = i.destino;
-        float vel = d.velocidade;
+        float vel = d.velocidade * tempoAqui().velocidade;  // fase 18: na neve as criaturas também se arrastam
         if (i.perseguindo) {
             alvo = jogador.pos;
             if (d.chefe) {  // de tempos em tempos, o chefe arranca em direção ao herói

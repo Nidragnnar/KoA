@@ -249,4 +249,16 @@ captura: 88_mensagens
 [OK] N fecha as mensagens e o relógio volta a andar
 [OK] o conselho é o único painel na pilha
 [OK] Esc esvazia a pilha
+[OK] 41 pessoas com nome; 16 andando pela vila, cada uma com a sua ficha
+[OK] hoje chove (a horta foi regada pela chuva)
+captura: 89_chuva
+[OK] 120 quadros por segundo com 46 pessoas e chuva
+[OK] E perto de uma aldeã abre a ficha dela
+captura: 90_ficha
+[OK] P abre a lista do povo
+captura: 91_povo
+[OK] o clique na lista abre a ficha
+[OK] Esc e P fecham a ficha e a lista
+[OK] um dia de neve no inverno
+captura: 92_neve
 RESULTADO: 0 falha(s)

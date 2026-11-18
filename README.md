@@ -6,7 +6,7 @@ era a era, até a **Alta Fantasia**.
 
 Engine própria em **C++20 + SDL3 + OpenGL 3.3** (Kingdom Engine), com EnTT, Dear ImGui, nlohmann/json e GoogleTest.
 
-## Versão 1.9
+## Versão 1.10
 
 A 2.0 está em andamento (identidade e plano em `docs/VISAO_2.0.md`). A fase 9 trouxe as Crônicas do Reino
 (tecla C), os títulos do herdeiro, o mercador viajante, três monumentos e o começo do mistério da Queda das Cinzas.
@@ -37,6 +37,10 @@ plano, cada save guarda a própria sorte, um save real de cada versão antiga é
 por assunto, os painéis viraram uma pilha só, os avisos foram para o canto (N relê as mensagens), as regras das obras
 saíram do código para os dados, e o balanceamento foi refeito com um jogador automático que usa todos os sistemas:
 o celeiro tem limite (a comida que sobra estraga), as obras alegram cada vez menos e o vilarejo apertado reclama.
+A fase 18 deu nome ao povo e trouxe o clima: cada habitante tem família, profissão (que rende para o reino), um jeito
+de ser e um desejo; desejos realizados viram páginas nas Crônicas, e quem cansa de esperar vai embora (e o relatório
+diz quem e por quê). E perto de um aldeão abre a ficha dele, e P mostra o povo inteiro. Cada dia tem o seu tempo:
+a chuva rega a horta, a neve deixa todo mundo mais lento, a neblina esconde a horda e a tempestade traz raios.
 
 As 8 fases do plano de arquitetura da 1.0 estão feitas:
 
@@ -59,6 +63,7 @@ As 8 fases do plano de arquitetura da 1.0 estão feitas:
 | F | na conversa, dar presente; no fogão, comer o prato escolhido |
 | B / K / R / G / L / C | obras / reino / terras do reino / Conselho Real / diário / Crônicas |
 | N | mensagens (os últimos avisos, com dia e hora) |
+| P | o povo (todos os habitantes; clique para a ficha) |
 | Esc | menu (salvar, opções, controles, título, sair) |
 | F5 | salvar |
 | F11 | tela cheia |

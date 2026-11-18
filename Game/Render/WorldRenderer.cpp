@@ -313,7 +313,7 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     r.definirMistura(ke::Mistura::Normal);
 
     // 6) Névoa rasteira: manchas grandes e lentas (some conforme a era avança)
-    const float nevoa = std::max(0.0f, 1.0f - w.reino.eraVisual);
+    const float nevoa = std::clamp(1.0f - w.reino.eraVisual + w.tempoAqui().nevoa, 0.0f, 1.0f);  // fase 18: e a neblina do dia
     if (nevoa > 0.01f) {
         for (int i = 0; i < 9; ++i) {
             const float vel = 4.0f + i * 1.3f;

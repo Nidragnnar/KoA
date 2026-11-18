@@ -33,7 +33,7 @@ ResumoReino calcularResumo(const Kingdom& k, const GameData& dados, const Estado
     }
     r.populacaoMax = e.populacaoBase + static_cast<int>(pop);
     r.seguranca = std::max(0, static_cast<int>(seguranca) + mod.seguranca);
-    r.comidaProduzida = static_cast<int>(std::round(comida * mod.comida));
+    r.comidaProduzida = static_cast<int>(std::round(comida * mod.comida)) + mod.comidaDia;
     r.comidaConsumida = static_cast<int>(std::ceil(e.populacao * mod.consumo));  // cada morador come 1 por dia
     static const int porMorador[] = {1, 2, 3};
     r.impostos = static_cast<int>(std::round(e.populacao * porMorador[static_cast<int>(e.imposto)] * mod.impostos));

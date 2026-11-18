@@ -131,7 +131,9 @@ TEST(Economia, FomeFazGenteIrEmbora) {
     w.inventario.definir("comida", 0);
     w.dormir(false);
     EXPECT_EQ(w.estado.populacao, 7);
-    EXPECT_NE(w.ultimoRelatorio.notas.back().find("Faltou comida"), std::string::npos);
+    // Fase 18: a nota da fome continua, e quem partiu tem nome
+    EXPECT_TRUE(std::ranges::any_of(w.ultimoRelatorio.notas, [](const std::string& n) { return n.find("Faltou comida") != std::string::npos; }));
+    EXPECT_TRUE(std::ranges::any_of(w.ultimoRelatorio.notas, [](const std::string& n) { return n.find("foi embora: faltou comida") != std::string::npos; }));
 }
 
 TEST(Economia, PopulacaoCresceComMoradiaEFelicidade) {

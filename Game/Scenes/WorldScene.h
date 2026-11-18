@@ -21,7 +21,7 @@ namespace koa {
 // Fase 17: cada tela por cima do jogo. A pilha de abertos é a única fonte: o relógio para e o alvo some com ela
 enum class Painel {
     Pausa, Leitura, Relatorio, Conversa, Escolha, Decisao, Conselho, Guilda, Cozinha, Alas, Brasao,
-    Regioes, Construcao, Forja, Loja, Cronicas, Diario, MenuObras, Reino, Mensagens
+    Regioes, Construcao, Forja, Loja, Cronicas, Diario, MenuObras, Reino, Mensagens, Ficha, Povo
 };
 
 // O vilarejo jogável
@@ -86,6 +86,9 @@ private:
     void entradaAlas();
     void entradaBrasao();
     void entradaMensagens();
+    void entradaFicha();
+    void entradaPovo();
+    void desenharClima(ke::Renderer2D& r);  // fase 18: chuva, neve e raios por cima do mundo
     void verificarGravacao(bool esperar);
     void darPresenteNaConversa();
     std::string propostoConselho() const;  // candidato que o herdeiro está olhando no cargo selecionado
@@ -131,6 +134,9 @@ private:
     std::future<Gravacao> gravando_;  // fase 17: o salvamento em segundo plano
     double msCaptura_ = 0.0;
     int rolagemMensagens_ = 0;
+    // Fase 18: a ficha de quem o herdeiro parou para conversar e a lista do povo (P)
+    int fichaId_ = 0, selPovo_ = 0, rolagemPovo_ = 0;
+    float proximoRaio_ = 4.0f;
     std::string painel_;  // id da construção com o painel aberto ("" = fechado)
     int selPainel_ = 0;
     int selPausa_ = 0;

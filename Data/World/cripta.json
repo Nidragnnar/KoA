@@ -1,5 +1,5 @@
 {
-  "nome": "Cripta do Cavaleiro",
+  "nome": "Cripta do Cavaleiro", "subterranea": true,
   "mapa": "cripta.txt",
   "escuridao_min": 0.8,
   "ambiente": [0.3, 0.28, 0.38],

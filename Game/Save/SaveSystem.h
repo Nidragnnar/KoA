@@ -11,6 +11,7 @@
 
 #include "Game/Kingdom/Castelo.h"
 #include "Game/Kingdom/Cotidiano.h"
+#include "Game/Kingdom/Povo.h"
 #include "Game/Kingdom/Guilda.h"
 #include "Game/Lore/Lore.h"
 #include "Game/World/Regioes.h"
@@ -20,8 +21,9 @@ namespace koa {
 // Sobe quando o formato muda (com migração). v2: relógio e moradores; v3: obras e povo; v4: regiões, combate e missões;
 // v5: Crônicas do Reino; v6: regiões vivas (corrupção, segurança, prosperidade); v7: Conselho Real e leis;
 // v8: hordas e a defesa do portão; v9: guilda, expedições e relíquias; v10: vida cotidiana (horta, pratos, presentes);
-// v11: o castelo (alas) e o brasão da linhagem; v12: a semente do sorteio (cada save segue a própria sorte)
-constexpr int VERSAO_SAVE = 12;
+// v11: o castelo (alas) e o brasão da linhagem; v12: a semente do sorteio (cada save segue a própria sorte);
+// v13: o povo com nome (people.json)
+constexpr int VERSAO_SAVE = 13;
 
 struct EstadoConstrucao {
     std::string id, def;
@@ -112,6 +114,10 @@ struct DadosSave {
     std::vector<std::string> alas;
     bool temBrasao = false, brasaoCriado = false;
     Brasao brasao;
+    // people.json (v13). Saves antigos: o povo ganha nome ao carregar (gerado pela sorte do save)
+    bool temPovoNomeado = false;
+    std::vector<Habitante> povo;
+    int proximoHabitante = 1;
 };
 
 // Saves em pastas (Saves/Save_001/*.json) com backup antes de sobrescrever

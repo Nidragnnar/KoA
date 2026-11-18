@@ -107,8 +107,16 @@ Saída da auditoria da versão 1.8 (problemas E1 a E11). Nada novo para jogar; o
 - **Balanceamento refeito** com um jogador automático que usa todos os sistemas por 120 dias, em 4 ritmos: o celeiro guarda 12 dias de comida (+8 com o Celeiro Real) e 40% do excesso estraga por noite; a felicidade das obras se aproxima de um teto de 35; acima de 40 moradores, cada um tira 0,5 de felicidade. No ritmo médio, o povo se estabiliza perto de 100 (antes passava de 230) e a comida fica entre 1 e 20 dias guardados.
 - Fica para depois (de propósito): o ouro ainda acumula no fim do jogo (vai ter destino no mercado vivo e na Guarda Real); os sistemas ainda guardam o estado dentro do World (a divisão foi por arquivo).
 
+### Fase 18 — Povo com nome e clima (feita, versão 1.10)
+- **Povo com nome** (`Data/NPCs/povo.json`): cada habitante além dos moradores do conselho é uma pessoa: nome, família (quem chega junto vem em famílias de 2 a 4), profissão (10, algumas só com a obra pronta: guarda com posto, ferreiro com forja...), traço (6: rende mais ou menos e aguenta mais ou menos esperar) e um desejo (10: casa de pedra, taverna, capela, dormir sem medo, despensa cheia, povo feliz, a horta do herdeiro, o castelo, o brasão, o mercado). Ninguém chega desejando o que o reino já tem.
+- As profissões rendem por noite (madeira, pedra, comida, ouro, segurança, alegria). Desejos realizados viram páginas nas Crônicas e alegram o reino (+0,2 cada, até +5). Com o povo abaixo de 50 de felicidade, quem esperou mais que a paciência vai embora (uma pessoa por noite). Fome e falta de casa também levam gente, e o relatório diz quem foi e por quê.
+- **E perto de um aldeão** abre a ficha (retrato, família, desde quando mora, o desejo e há quantos dias espera). **P** abre a lista do povo, com mouse.
+- **Clima** (`Data/World/clima.json`): o tempo de cada dia é sorteado pela estação e pela sorte da partida, e aparece no relatório e no painel da data. Chuva e tempestade regam a horta; tempestade tira 2 de felicidade e traz raios; neve deixa o herói e as criaturas 20% mais lentos; neblina deixa o mundo cinza e a horda 20% mais forte. Nada disso chega à cripta e às minas. Na Alta Fantasia a chuva é de luz e a neve brilha.
+- **Balanceamento**: o limiar do Reino Renascido subiu de 22 para 26 (mais obras desde a fase 9 aceleravam as eras), e a era já alcançada não volta atrás. Na simulação de 120 dias, os 4 ritmos ficam sem alarmes; de 31 a 36 desejos realizados até o dia 60.
+- Fica para depois: moradores do povo no conselho e na guilda, casamentos entre famílias (vai junto da linhagem), falas próprias por profissão.
+
 ### Próximas fases (plano da auditoria de 18/11/2026)
-- **Fase 18 — Povo com nome e clima.** **Fase 19 — Reputação e as três primeiras facções.** **Fase 20 — Mercado vivo e Livro do Reino.** **Fase 21 — Linhagem.** Detalhes e critérios no relatório da auditoria.
+- **Fase 19 — Reputação e as três primeiras facções.** **Fase 20 — Mercado vivo e Livro do Reino.** **Fase 21 — Linhagem.** Detalhes e critérios no relatório da auditoria.
 
 ### Depois da 2.0 (para decidir mais tarde)
 - Linhagem: casamento, herdeiros, envelhecimento e sucessão.
@@ -118,6 +126,6 @@ Saída da auditoria da versão 1.8 (problemas E1 a E11). Nada novo para jogar; o
 
 ## Notas técnicas
 
-- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`), a 14 para a v9 (`guild.json`), a 15 para a v10 (`life.json`), a 16 para a v11 (`castle.json`) e a 17 para a v12 (a semente do sorteio no `metadata.json`).
+- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`), a 14 para a v9 (`guild.json`), a 15 para a v10 (`life.json`), a 16 para a v11 (`castle.json`), a 17 para a v12 (a semente do sorteio no `metadata.json`) e a 18 para a v13 (`people.json`).
 - Conteúdo (crônicas, títulos, eventos, cargos, estações) em JSON dentro de `Data/`, como missões e diálogos hoje.
 - O roteiro ponta a ponta ganha etapas a cada fase; a arte nova vem do NidraIA em sessão separada.
