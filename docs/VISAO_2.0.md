@@ -126,9 +126,19 @@ Saída da auditoria da versão 1.8 (problemas E1 a E11). Nada novo para jogar; o
 - **Balanceamento**: o jogador automático assina os tratados dos anões e da Ordem quando sobra ouro. Em 120 dias: anões perto de +30, Ordem +16, Culto -13, fama de justiça +23 (abaixo do limite de 30: a fama é para quem governa de propósito), nenhum desvio (o bot não maltrata o conselho). Sem alarmes nos 4 ritmos.
 - Fica para depois: elfos e tribos do norte, guerra entre facções no mapa, emissários andando pelo vilarejo, conselheiros vindos do povo.
 
-### Próximas fases (plano da auditoria de 18/11/2026)
-- **Fase 20 — Mercado vivo e Livro do Reino.** **Fase 21 — Linhagem.** Detalhes e critérios no relatório da auditoria.
+### Fase 20 — Mercado vivo, Livro do Reino e acessibilidade (feita, versão 1.12)
+- **Mercado vivo** (`Data/Kingdom/mercado.json`): o preço de cada bem é base × estação × (1 + pressão) × (1 + sorte do dia). Comprar sobe a pressão, vender desce, e a cada noite ela volta 25% para o normal. Comida: 0,8 no outono, 1,4 no inverno (vale ter guardado). A taxa (20%, 15%, 10% pelo nível do mercado; 25% no Corvin) e o limite de lotes por dia (6, 9, 12) impedem lucro sem fim: um teste de propriedade faz 300 ciclos aleatórios de compra e venda que voltam ao mesmo estoque e nenhum termina com mais ouro. Acontecimentos mexem nos preços (saque na horda, festival, minas abertas, tratados dos anões e da Ordem, Lua de Sangue, meteoros).
+- O mercado compra colheita, peixe, ovos, leite e pratos (o que antes só servia para comer ou presentear). O **Corvin** também compra (pagando menos) e aceita **encomendas** pagas na hora, que chegam numa visita seguinte (cristal, peixe dourado, sementes, pedra lavrada, tábuas).
+- Painel do mercado (V, ou "Negociar no mercado" na construção): uma linha por bem, com botões de comprar e vender, ✓/✗, o que o herdeiro tem e a tendência dos últimos 14 dias; embaixo, por que o preço está assim.
+- **Livro do Reino** (Tab ou o botão "Livro" no canto): os painéis de informação viram abas numa faixa embaixo (Reino, Mercado, Terras, Conselho, Povo, Vizinhos, Diário, Crônicas, Avisos). Clique troca de aba; Tab passa para a próxima; as teclas antigas continuam. Os painéis de cada construção (forja, guilda, fogão, alas, brasão) seguem abrindo na construção.
+- **Acessibilidade**: dicas ao passar o mouse nos recursos, no povo e na data (o que entra por dia, o preço no mercado); texto grande (conversas, avisos e dicas com letra em dobro); velocidade do texto (lenta, normal, rápida, instantânea); teclas trocáveis em Opções → Controles (guardadas no `config.json`); ✓ ou ✗ na prévia de obra e nos botões, além da cor.
+- **Ações das alas** (`castelo.json`, com recarga em dias): Salão de Banquetes dá uma festa (+6 de felicidade), Sala do Tesouro empresta 60 ao povo (voltam 78 em 6 dias, ou só 60 com o povo triste), Quartel treina a guarda (+2 soldados na próxima horda), Biblioteca decifra fragmentos (diz onde está o próximo fragmento da Queda). Os vizinhos e a fama reagem a cada uso.
+- **Sons de fundo por região**: grilos à noite e pássaros nas eras felizes no vilarejo, corvos e vento na floresta amaldiçoada, pássaros e brilhos na encantada, gotas com eco na cripta, gotas e estrondos nas minas.
+- **Balanceamento**: o jogador automático vende a comida que passa de 8 dias e compra pedra no mercado. Em 120 dias: perto de 4.000 de comida vendida (cerca de 2.000 de ouro); a comida ainda vale 0,64 de ouro a unidade no fim. Sem alarmes nos 4 ritmos.
+- Fica para depois: a escala de texto dentro dos painéis grandes (hoje só conversas, avisos e dicas), controle (gamepad) sobre a camada de ações, e mercadores de outras facções.
 
+### Próximas fases (plano da auditoria de 18/11/2026)
+- **Fase 21 — Linhagem.** Detalhes e critérios no relatório da auditoria.
 ### Depois da 2.0 (para decidir mais tarde)
 - Linhagem: casamento, herdeiros, envelhecimento e sucessão.
 - Mais facções e diplomacia (elfos, tribos do norte) e conflitos entre elas no mapa.
@@ -137,6 +147,6 @@ Saída da auditoria da versão 1.8 (problemas E1 a E11). Nada novo para jogar; o
 
 ## Notas técnicas
 
-- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`), a 14 para a v9 (`guild.json`), a 15 para a v10 (`life.json`), a 16 para a v11 (`castle.json`), a 17 para a v12 (a semente do sorteio no `metadata.json`) a 18 para a v13 (`people.json`) e a 19 para a v14 (`factions.json`).
+- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`), a 14 para a v9 (`guild.json`), a 15 para a v10 (`life.json`), a 16 para a v11 (`castle.json`), a 17 para a v12 (a semente do sorteio no `metadata.json`) a 18 para a v13 (`people.json`) a 19 para a v14 (`factions.json`) e a 20 para a v15 (`market.json`).
 - Conteúdo (crônicas, títulos, eventos, cargos, estações) em JSON dentro de `Data/`, como missões e diálogos hoje.
 - O roteiro ponta a ponta ganha etapas a cada fase; a arte nova vem do NidraIA em sessão separada.

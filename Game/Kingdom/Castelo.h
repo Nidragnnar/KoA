@@ -1,5 +1,6 @@
 #pragma once
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -19,10 +20,21 @@ struct EfeitosAla {
     EfeitosAla& operator+=(const EfeitosAla& o);
 };
 
+// Fase 20: o que a ala erguida deixa fazer (com tempo de recarga em dias)
+struct AcaoAla {
+    std::string id, nome, descricao;
+    Custo custo;
+    int recarga = 7;
+    float felicidade = 0.0f;
+    int soldadosHorda = 0, emprestimo = 0, diasEmprestimo = 0;
+    bool decifrar = false;
+};
+
 struct AlaDef {
     std::string id, nome, descricao;
     Custo custo;
     EfeitosAla efeitos;
+    std::optional<AcaoAla> acao;
 };
 
 struct PecaBrasao {

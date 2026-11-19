@@ -183,7 +183,8 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
     for (const auto& [arq, ler] : std::initializer_list<std::pair<const char*, std::function<bool(const nlohmann::json&)>>>{
              {"NPCs/povo.json", [&](const nlohmann::json& jj) { return lerPovo(jj, povo, erro); }},
              {"World/clima.json", [&](const nlohmann::json& jj) { return lerClima(jj, clima, erro); }},
-             {"Kingdom/faccoes.json", [&](const nlohmann::json& jj) { return lerFaccoes(jj, faccoes, erro); }}}) {
+             {"Kingdom/faccoes.json", [&](const nlohmann::json& jj) { return lerFaccoes(jj, faccoes, erro); }},
+             {"Kingdom/mercado.json", [&](const nlohmann::json& jj) { return lerMercado(jj, mercado, erro); }}}) {
         const auto texto = ke::fs::lerTexto(pasta / arq);
         const auto jj = texto ? nlohmann::json::parse(*texto, nullptr, false) : nlohmann::json();
         if (!texto || jj.is_discarded()) {
@@ -249,6 +250,12 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
     if (!lerCotidiano(jv, cotidiano, erro)) return false;
     // Todo item citado precisa ter nome (é o que a interface mostra)
     auto conhecido = [&](const std::string& id) { return recursos.contains(id) || cotidiano.itens.contains(id); };
+    // Fase 20: só se negocia o que o jogo conhece (recurso ou item da vida cotidiana)
+    for (const BemDef& b : mercado.bens)
+        if (!recursos.contains(b.id) && !cotidiano.itens.contains(b.id)) {
+            if (erro) *erro = "mercado: bem desconhecido: " + b.id;
+            return false;
+        }
     std::vector<std::string> citados;
     for (const auto& cul : cotidiano.culturas) citados.push_back(cul.semente), citados.push_back(cul.id);
     for (const auto& p : cotidiano.peixes) citados.push_back(p.id);

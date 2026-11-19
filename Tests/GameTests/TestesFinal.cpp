@@ -97,28 +97,26 @@ TEST(Renascer, DiaEsgotadoSobreviveAoSave) {
     EXPECT_FALSE(arvoreEsgotada(w2)) << "a contagem continua de onde parou";
 }
 
-TEST(Mercado, SoVendeComMercadoEFicaMaisBarato) {
+TEST(Mercado, SoNegociaComMercadoEATaxaCaiComONivel) {
     World w = vilarejo();
-    EXPECT_EQ(w.precoLote("pedra"), 0);
-    w.inventario.definir("ouro", 100);
-    EXPECT_FALSE(w.comprarLote("pedra")) << "sem mercado não há compra";
+    w.inventario.definir("ouro", 200);
+    EXPECT_FALSE(w.podeNegociar("pedra", true).empty());
+    EXPECT_FALSE(w.comprarNoMercado("pedra")) << "sem mercado não há compra";
 
     w.reino.construcoes.push_back({"mercado_teste", "mercado", "Mercado", 1, {0, 0}});
-    EXPECT_EQ(w.precoLote("pedra"), 30);
-    EXPECT_EQ(w.precoLote("madeira"), 20);
-    EXPECT_EQ(w.precoLote("comida"), 0) << "só pedra e madeira";
-    const int pedra = w.inventario.quantidade("pedra");
-    EXPECT_TRUE(w.comprarLote("pedra"));
-    EXPECT_EQ(w.inventario.quantidade("pedra"), pedra + 10);
-    EXPECT_EQ(w.inventario.quantidade("ouro"), 70);
-
+    const int nivel1 = w.precoCompraLote("pedra");
+    EXPECT_GT(nivel1, 0);
     w.reino.construcoes.back().level = 3;
-    EXPECT_EQ(w.precoLote("pedra"), 21);
-    w.inventario.definir("ouro", 20);
-    EXPECT_FALSE(w.comprarLote("pedra")) << "ouro insuficiente";
-    EXPECT_EQ(w.inventario.quantidade("ouro"), 20) << "falha não cobra nada";
+    EXPECT_LT(w.precoCompraLote("pedra"), nivel1) << "o Grande Bazar cobra menos taxa";
+    const int preco = w.precoCompraLote("pedra"), pedra = w.inventario.quantidade("pedra");
+    ASSERT_TRUE(w.comprarNoMercado("pedra"));
+    EXPECT_EQ(w.inventario.quantidade("pedra"), pedra + 10);
+    EXPECT_EQ(w.inventario.quantidade("ouro"), 200 - preco);
+    EXPECT_GT(w.precoCompraLote("pedra"), preco) << "comprar sobe o preço";
+    w.inventario.definir("ouro", 5);
+    EXPECT_FALSE(w.comprarNoMercado("pedra")) << "ouro insuficiente";
+    EXPECT_EQ(w.inventario.quantidade("ouro"), 5) << "falha não cobra nada";
 }
-
 TEST(EraFinal, AltaFantasiaSoDepoisDoChefe) {
     Kingdom k;
     for (int i = 0; i < 41; ++i) k.construcoes.push_back({"m" + std::to_string(i), "moradia", "", 1});

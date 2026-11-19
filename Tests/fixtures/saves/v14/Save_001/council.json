@@ -1,0 +1,15 @@
+{
+  "cargos": {
+    "marechal": "oswin",
+    "obras": "bram",
+    "tesoureiro": "edda"
+  },
+  "decisao_pendente": "nobre_isencao",
+  "lealdade": {
+    "bram": 70,
+    "edda": 70,
+    "oswin": 70
+  },
+  "leis": [],
+  "ultima_decisao": 2
+}

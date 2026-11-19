@@ -172,6 +172,21 @@ bool lerCastelo(const nlohmann::json& j, DadosCastelo& d, std::string* erro) {
             a.efeitos.soldados = je.value("soldados", 0);
             a.efeitos.expedicao = je.value("expedicao", 0);
             a.efeitos.diasCeleiro = je.value("dias_celeiro", 0.0f);
+            if (ja.contains("acao")) {
+                const auto& jx = ja["acao"];
+                AcaoAla x;
+                x.id = jx.at("id").get<std::string>();
+                x.nome = jx.value("nome", x.id);
+                x.descricao = jx.value("descricao", "");
+                x.custo = jx.value("custo", Custo{});
+                x.recarga = std::max(1, jx.value("recarga", 7));
+                x.felicidade = jx.value("felicidade", 0.0f);
+                x.soldadosHorda = jx.value("soldados_horda", 0);
+                x.emprestimo = jx.value("emprestimo", 0);
+                x.diasEmprestimo = jx.value("dias_emprestimo", 0);
+                x.decifrar = jx.value("decifrar", false);
+                a.acao = std::move(x);
+            }
             d.alas.push_back(std::move(a));
         }
         const auto& jb = j.at("brasao");

@@ -1,19 +1,27 @@
 {
-  "_como_funciona": "Fase 16. O castelo é uma construção fixa do mapa (Data/Buildings/construcoes.json, id 'castelo'), reconstruída em 4 níveis. Cada nível a partir do 2 abre uma vaga de ala (n2: 1, n3: 2, n4: 3). Cada ala é erguida uma vez, na hora, pagando o custo; efeitos somados todo dia: felicidade e seguranca (pontos), impostos e comida (fração: 0.15 = +15%), viajantes (famílias a mais que podem chegar), ouro_dia, soldados (a mais no portão) e expedicao (força a mais nas expedições da guilda). O brasão da linhagem se monta no painel do castelo: forma, divisão, duas cores do campo, símbolo, cor do símbolo e lema. As cores aparecem nos estandartes do vilarejo e nas bandeiras do castelo.",
+  "_como_funciona": "Fase 16. O castelo é uma construção fixa do mapa (Data/Buildings/construcoes.json, id 'castelo'), reconstruída em 4 níveis. Cada nível a partir do 2 abre uma vaga de ala (n2: 1, n3: 2, n4: 3). Cada ala é erguida uma vez, na hora, pagando o custo; efeitos somados todo dia: felicidade e seguranca (pontos), impostos e comida (fração: 0.15 = +15%), viajantes (famílias a mais que podem chegar), ouro_dia, soldados (a mais no portão) e expedicao (força a mais nas expedições da guilda). O brasão da linhagem se monta no painel do castelo: forma, divisão, duas cores do campo, símbolo, cor do símbolo e lema. As cores aparecem nos estandartes do vilarejo e nas bandeiras do castelo. Fase 20: uma ala erguida pode ter uma ação no painel das alas (acao): paga o custo e só volta depois de recarga dias; felicidade (na hora), soldados_horda (na próxima horda), emprestimo (ouro que volta em dias_emprestimo dias; com o povo abaixo de 40 de felicidade volta só o que foi emprestado), decifrar (diz onde está o próximo fragmento da Queda). Cada uso marca ala_acao:<id> (os vizinhos reagem).",
   "vagas_por_nivel": [0, 0, 1, 2, 3],
   "alas": [
     { "id": "tesouro", "nome": "Sala do Tesouro", "descricao": "Cofres, balanças e um escrivão que não deixa moeda sumir.",
-      "custo": { "pedra": 60, "ouro": 80 }, "efeitos": { "impostos": 0.15, "ouro_dia": 3 } },
+      "custo": { "pedra": 60, "ouro": 80 }, "efeitos": { "impostos": 0.15, "ouro_dia": 3 },
+      "acao": { "id": "emprestimo", "nome": "Emprestar ao povo", "descricao": "60 de ouro emprestados às famílias: alegra agora e volta com juros em 6 dias (menos, se o povo andar triste).",
+        "custo": { "ouro": 60 }, "recarga": 10, "felicidade": 3, "emprestimo": 78, "dias_emprestimo": 6 } },
     { "id": "quartel", "nome": "Quartel Real", "descricao": "Camas, armas e um pátio de treino: um soldado a mais no portão.",
-      "custo": { "madeira": 60, "pedra": 60, "ouro": 60 }, "efeitos": { "seguranca": 8, "soldados": 1 } },
+      "custo": { "madeira": 60, "pedra": 60, "ouro": 60 }, "efeitos": { "seguranca": 8, "soldados": 1 },
+      "acao": { "id": "treino", "nome": "Treinar a guarda", "descricao": "Uma semana de pátio: dois soldados a mais no portão na próxima horda.",
+        "custo": { "ouro": 40, "comida": 20 }, "recarga": 7, "soldados_horda": 2 } },
     { "id": "jardim", "nome": "Jardim Real", "descricao": "Roseiras, um lago pequeno e bancos onde o povo pode passear.",
       "custo": { "madeira": 40, "pedra": 30, "ouro": 50 }, "efeitos": { "felicidade": 5 } },
     { "id": "celeiro", "nome": "Celeiro Real", "descricao": "Grãos guardados para o inverno: a colheita rende mais e o celeiro guarda mais.",
       "custo": { "madeira": 80, "pedra": 30, "ouro": 40 }, "efeitos": { "comida": 0.2, "dias_celeiro": 8 } },
     { "id": "biblioteca", "nome": "Biblioteca Real", "descricao": "Mapas e crônicas antigas: as expedições sabem onde pisar.",
-      "custo": { "madeira": 50, "pedra": 40, "ouro": 90, "cristal": 4 }, "efeitos": { "expedicao": 1, "felicidade": 1 } },
+      "custo": { "madeira": 50, "pedra": 40, "ouro": 90, "cristal": 4 }, "efeitos": { "expedicao": 1, "felicidade": 1 },
+      "acao": { "id": "decifrar", "nome": "Decifrar fragmentos", "descricao": "Os escribas cruzam mapas e crônicas: dizem onde está o próximo fragmento da Queda.",
+        "custo": { "ouro": 25, "cristal": 1 }, "recarga": 5, "decifrar": true } },
     { "id": "salao", "nome": "Salão de Banquetes", "descricao": "Mesas longas e lareiras: viajantes ouvem falar e vêm morar.",
-      "custo": { "madeira": 70, "pedra": 50, "ouro": 70 }, "efeitos": { "felicidade": 2, "viajantes": 1 } }
+      "custo": { "madeira": 70, "pedra": 50, "ouro": 70 }, "efeitos": { "felicidade": 2, "viajantes": 1 },
+      "acao": { "id": "festa", "nome": "Dar uma festa", "descricao": "Mesa farta no salão para quem quiser vir: o povo inteiro se alegra.",
+        "custo": { "comida": 40, "ouro": 30 }, "recarga": 7, "felicidade": 6 } }
   ],
   "brasao": {
     "formas": [

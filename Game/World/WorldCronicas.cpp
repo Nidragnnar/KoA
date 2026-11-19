@@ -9,7 +9,7 @@ using namespace interno;
 
 bool World::marcar(const std::string& marco, const std::string& nome, bool silencioso) {
     if (!marcos.insert(marco).second) return false;
-    if (dados_) reagirAoMarco(marco);  // fase 19: os vizinhos e a fama reagem ao que aconteceu
+    if (dados_) reagirAoMarco(marco), reagirMercado(marco);  // fase 19: os vizinhos e a fama; fase 20: os preços
     // Página própria ("construiu:memorial") ou a do grupo ("construiu:*")
     const auto& paginas = dados().lore.paginas;
     auto it = paginas.find(marco);

@@ -15,6 +15,7 @@
 #include "Game/Kingdom/Conselho.h"
 #include "Game/Kingdom/Cotidiano.h"
 #include "Game/Kingdom/Faccoes.h"
+#include "Game/Kingdom/Mercado.h"
 #include "Game/Kingdom/Defesa.h"
 #include "Game/Kingdom/Guilda.h"
 #include "Game/Kingdom/Estacoes.h"
@@ -84,6 +85,7 @@ struct GameData {
     DadosPovo povo;                              // fase 18: nomes, profissões, traços e desejos do povo
     DadosClima clima;                            // fase 18: o tempo de cada estação
     DadosFaccoes faccoes;                        // fase 19: povos vizinhos, tratados e reputação
+    DadosMercado mercado;                        // fase 20: preços, encomendas do Corvin
     DadosCotidiano cotidiano;                    // fase 15: horta, pesca, animais, cozinha e presentes
 
     const InimigoDef* inimigoPorLetra(char c) const {

@@ -1542,8 +1542,77 @@ void Roteiro::noMundo(WorldScene& cena) {
             if (quadro_ == 60) proxima();
             return;
         }
-        case 57:
-            w.reino.eraForcada = 0;
+        // ---------- Fase 20: o mercado vivo, o Livro do Reino e a acessibilidade ----------
+        case 57: {  // V abre o mercado (aba do Livro); compra e venda; o clique e o Tab trocam de aba; o botão do Livro
+            if (cena.decisaoAberta() && quadro_ % 5 == 0) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 1) {
+                for (const char* r : {"madeira", "pedra", "ouro", "comida"}) w.inventario.definir(r, 600);
+                verificar(!w.construir("mercado", lugarLivre(w, "mercado", {44, 26})).empty(), "o mercado começa a subir");
+                w.dormir(false);
+                w.relogio.minutos = 10 * 60;
+                w.jogador.pos = {31.0f * 16, 21.0f * 16};
+            }
+            if (quadro_ == 8) in.simularToque(SDL_SCANCODE_E);  // fecha o relatório
+            if (quadro_ == 20) in.simularToque(SDL_SCANCODE_V);
+            if (quadro_ == 30) {
+                verificar(cena.aberto(Painel::Mercado) && w.nivelMercado() > 0, "V abre o mercado, que já está de pé");
+                capturar("95_mercado");
+                ouroAntes_ = w.inventario.quantidade("ouro");
+                abatesAntes_ = w.inventario.quantidade("comida");  // reaproveitado: a comida antes da compra
+            }
+            if (quadro_ == 32) in.simularToque(SDL_SCANCODE_E);  // a primeira linha: comida
+            if (quadro_ == 40) {
+                verificar(w.inventario.quantidade("comida") == abatesAntes_ + 10 && w.inventario.quantidade("ouro") < ouroAntes_, "E compra um lote de comida");
+                ouroAntes_ = w.inventario.quantidade("ouro");
+            }
+            if (quadro_ == 42) in.simularToque(SDL_SCANCODE_Q);
+            if (quadro_ == 50) {
+                verificar(w.inventario.quantidade("comida") == abatesAntes_ && w.inventario.quantidade("ouro") > ouroAntes_ && w.mercado.negociadosHoje == 2,
+                          "Q vende o lote de volta (a taxa fica com o mercado)");
+            }
+            if (quadro_ == 52) in.simularClique(ke::BotaoMouse::Esquerdo, {320, 352});  // a aba Povo, na faixa do Livro
+            if (quadro_ == 62) verificar(cena.aberto(Painel::Povo) && !cena.aberto(Painel::Mercado), "o clique na aba troca o painel");
+            if (quadro_ == 64) in.simularToque(SDL_SCANCODE_TAB);
+            if (quadro_ == 74) {
+                verificar(cena.aberto(Painel::Vizinhos) && cena.pilha().size() == 1, "Tab passa para a próxima aba");
+                capturar("96_livro_abas");
+            }
+            if (quadro_ == 76) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 84) verificar(cena.pilha().empty(), "Esc fecha o Livro");
+            if (quadro_ == 86) in.simularClique(ke::BotaoMouse::Esquerdo, {600, 349});  // o botão do Livro, no canto
+            if (quadro_ == 96) verificar(cena.aberto(Painel::Vizinhos), "o botão abre o Livro na última aba");
+            if (quadro_ == 98) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 106) {
+                // Texto grande: avisos e dicas em dobro; o mouse em cima do ouro mostra a dica
+                ctx_.opcoes.textoGrande = true;
+                cena.avisar("Texto grande: os avisos e as dicas ficam com a letra em dobro.");
+                in.simularMouse({60, 37});
+            }
+            if (quadro_ == 116) capturar("97_texto_grande");
+            if (quadro_ == 118) {
+                ctx_.opcoes.textoGrande = false;
+                in.simularToque(SDL_SCANCODE_ESCAPE);  // menu de pausa
+            }
+            if (quadro_ == 122 || quadro_ == 124 || quadro_ == 126) in.simularToque(SDL_SCANCODE_S);
+            if (quadro_ == 128) in.simularToque(SDL_SCANCODE_E);  // Controles
+            if (quadro_ == 136) in.simularToque(SDL_SCANCODE_E);  // trocar a tecla de "andar para cima"
+            if (quadro_ == 140) in.simularToque(SDL_SCANCODE_I);
+            if (quadro_ == 146) {
+                verificar(ctx_.opcoes.teclas.contains("cima") && ctx_.opcoes.teclas.at("cima") == "I" && ctx_.app.input().tecla("cima") == SDL_SCANCODE_I,
+                          "a tecla de andar para cima virou I (e foi para o config.json)");
+                capturar("98_controles");
+            }
+            if (quadro_ == 148 || quadro_ == 150) in.simularToque(SDL_SCANCODE_W);  // "Restaurar o padrão"
+            if (quadro_ == 152) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 158) verificar(ctx_.opcoes.teclas.empty() && ctx_.app.input().tecla("cima") == SDL_SCANCODE_W, "Restaurar volta o W");
+            if (quadro_ == 160 || quadro_ == 166) in.simularToque(SDL_SCANCODE_ESCAPE);  // fecha os controles e o menu
+            if (quadro_ == 176) {
+                verificar(cena.pilha().empty(), "Esc volta das opções e do menu");
+                proxima();
+            }
+            return;
+        }
+        case 58:            w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();
             return;

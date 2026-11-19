@@ -28,6 +28,7 @@ void Input::processar(const SDL_Event& e) {
     if (e.type == SDL_EVENT_KEY_DOWN) {
         segurando_[e.key.scancode] = true;
         pressionou_[e.key.scancode] = true;  // repetição do teclado também conta (útil em menus)
+        if (!e.key.repeat) ultima_ = e.key.scancode;
     } else if (e.type == SDL_EVENT_KEY_UP) {
         segurando_[e.key.scancode] = false;
     } else if (e.type == SDL_EVENT_MOUSE_MOTION) {

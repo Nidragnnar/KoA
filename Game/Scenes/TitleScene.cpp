@@ -124,6 +124,7 @@ void TitleScene::atualizar(double dtD) {
     const float dt = static_cast<float>(dtD);
     tempo_ += dt;
     ctx_.app.audio().definir(0.0f, 1.0f, 0.0f);  // a melodia melancólica das cinzas, à noite
+    ctx_.app.audio().definirAmbiente(ke::Ambiente::Nenhum);
     if (ctx_.roteiro) ctx_.roteiro->naTitulo(*this);
     ke::Input& in = ctx_.app.input();
     if (telaOpcoes_.aberta()) telaOpcoes_.entrada(ctx_);

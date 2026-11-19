@@ -21,7 +21,8 @@ namespace koa {
 // Fase 17: cada tela por cima do jogo. A pilha de abertos é a única fonte: o relógio para e o alvo some com ela
 enum class Painel {
     Pausa, Leitura, Relatorio, Conversa, Escolha, Decisao, Conselho, Guilda, Cozinha, Alas, Brasao,
-    Regioes, Construcao, Forja, Loja, Cronicas, Diario, MenuObras, Reino, Mensagens, Ficha, Povo, Vizinhos
+    Regioes, Construcao, Forja, Loja, Cronicas, Diario, MenuObras, Reino, Mensagens, Ficha, Povo, Vizinhos,
+    Mercado  // fase 20
 };
 
 // O vilarejo jogável
@@ -68,6 +69,7 @@ public:
     // Fase 12
     bool conselhoAberto() const { return aberto(Painel::Conselho); }
     bool decisaoAberta() const { return aberto(Painel::Decisao); }
+    void avisar(const std::string& texto) { hud_.aviso(texto, cor::texto); }  // fase 20: o roteiro mostra o texto grande
     // Fase 14
     bool guildaAberta() const { return aberto(Painel::Guilda); }
     // Fase 15
@@ -89,6 +91,12 @@ private:
     void entradaFicha();
     void entradaPovo();
     void entradaVizinhos();
+    void entradaMercado();
+    void abrirMercado(bool corvin, int aba);
+    // Fase 20: o Livro do Reino (abas = painéis que já existiam)
+    int abaAberta() const;  // -1 = nenhuma aba do Livro por cima
+    void abrirAba(int k);
+    bool entradaLivro();    // true = a faixa de abas tratou a entrada deste passo
     void desenharClima(ke::Renderer2D& r);  // fase 18: chuva, neve e raios por cima do mundo
     void verificarGravacao(bool esperar);
     void darPresenteNaConversa();
@@ -139,6 +147,9 @@ private:
     int fichaId_ = 0, selPovo_ = 0, rolagemPovo_ = 0;
     float proximoRaio_ = 4.0f;
     int selVizinhos_ = 0;  // fase 19
+    bool mercadoCorvin_ = false;  // fase 20: o painel do mercado aberto na banca do Corvin (só vende e encomenda)
+    int abaMercado_ = 0, selMercado_ = 0, rolagemMercado_ = 0;
+    int abaLivro_ = 0;  // a última aba do Livro aberta
     std::string painel_;  // id da construção com o painel aberto ("" = fechado)
     int selPainel_ = 0;
     int selPausa_ = 0;

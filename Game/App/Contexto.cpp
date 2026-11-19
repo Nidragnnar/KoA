@@ -6,9 +6,11 @@
 #include <format>
 
 #include <glm/common.hpp>
+#include <SDL3/SDL_keyboard.h>
 #include <nlohmann/json.hpp>
 
 #include "Engine/Platform/FileSystem.h"
+#include "Game/UI/Teclas.h"
 
 namespace koa {
 
@@ -45,16 +47,33 @@ void Contexto::carregarOpcoes() {
     opcoes.musica = std::clamp(j.value("musica", 6), 0, 10);
     opcoes.efeitos = std::clamp(j.value("efeitos", 8), 0, 10);
     opcoes.telaCheia = j.value("tela_cheia", false);
+    opcoes.teclas = j.value("teclas", std::map<std::string, std::string>{});
+    opcoes.textoGrande = j.value("texto_grande", false);
+    opcoes.velocidadeTexto = std::clamp(j.value("velocidade_texto", 1), 0, 3);
 }
 
 void Contexto::salvarOpcoes() const {
-    const nlohmann::json j = {{"musica", opcoes.musica}, {"efeitos", opcoes.efeitos}, {"tela_cheia", opcoes.telaCheia}};
+    const nlohmann::json j = {{"musica", opcoes.musica},           {"efeitos", opcoes.efeitos}, {"tela_cheia", opcoes.telaCheia},
+                              {"teclas", opcoes.teclas},           {"texto_grande", opcoes.textoGrande},
+                              {"velocidade_texto", opcoes.velocidadeTexto}};
     ke::fs::gravarTextoSeguro(pastaUsuario / "config.json", j.dump(2));
 }
 
 void Contexto::aplicarOpcoes() {
     app.audio().definirVolumes(opcoes.musica / 10.0f * 0.9f, opcoes.efeitos / 10.0f);
     app.janela().definirTelaCheia(opcoes.telaCheia);
+    // Fase 20: cada ação com a tecla escolhida (nome inválido ou reservado volta ao padrão)
+    for (const AcaoTecla& a : ACOES_TECLAS) {
+        SDL_Scancode t = a.padrao;
+        if (const auto it = opcoes.teclas.find(a.id); it != opcoes.teclas.end())
+            if (const SDL_Scancode s = SDL_GetScancodeFromName(it->second.c_str()); !teclaReservada(s)) t = s;
+        app.input().mapear(a.id, t);
+    }
+}
+
+float Opcoes::letrasPorSegundo() const {
+    static const float v[] = {22.0f, 45.0f, 90.0f, 100000.0f};
+    return v[std::clamp(velocidadeTexto, 0, 3)];
 }
 
 std::string agoraTexto() {

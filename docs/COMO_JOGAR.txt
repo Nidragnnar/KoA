@@ -21,8 +21,9 @@ TELA DE TÍTULO
   Novo Jogo ..... escolha um dos 3 espaços de save (se já tiver jogo
                   nele, o jogo pergunta antes de substituir)
   Carregar ...... escolha qual dos 3 jogos abrir (mostra dia, era e horas)
-  Opções ........ volume da música e dos efeitos (A/D) e tela cheia
-  Controles ..... lista de teclas
+  Opções ........ volume, tela cheia, texto grande e velocidade do texto
+  Controles ..... lista de teclas; E numa linha e depois a tecla nova troca
+                  (Restaurar o padrão desfaz tudo)
 As mesmas Opções e Controles aparecem no menu do Esc durante o jogo.
 
 CONTROLES
@@ -38,6 +39,11 @@ CONTROLES
   L .................. diário (missões, equipamento, criaturas derrotadas)
   C .................. Crônicas do Reino e fragmentos da Queda
   M .................. ligar/desligar o som
+  Tab ................ Livro do Reino: reino, mercado, terras, conselho, povo,
+                       vizinhos, diário, crônicas e avisos (clique nas abas
+                       embaixo, ou Tab de novo). Também no botão "Livro" no canto.
+  V .................. mercado (comprar e vender; precisa construir o mercado)
+  Mouse parado em cima dos números mostra uma dica.
   Esc ................ menu (continuar, salvar, opções, controles, título, sair)
   F5 ................. salvar
   F11 ................ tela cheia

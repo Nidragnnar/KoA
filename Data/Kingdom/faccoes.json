@@ -67,7 +67,11 @@
     { "marco": "cozinhou:banquete", "generosidade": 5 },
     { "marco": "ala:jardim", "generosidade": 3 },
     { "marco": "ala:quartel", "anoes": 5 },
-    { "marco": "ala:biblioteca", "ordem": 8 }
+    { "marco": "ala:biblioteca", "ordem": 8 },
+    { "marco": "ala_acao:festa", "generosidade": 3 },
+    { "marco": "ala_acao:emprestimo", "generosidade": 3, "justica": 1, "anoes": 1 },
+    { "marco": "ala_acao:treino", "anoes": 1 },
+    { "marco": "ala_acao:decifrar", "ordem": 2, "devocao": 1 }
   ],
   "fama": {
     "limite": 30,

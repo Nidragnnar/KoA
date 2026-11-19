@@ -134,6 +134,85 @@ void Sintetizador::tocar(Som s) {
     }
 }
 
+void Sintetizador::efeitoAmbiente(float freq, float dur, float amp, int forma, float decai, float atraso, float deslize, float corte, float pan) {
+    if (vozes_.size() > 56) return;
+    Voz v;
+    v.freq = freq;
+    v.duracao = dur;
+    v.amp = amp;
+    v.forma = forma;
+    v.ataque = 0.004f;
+    v.decaimento = decai;
+    v.atraso = atraso;
+    v.deslize = deslize;
+    v.corte = corte;
+    v.pan = pan;
+    v.musica = false;
+    vozes_.push_back(v);
+}
+
+void Sintetizador::somDeAmbiente() {
+    std::uniform_real_distribution<float> u(0.0f, 1.0f);
+    const float pan = u(rng_) * 1.6f - 0.8f;
+    auto conta = [&](const char* tipo) { ++contagem_[tipo]; };
+    auto passaro = [&](float amp) {
+        const float f = 2400.0f + u(rng_) * 1400.0f;
+        const int notas = 2 + static_cast<int>(u(rng_) * 3);
+        for (int i = 0; i < notas; ++i) efeitoAmbiente(f * (1.0f + 0.08f * i), 0.09f, amp, 0, 26.0f, i * 0.11f, 2.5f, 1.0f, pan);
+        conta("passaro");
+    };
+    auto gota = [&](float amp, bool eco) {
+        const float f = 900.0f + u(rng_) * 700.0f;
+        efeitoAmbiente(f, 0.16f, amp, 0, 22.0f, 0.0f, -2.2f, 1.0f, pan);
+        if (eco)  // a cripta devolve a gota duas vezes, cada vez mais fraca
+            for (int i = 1; i <= 2; ++i) efeitoAmbiente(f, 0.16f, amp * (i == 1 ? 0.45f : 0.2f), 0, 22.0f, 0.28f * i, -2.2f, 1.0f, -pan * 0.6f);
+        conta(eco ? "gota_eco" : "gota");
+    };
+    float espera = 2.0f;
+    switch (ambiente_) {
+    case Ambiente::Nenhum: espera = 1.0f; break;
+    case Ambiente::Vilarejo:
+        if (noite_ > 0.55f) {  // grilos: três pulsos agudos
+            for (int i = 0; i < 3; ++i) efeitoAmbiente(4300.0f + u(rng_) * 300.0f, 0.03f, 0.012f, 0, 60.0f, i * 0.06f, 0.0f, 1.0f, pan);
+            conta("grilo");
+            espera = 0.6f + u(rng_) * 1.2f;
+        } else if (era_ >= 1.5f) {  // as eras felizes trazem os pássaros de volta
+            passaro(0.016f);
+            espera = 2.5f + u(rng_) * 4.0f;
+        } else {
+            espera = 3.0f;  // nas cinzas, só o vento
+        }
+        break;
+    case Ambiente::Floresta:  // corvos: dois grasnidos roucos
+        for (int i = 0; i < 2; ++i) efeitoAmbiente(330.0f + u(rng_) * 60.0f, 0.22f, 0.05f, 2, 9.0f, i * 0.3f, -0.7f, 0.12f, pan);
+        conta("corvo");
+        espera = 5.0f + u(rng_) * 7.0f;
+        break;
+    case Ambiente::FlorestaEncantada:
+        passaro(0.02f);
+        if (u(rng_) < 0.4f) {  // brilho: sininhos suaves
+            for (int i = 0; i < 3; ++i) efeitoAmbiente(1760.0f * (1.0f + 0.25f * i), 0.8f, 0.01f, 0, 3.5f, i * 0.09f, 0.0f, 1.0f, -pan);
+            conta("brilho");
+        }
+        espera = 1.5f + u(rng_) * 3.0f;
+        break;
+    case Ambiente::Cripta:
+        gota(0.03f, true);
+        espera = 2.5f + u(rng_) * 4.0f;
+        break;
+    case Ambiente::Minas:
+        if (u(rng_) < 0.25f) {  // estrondo distante: ruído grave e longo
+            efeitoAmbiente(80.0f, 1.6f, 0.06f, 3, 1.6f, 0.0f, 0.0f, 0.015f, pan);
+            conta("estrondo");
+        } else {
+            gota(0.025f, false);
+        }
+        espera = 1.2f + u(rng_) * 2.5f;
+        break;
+    }
+    ateAmbiente_ = espera;
+}
+
 float Sintetizador::onda(Voz& v) {
     const float vib = v.vibrato > 0.0f ? 1.0f + v.vibrato * std::sin(v.idade * 5.5f * DOIS_PI) : 1.0f;
     const float f = v.freq * vib * (1.0f + v.deslize * v.idade);
@@ -158,6 +237,8 @@ void Sintetizador::gerar(float* saida, int quadros) {
     for (int i = 0; i < quadros; ++i) {
         ateBatida_ -= 1.0;
         if (ateBatida_ <= 0.0) proximaBatida();
+        ateAmbiente_ -= dt;
+        if (ateAmbiente_ <= 0.0) somDeAmbiente();
         float l = 0.0f, r = 0.0f;
         for (Voz& v : vozes_) {
             if (v.atraso > 0.0f) {
@@ -171,10 +252,12 @@ void Sintetizador::gerar(float* saida, int quadros) {
             v.idade += dt;
         }
         // Vento: ruído filtrado que sobe e desce devagar (some nas eras felizes)
-        if (e.vento > 0.0f) {
+        // Fase 20: a floresta amaldiçoada e as profundezas têm vento próprio, mesmo nas eras felizes
+        const float ventoLugar = ambiente_ == Ambiente::Floresta ? 0.12f : ambiente_ == Ambiente::Cripta || ambiente_ == Ambiente::Minas ? 0.05f : 0.0f;
+        if (const float vento = std::max(e.vento, ventoLugar); vento > 0.0f) {
             faseVento_ += dt * 0.13f;
             ventoFiltro_ += 0.02f * (ruido(rng_) - ventoFiltro_);
-            const float w = ventoFiltro_ * e.vento * (0.55f + 0.45f * std::sin(faseVento_ * DOIS_PI)) * volMusica_;
+            const float w = ventoFiltro_ * vento * (0.55f + 0.45f * std::sin(faseVento_ * DOIS_PI)) * volMusica_;
             l += w;
             r += w * 0.9f;
         }

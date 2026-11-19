@@ -84,6 +84,14 @@ DadosSave World::capturar() const {
     d.reputacao = reputacao;
     d.desvios = desvios;
     d.suspeito = suspeito;
+    // Fase 20
+    d.temMercado = true;
+    d.mercado = mercado;
+    d.ultimaAcaoAla = ultimaAcaoAla;
+    d.guardaTreinada = guardaTreinada;
+    d.emprestimoVolta = emprestimoVolta;
+    d.emprestimoValor = emprestimoValor;
+    d.emprestimoDia = emprestimoDia;
     return d;
 }
 
@@ -270,6 +278,25 @@ void World::aplicar(const DadosSave& d) {
         const std::set<std::string> jaAconteceu = marcos;
         for (const auto& m : jaAconteceu) reagirAoMarco(m);
     }
+    // Fase 20: o mercado (só bens e encomendas que ainda existem) e as ações das alas
+    mercado = {};
+    if (d.temMercado) {
+        const DadosMercado& dm = dados().mercado;
+        for (const auto& [b, p] : d.mercado.pressao)
+            if (dm.bem(b)) mercado.pressao[b] = std::clamp(p, dm.pressaoMin, dm.pressaoMax);
+        for (const auto& [b, h] : d.mercado.historico)
+            if (dm.bem(b)) mercado.historico[b] = h;
+        for (const auto& e : d.mercado.encomendas)
+            if (dm.encomenda(e.id)) mercado.encomendas.push_back(e);
+        mercado.negociadosHoje = d.mercado.negociadosHoje;
+        mercado.vendido = d.mercado.vendido;
+        mercado.comprado = d.mercado.comprado;
+    }
+    ultimaAcaoAla = d.ultimaAcaoAla;
+    guardaTreinada = d.guardaTreinada;
+    emprestimoVolta = d.emprestimoVolta;
+    emprestimoValor = d.emprestimoValor;
+    emprestimoDia = d.emprestimoDia;
     atualizarPistas();
     atualizarEspeciais();
     atualizarMeteorito();

@@ -1,5 +1,6 @@
 #pragma once
 #include <filesystem>
+#include <map>
 #include <memory>
 #include <string>
 
@@ -14,13 +15,18 @@ namespace koa {
 
 class Roteiro;
 
-constexpr const char* VERSAO_JOGO = "1.11.0";
+constexpr const char* VERSAO_JOGO = "1.12.0";
 constexpr const char* SLOTS[] = {"Save_001", "Save_002", "Save_003"};
 
 // Preferências do jogador (config.json na pasta do usuário)
 struct Opcoes {
     int musica = 6, efeitos = 8;  // 0..10
     bool telaCheia = false;
+    // Fase 20: acessibilidade
+    std::map<std::string, std::string> teclas;  // ação → nome da tecla (só as trocadas; o resto fica no padrão)
+    bool textoGrande = false;                   // conversas, avisos e dicas com letra em dobro
+    int velocidadeTexto = 1;                    // 0 lenta, 1 normal, 2 rápida, 3 instantânea
+    float letrasPorSegundo() const;
 };
 
 // O que as cenas compartilham
@@ -37,7 +43,7 @@ struct Contexto {
 
     void carregarOpcoes();
     void salvarOpcoes() const;
-    void aplicarOpcoes();  // volume e tela cheia
+    void aplicarOpcoes();  // volume, tela cheia e as teclas
 };
 
 // Cores da interface

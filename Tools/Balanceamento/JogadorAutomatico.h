@@ -26,6 +26,9 @@ struct Amostra {
     float anoes = 0.0f, ordem = 0.0f, culto = 0.0f;
     Reputacao fama;
     int tratados = 0, descobertos = 0, sumido = 0;
+    // Fase 20: o mercado (comida vendida pelo jogador automático, ouro recebido e pago desde o começo, preço da comida hoje)
+    int comidaVendida = 0, ouroVendas = 0, ouroCompras = 0;
+    float precoComida = 0.0f;
 };
 
 class JogadorAutomatico {
@@ -46,7 +49,7 @@ private:
     World& w_;
     const GameData& dados_;
     Ritmo ritmo_;
-    int obras_ = 0, expedicoes_ = 0;
+    int obras_ = 0, expedicoes_ = 0, comidaVendida_ = 0;
     std::vector<Amostra> historico_;
 };
 

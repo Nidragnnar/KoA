@@ -4,6 +4,7 @@
 
 #include <format>
 
+#include <SDL3/SDL_keyboard.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <imgui.h>
 
@@ -16,7 +17,24 @@ namespace koa {
 
 namespace {
 const std::vector<std::string> OPCOES_PAUSA = {"Continuar", "Salvar", "Opções", "Controles", "Voltar ao título", "Sair do jogo"};
-constexpr float LETRAS_POR_SEGUNDO = 45.0f;
+
+// Fase 20: as abas do Livro do Reino, na ordem da faixa (cada uma é um painel que já existia, com a sua tecla)
+struct AbaLivro {
+    const char* nome;
+    Painel painel;
+    const char* acao;
+};
+constexpr AbaLivro ABAS_LIVRO[] = {{"Reino", Painel::Reino, "reino"},       {"Mercado", Painel::Mercado, "mercado"},
+                                   {"Terras", Painel::Regioes, "terras"},    {"Conselho", Painel::Conselho, "conselho"},
+                                   {"Povo", Painel::Povo, "povo"},           {"Vizinhos", Painel::Vizinhos, "vizinhos"},
+                                   {"Diário", Painel::Diario, "diario"},     {"Crônicas", Painel::Cronicas, "cronicas"},
+                                   {"Avisos", Painel::Mensagens, "mensagens"}};
+constexpr int N_ABAS = static_cast<int>(std::size(ABAS_LIVRO));
+
+std::string nomeTecla(const ke::Input& in, const char* acao) {
+    const char* n = SDL_GetScancodeName(in.tecla(acao));
+    return n && *n ? n : "?";
+}
 }
 
 WorldScene::WorldScene(Contexto& ctx, std::optional<DadosSave> save)
@@ -99,8 +117,7 @@ std::vector<std::string> WorldScene::opcoesPainel() const {
             else if (a == "reparar") {
                 const Custo c = mundo_.custoReparo();
                 if (!c.empty()) o.push_back(std::format("Reparar portão ({} pedra, {} madeira)", c.at("pedra"), c.at("madeira")));
-            } else if (a == "comprar_pedra") o.push_back(std::format("Comprar 10 pedra ({} ouro)", mundo_.precoLote("pedra")));
-            else if (a == "comprar_madeira") o.push_back(std::format("Comprar 10 madeira ({} ouro)", mundo_.precoLote("madeira")));
+            } else if (a == "mercado") o.push_back("Negociar no mercado");
         }
     o.push_back("Fechar");
     return o;
@@ -127,7 +144,7 @@ void WorldScene::entradaForja() {
 
 void WorldScene::entradaCronicas() {
     ke::Input& in = ctx_.app.input();
-    if (in.pressionou(SDL_SCANCODE_C) || in.pressionou(SDL_SCANCODE_ESCAPE) || cliqueFecha(in, hud_.cliques)) {
+    if (in.pressionouAcao("cronicas") || in.pressionou(SDL_SCANCODE_ESCAPE) || cliqueFecha(in, hud_.cliques)) {
         fechar(Painel::Cronicas);
         return;
     }
@@ -159,8 +176,10 @@ void WorldScene::entradaCronicas() {
 
 void WorldScene::entradaLoja() {
     ke::Input& in = ctx_.app.input();
-    const auto& itens = ctx_.dados.npcs.at(loja_).loja;
-    const int n = static_cast<int>(itens.size());
+    const NpcDef& npc = ctx_.dados.npcs.at(loja_);
+    const auto& itens = npc.loja;
+    // Fase 20: na banca do mercador viajante, duas linhas a mais: vender a ele e encomendar
+    const int n = static_cast<int>(itens.size()) + (npc.visitante() ? 2 : 0);
     if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_Q) || cliqueFecha(in, hud_.cliques)) {
         fechar(Painel::Loja);
         return;
@@ -168,20 +187,31 @@ void WorldScene::entradaLoja() {
     if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selLoja_ = (selLoja_ + n - 1) % n;
     if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selLoja_ = (selLoja_ + 1) % n;
     const bool clique = listaComMouse(in, hud_.cliques, selLoja_, n);
-    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique)
+    if (!(in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique)) return;
+    if (selLoja_ < static_cast<int>(itens.size())) {
         mundo_.comprar(loja_, itens[selLoja_].id);
+        return;
+    }
+    const int aba = selLoja_ - static_cast<int>(itens.size());
+    fechar(Painel::Loja);
+    abrirMercado(true, aba);
 }
 
 void WorldScene::entradaJogo() {
     ke::Input& in = ctx_.app.input();
     EntradaMundo e;
-    if (in.segurando(SDL_SCANCODE_A) || in.segurando(SDL_SCANCODE_LEFT)) e.mover.x -= 1;
-    if (in.segurando(SDL_SCANCODE_D) || in.segurando(SDL_SCANCODE_RIGHT)) e.mover.x += 1;
-    if (in.segurando(SDL_SCANCODE_W) || in.segurando(SDL_SCANCODE_UP)) e.mover.y -= 1;
-    if (in.segurando(SDL_SCANCODE_S) || in.segurando(SDL_SCANCODE_DOWN)) e.mover.y += 1;
-    e.interagir = in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_SPACE);
-    e.interagirSegurando = in.segurando(SDL_SCANCODE_E) || in.segurando(SDL_SCANCODE_SPACE);
-    e.atacar = in.pressionou(SDL_SCANCODE_J);
+    // Fase 20: as teclas vêm das ações (trocáveis nas opções); setas e Espaço continuam valendo
+    if (in.segurandoAcao("esquerda") || in.segurando(SDL_SCANCODE_LEFT)) e.mover.x -= 1;
+    if (in.segurandoAcao("direita") || in.segurando(SDL_SCANCODE_RIGHT)) e.mover.x += 1;
+    if (in.segurandoAcao("cima") || in.segurando(SDL_SCANCODE_UP)) e.mover.y -= 1;
+    if (in.segurandoAcao("baixo") || in.segurando(SDL_SCANCODE_DOWN)) e.mover.y += 1;
+    e.interagir = in.pressionouAcao("interagir") || in.pressionou(SDL_SCANCODE_SPACE);
+    e.interagirSegurando = in.segurandoAcao("interagir") || in.segurando(SDL_SCANCODE_SPACE);
+    e.atacar = in.pressionouAcao("atacar");
+    if (in.clicou(ke::BotaoMouse::Esquerdo) && hud_.cliques.em(in.mouse()) == Hud::ID_LIVRO) {  // fase 20: o botão do Livro
+        abrirAba(abaLivro_);
+        return;
+    }
     // Clique esquerdo: ataca virado para o cursor (o J ataca para onde o herói já olha)
     if (in.clicou(ke::BotaoMouse::Esquerdo) && mundo_.pescando()) {
         e.interagir = true;  // pescando, o clique puxa a linha
@@ -193,55 +223,26 @@ void WorldScene::entradaJogo() {
             else if (std::abs(d.y) > 0.0f) mundo_.jogador.dir = d.y < 0 ? Direcao::Cima : Direcao::Baixo;
         }
     }
-    e.comer = in.pressionou(SDL_SCANCODE_H);
+    e.comer = in.pressionouAcao("comer");
     if (in.pressionou(SDL_SCANCODE_ESCAPE)) {
         abrir(Painel::Pausa);
         selPausa_ = 0;
         return;
     }
-    if (in.pressionou(SDL_SCANCODE_F5)) salvar();
-    if (in.pressionou(SDL_SCANCODE_T)) {  // fase 19: os vizinhos, tratados e a reputação
-        abrir(Painel::Vizinhos);
-        selVizinhos_ = 0;
+    if (in.pressionouAcao("salvar")) salvar();
+    // Fase 20: cada aba do Livro abre pela sua tecla; o Livro (Tab) abre na última aba usada
+    if (in.pressionouAcao("livro")) {
+        abrirAba(abaLivro_);
         return;
     }
-    if (in.pressionou(SDL_SCANCODE_P)) {  // fase 18: o povo de Valdren
-        abrir(Painel::Povo);
-        selPovo_ = rolagemPovo_ = 0;
-        return;
-    }
-    if (in.pressionou(SDL_SCANCODE_N)) {  // fase 17: as últimas mensagens, para reler
-        abrir(Painel::Mensagens);
-        rolagemMensagens_ = 0;
-        return;
-    }
-    if (in.pressionou(SDL_SCANCODE_L)) {
-        abrir(Painel::Diario);
-        return;
-    }
-    if (in.pressionou(SDL_SCANCODE_C)) {
-        // Abre nas páginas mais recentes
-        abrir(Painel::Cronicas);
-        rolagem_ = std::max(0, static_cast<int>(mundo_.cronicas.size()) - Hud::paginasVisiveis());
-        return;
-    }
-    if (in.pressionou(SDL_SCANCODE_B)) {
+    for (int k = 0; k < N_ABAS; ++k)
+        if (in.pressionouAcao(ABAS_LIVRO[k].acao)) {
+            abrirAba(k);
+            return;
+        }
+    if (in.pressionouAcao("obras")) {
         if (!mundo_.noVilarejo()) hud_.aviso("Só dá para construir no vilarejo.", cor::ruim);
         else abrir(Painel::MenuObras);
-        return;
-    }
-    if (in.pressionou(SDL_SCANCODE_K)) {
-        abrir(Painel::Reino);
-        return;
-    }
-    if (in.pressionou(SDL_SCANCODE_R)) {
-        abrir(Painel::Regioes);
-        return;
-    }
-    if (in.pressionou(SDL_SCANCODE_G)) {
-        abrir(Painel::Conselho);
-        selConselho_ = 0;
-        proposta_ = -1;
         return;
     }
     mundo_.passo(static_cast<float>(1.0 / 60.0), e);
@@ -257,7 +258,7 @@ std::string WorldScene::propostoConselho() const {
 
 void WorldScene::entradaConselho() {
     ke::Input& in = ctx_.app.input();
-    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_G) || cliqueFecha(in, hud_.cliques)) {
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionouAcao("conselho") || cliqueFecha(in, hud_.cliques)) {
         fechar(Painel::Conselho);
         return;
     }
@@ -414,7 +415,7 @@ void WorldScene::entradaMenuObras() {
     ke::Input& in = ctx_.app.input();
     const auto opcoes = opcoesObras();
     const int n = static_cast<int>(opcoes.size());
-    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_B) || cliqueFecha(in, hud_.cliques)) {
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionouAcao("obras") || cliqueFecha(in, hud_.cliques)) {
         fechar(Painel::MenuObras);
         return;
     }
@@ -457,7 +458,7 @@ void WorldScene::entradaColocacao() {
     if (in.segurando(SDL_SCANCODE_D) || in.segurando(SDL_SCANCODE_RIGHT)) e.mover.x += 1;
     if (in.segurando(SDL_SCANCODE_W) || in.segurando(SDL_SCANCODE_UP)) e.mover.y -= 1;
     if (in.segurando(SDL_SCANCODE_S) || in.segurando(SDL_SCANCODE_DOWN)) e.mover.y += 1;
-    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_B)) {
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionouAcao("obras")) {
         colocando_.clear();
         return;
     }
@@ -470,7 +471,7 @@ void WorldScene::entradaColocacao() {
 
 void WorldScene::entradaPainelReino() {
     ke::Input& in = ctx_.app.input();
-    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_K) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques))
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionouAcao("reino") || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques))
         fechar(Painel::Reino);
     int imp = static_cast<int>(mundo_.estado.imposto);
     const int seta = in.clicou(ke::BotaoMouse::Esquerdo) ? hud_.cliques.em(in.mouse()) : -1;  // 200 = <, 201 = >
@@ -524,10 +525,9 @@ void WorldScene::entradaPainel() {
             abaGuilda_ = selGuilda_ = passoExpedicao_ = 0;
         } else if (o.starts_with("Reparar portão")) {
             mundo_.repararPortao();  // o painel fica aberto (mostra a vida nova)
-        } else if (o.starts_with("Comprar 10 pedra")) {
-            mundo_.comprarLote("pedra");  // o painel fica aberto para comprar de novo
-        } else if (o.starts_with("Comprar 10 madeira")) {
-            mundo_.comprarLote("madeira");
+        } else if (o == "Negociar no mercado") {
+            fechar(Painel::Construcao);
+            abrirMercado(false, 0);
         } else {
             fechar(Painel::Construcao);
         }
@@ -565,10 +565,10 @@ void WorldScene::entradaPausa() {
 void WorldScene::entradaDialogo(float dt) {
     ke::Input& in = ctx_.app.input();
     const int tamanho = Hud::tamanhoUtf8(conversa_->falas[linhaFala_]);
-    letras_ = std::min(static_cast<float>(tamanho), letras_ + dt * LETRAS_POR_SEGUNDO);
+    letras_ = std::min(static_cast<float>(tamanho), letras_ + dt * ctx_.opcoes.letrasPorSegundo());
     // Fase 15: F (ou clique na dica) dá o presente sem encerrar a conversa
     if (!conversa_->presente.empty() &&
-        (in.pressionou(SDL_SCANCODE_F) || (in.clicou(ke::BotaoMouse::Esquerdo) && hud_.cliques.em(in.mouse()) == 600))) {
+        (in.pressionouAcao("presente") || (in.clicou(ke::BotaoMouse::Esquerdo) && hud_.cliques.em(in.mouse()) == 600))) {
         darPresenteNaConversa();
         mundo_.passo(dt, {});
         return;
@@ -607,7 +607,7 @@ void WorldScene::entradaCozinha() {
         return;
     }
     // Botão "comer" (id 500) antes da lista, para o clique nele não cozinhar
-    if (in.pressionou(SDL_SCANCODE_F) || (in.clicou(ke::BotaoMouse::Esquerdo) && hud_.cliques.em(in.mouse()) == 500)) {
+    if (in.pressionouAcao("presente") || (in.clicou(ke::BotaoMouse::Esquerdo) && hud_.cliques.em(in.mouse()) == 500)) {
         mundo_.comerPrato(receitas[selCozinha_].id);
         return;
     }
@@ -639,7 +639,7 @@ void WorldScene::entradaFicha() {
 
 void WorldScene::entradaVizinhos() {
     ke::Input& in = ctx_.app.input();
-    if (in.pressionou(SDL_SCANCODE_T) || in.pressionou(SDL_SCANCODE_ESCAPE) || cliqueFecha(in, hud_.cliques)) {
+    if (in.pressionouAcao("vizinhos") || in.pressionou(SDL_SCANCODE_ESCAPE) || cliqueFecha(in, hud_.cliques)) {
         fechar(Painel::Vizinhos);
         return;
     }
@@ -660,9 +660,66 @@ void WorldScene::entradaVizinhos() {
     }
 }
 
+void WorldScene::abrirMercado(bool corvin, int aba) {
+    abrir(Painel::Mercado);
+    mercadoCorvin_ = corvin;
+    abaMercado_ = corvin ? aba : 0;
+    selMercado_ = rolagemMercado_ = 0;
+}
+
+// Fase 20: W/S escolhe; E compra (no Corvin, vende) e Q vende; o mouse clica nos botões de cada linha
+void WorldScene::entradaMercado() {
+    ke::Input& in = ctx_.app.input();
+    if (in.pressionou(SDL_SCANCODE_ESCAPE) || cliqueFecha(in, hud_.cliques)) {
+        fechar(Painel::Mercado);
+        return;
+    }
+    const int id = hud_.cliques.em(in.mouse());
+    const bool clicou = in.clicou(ke::BotaoMouse::Esquerdo);
+    const bool confirmar = in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE);
+    if (mercadoCorvin_) {
+        const bool troca = in.pressionou(SDL_SCANCODE_A) || in.pressionou(SDL_SCANCODE_D) || in.pressionou(SDL_SCANCODE_LEFT) || in.pressionou(SDL_SCANCODE_RIGHT);
+        if (troca || (clicou && (id == 900 || id == 901))) {
+            abaMercado_ = troca ? 1 - abaMercado_ : id - 900;
+            selMercado_ = rolagemMercado_ = 0;
+            return;
+        }
+    }
+    if (mercadoCorvin_ && abaMercado_ == 1) {
+        const auto& encs = ctx_.dados.mercado.encomendas;
+        const int n = static_cast<int>(encs.size());
+        if (n == 0) return;
+        if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selMercado_ = (selMercado_ + n - 1) % n;
+        if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selMercado_ = (selMercado_ + 1) % n;
+        const bool clique = listaComMouse(in, hud_.cliques, selMercado_, n);
+        if (confirmar || clique) mundo_.encomendar(encs[selMercado_].id);
+        return;
+    }
+    const auto bens = mundo_.bensNoMercado(mercadoCorvin_);
+    const int n = static_cast<int>(bens.size());
+    if (n == 0) return;
+    selMercado_ = std::clamp(selMercado_, 0, n - 1);
+    if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selMercado_ = (selMercado_ + n - 1) % n;
+    if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selMercado_ = (selMercado_ + 1) % n;
+    bool comprar = false, vender = false;
+    if (id >= 0 && id < 2 * n) {
+        if (in.mouseMoveu() || clicou) selMercado_ = id / 2;
+        if (clicou) (id % 2 == 0 ? comprar : vender) = true;
+    } else if (id >= 2000 && id < 2000 + n && (in.mouseMoveu() || clicou)) {
+        selMercado_ = id - 2000;
+    }
+    if (confirmar) (mercadoCorvin_ ? vender : comprar) = true;
+    if (in.pressionou(SDL_SCANCODE_Q) && !mercadoCorvin_) vender = true;
+    // A rolagem segue a escolha
+    rolagemMercado_ = std::clamp(rolagemMercado_, std::max(0, selMercado_ - Hud::linhasMercado() + 1), selMercado_);
+    const std::string bem = bens[selMercado_]->id;
+    if (comprar && !mercadoCorvin_) mundo_.comprarNoMercado(bem);
+    if (vender) mundo_.venderNoMercado(bem, mercadoCorvin_);
+}
+
 void WorldScene::entradaPovo() {
     ke::Input& in = ctx_.app.input();
-    if (in.pressionou(SDL_SCANCODE_P) || in.pressionou(SDL_SCANCODE_ESCAPE) || cliqueFecha(in, hud_.cliques)) {
+    if (in.pressionouAcao("povo") || in.pressionou(SDL_SCANCODE_ESCAPE) || cliqueFecha(in, hud_.cliques)) {
         fechar(Painel::Povo);
         return;
     }
@@ -713,7 +770,7 @@ void WorldScene::desenharClima(ke::Renderer2D& r) {
 
 void WorldScene::entradaMensagens() {
     ke::Input& in = ctx_.app.input();
-    if (in.pressionou(SDL_SCANCODE_N) || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques)) {
+    if (in.pressionouAcao("mensagens") || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques)) {
         fechar(Painel::Mensagens);
         return;
     }
@@ -734,7 +791,12 @@ void WorldScene::entradaAlas() {
     if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selAla_ = (selAla_ + 1) % n;
     const bool clique = listaComMouse(in, hud_.cliques, selAla_, n);
     if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique)
-        mundo_.erguerAla(alas[selAla_].id);
+    {
+        // Fase 20: a ala já erguida faz a sua ação; senão, E ergue
+        const AlaDef& a = alas[selAla_];
+        if (a.acao && std::ranges::find(mundo_.alas, a.id) != mundo_.alas.end()) mundo_.agirAla(a.id);
+        else mundo_.erguerAla(a.id);
+    }
 }
 
 void WorldScene::entradaBrasao() {
@@ -1298,6 +1360,8 @@ void WorldScene::atualizar(double dtD) {
     tempo_ += dt;
     verificarGravacao(false);  // fase 17: o salvamento terminou?
     if (ctx_.roteiro) ctx_.roteiro->noMundo(*this);
+    hud_.definirEscalaTexto(ctx_.opcoes.textoGrande ? 2 : 1);  // fase 20
+    hud_.definirTeclaLivro(nomeTecla(ctx_.app.input(), "livro"));
 
     mundo_.relogio.parado = !pilha_.empty() || transicao_ >= 0.0f;  // fase 17: qualquer painel aberto (a pilha diz tudo)
 
@@ -1321,6 +1385,12 @@ void WorldScene::atualizar(double dtD) {
     // Música: a era do reino no vilarejo; trilha de perigo na floresta e na cripta
     ctx_.app.audio().definir(mundo_.noVilarejo() ? mundo_.reino.eraVisual : static_cast<float>(mundo_.eraEm(mundo_.jogador.pos)),
                              mundo_.relogio.escuridao(), mundo_.regiaoHostil() || mundo_.emBatalha() ? 1.0f : 0.0f);
+    // Fase 20: os sons de fundo de cada região (a floresta purificada canta)
+    const std::string& reg = mundo_.regiaoAtual;
+    ctx_.app.audio().definirAmbiente(reg == "cripta"   ? ke::Ambiente::Cripta
+                                     : reg == "minas"  ? ke::Ambiente::Minas
+                                     : reg == "floresta" ? (mundo_.transformacao("floresta") ? ke::Ambiente::FlorestaEncantada : ke::Ambiente::Floresta)
+                                                         : ke::Ambiente::Vilarejo);
 
     if (transicao_ >= 0.0f) {
         const float antes = transicao_;
@@ -1332,7 +1402,9 @@ void WorldScene::atualizar(double dtD) {
         if (transicao_ >= 2.0f) transicao_ = -1.0f;
         mundo_.passo(dt, {});
     } else if (aberto(Painel::Pausa)) entradaPausa();
-    else if (aberto(Painel::Leitura)) {
+    else if (entradaLivro()) {
+        mundo_.passo(dt, {});
+    } else if (aberto(Painel::Leitura)) {
         // Lendo um fragmento: E ou Esc fecha (e volta para as Crônicas, se veio de lá)
         ke::Input& in = ctx_.app.input();
         if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_ESCAPE) ||
@@ -1362,15 +1434,16 @@ void WorldScene::atualizar(double dtD) {
     else if (aberto(Painel::Vizinhos)) entradaVizinhos();
     else if (aberto(Painel::Regioes)) {
         ke::Input& in = ctx_.app.input();
-        if (in.pressionou(SDL_SCANCODE_R) || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques))
+        if (in.pressionouAcao("terras") || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques))
             fechar(Painel::Regioes);
-    } else if (aberto(Painel::Construcao)) entradaPainel();
+    } else if (aberto(Painel::Mercado)) entradaMercado();
+    else if (aberto(Painel::Construcao)) entradaPainel();
     else if (aberto(Painel::Forja)) entradaForja();
     else if (aberto(Painel::Loja)) entradaLoja();
     else if (aberto(Painel::Cronicas)) entradaCronicas();
     else if (aberto(Painel::Diario)) {
         ke::Input& in = ctx_.app.input();
-        if (in.pressionou(SDL_SCANCODE_L) || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques))
+        if (in.pressionouAcao("diario") || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques))
             fechar(Painel::Diario);
     } else if (aberto(Painel::MenuObras)) entradaMenuObras();
     else if (aberto(Painel::Reino)) entradaPainelReino();
@@ -1445,6 +1518,9 @@ void WorldScene::renderizar(float) {
         r.retangulo(glm::vec2(t * 16), glm::vec2(d.tamanho * 16), {c.r, c.g, c.b, pulso});
         r.retangulo({t.x * 16.0f, (t.y + d.tamanho.y) * 16.0f}, {d.tamanho.x * 16.0f, 16.0f}, {c.r, c.g, c.b, pulso * 0.4f});
         r.contorno(glm::vec2(t * 16), glm::vec2(d.tamanho * 16), c);
+        // Fase 20: ✓ ou ✗ no canto (a cor nunca é a única pista)
+        r.retangulo(glm::vec2(t * 16) + glm::vec2(1, 1), {10, 10}, {0.05f, 0.04f, 0.04f, 0.85f});
+        hud_.marcaSimNao(r, glm::vec2(t * 16) + glm::vec2(3, 2), obraValida);
         const ke::SpriteRegion& s = ctx_.app.recursos().regiao(std::format("{}_n1", d.aparencia));
         r.sprite(s, {t.x * 16.0f + d.tamanho.x * 8.0f - s.tamanho.x / 2.0f, (t.y + d.tamanho.y) * 16.0f - s.tamanho.y}, {1, 1, 1, 0.55f});
     }
@@ -1499,6 +1575,7 @@ void WorldScene::renderizar(float) {
     }
     if (aberto(Painel::Forja)) hud_.lojaForja(r, mundo_, opcoesForja(), selForja_);
     if (aberto(Painel::Loja)) hud_.lojaMercador(r, mundo_, ctx_.dados.npcs.at(loja_), selLoja_);
+    if (aberto(Painel::Mercado)) hud_.painelMercado(r, mundo_, mercadoCorvin_, abaMercado_, selMercado_, rolagemMercado_, tempo_);
     if (aberto(Painel::Diario)) hud_.diario(r, mundo_);
     if (aberto(Painel::Cronicas)) hud_.cronicas(r, mundo_, abaCronicas_, rolagem_, selFragmento_);
     if (aberto(Painel::Leitura))
@@ -1524,8 +1601,14 @@ void WorldScene::renderizar(float) {
     }
     if (aberto(Painel::Escolha)) hud_.painelEscolha(r, mundo_, ctx_.dados.escolhas.at(escolha_), selEscolha_, tempo_);
     if (aberto(Painel::Relatorio) && transicao_ < 0.0f && !aberto(Painel::Leitura)) hud_.relatorioManha(r, mundo_);
+    if (const int aba = abaAberta(); aba >= 0) {
+        std::vector<std::string> nomes, teclas;
+        for (const AbaLivro& a : ABAS_LIVRO) nomes.push_back(a.nome), teclas.push_back(nomeTecla(ctx_.app.input(), a.acao));
+        hud_.abasLivro(r, nomes, teclas, aba);
+    }
     if (aberto(Painel::Pausa)) hud_.menuPausa(r, OPCOES_PAUSA, selPausa_);
     if (aberto(Painel::Pausa) && telaOpcoes_.aberta()) telaOpcoes_.desenhar(r, f, ctx_);
+    if (!aberto(Painel::Pausa) && transicao_ < 0.0f) hud_.desenharDica(r, ctx_.app.input().mouse());  // fase 20: por cima de tudo
     if (transicao_ >= 0.0f) {
         const float a = transicao_ < 1.0f ? transicao_ : 2.0f - transicao_;
         r.retangulo({0, 0}, {640, 360}, {0, 0, 0, std::clamp(a * 1.2f, 0.0f, 1.0f)});
@@ -1597,4 +1680,54 @@ void WorldScene::interfaceDepuracao() {
     ImGui::End();
 }
 
+// ---------- Fase 20: o Livro do Reino ----------
+
+int WorldScene::abaAberta() const {
+    if (pilha_.empty()) return -1;
+    for (int k = 0; k < N_ABAS; ++k)
+        if (pilha_.back() == ABAS_LIVRO[k].painel && !(ABAS_LIVRO[k].painel == Painel::Mercado && mercadoCorvin_)) return k;
+    return -1;
+}
+
+void WorldScene::abrirAba(int k) {
+    k = (k % N_ABAS + N_ABAS) % N_ABAS;
+    for (const AbaLivro& a : ABAS_LIVRO)  // uma aba por vez: a anterior fecha
+        if (aberto(a.painel)) fechar(a.painel);
+    abaLivro_ = k;
+    const Painel p = ABAS_LIVRO[k].painel;
+    if (p == Painel::Mercado) {
+        abrirMercado(false, 0);
+        return;
+    }
+    abrir(p);
+    switch (p) {
+    case Painel::Vizinhos: selVizinhos_ = 0; break;
+    case Painel::Povo: selPovo_ = rolagemPovo_ = 0; break;
+    case Painel::Mensagens: rolagemMensagens_ = 0; break;
+    case Painel::Cronicas: rolagem_ = std::max(0, static_cast<int>(mundo_.cronicas.size()) - Hud::paginasVisiveis()); break;
+    case Painel::Conselho:
+        selConselho_ = 0;
+        proposta_ = -1;
+        break;
+    default: break;
+    }
+}
+
+// Com uma aba do Livro por cima: Tab passa para a próxima (Shift+Tab volta) e o clique na faixa troca de aba
+bool WorldScene::entradaLivro() {
+    const int aba = abaAberta();
+    if (aba < 0) return false;
+    ke::Input& in = ctx_.app.input();
+    if (in.pressionouAcao("livro")) {
+        const bool volta = in.segurando(SDL_SCANCODE_LSHIFT) || in.segurando(SDL_SCANCODE_RSHIFT);
+        abrirAba(aba + (volta ? -1 : 1));
+        return true;
+    }
+    if (in.clicou(ke::BotaoMouse::Esquerdo))
+        if (const int id = hud_.cliques.em(in.mouse()); id >= Hud::ID_ABA && id < Hud::ID_ABA + N_ABAS) {
+            abrirAba(id - Hud::ID_ABA);
+            return true;
+        }
+    return false;
+}
 }

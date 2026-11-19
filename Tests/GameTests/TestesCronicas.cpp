@@ -236,7 +236,7 @@ TEST(Cenarios, MontarSavesDeTeste) {
     free(pasta);
     auto gravar = [&](World& w, const std::string& slot) {
         DadosSave d = w.capturar();
-        d.versaoJogo = "1.11.0";
+        d.versaoJogo = "1.12.0";
         d.dataHora = "cenário de teste";
         ASSERT_TRUE(s.salvar(d, slot));
     };
@@ -285,70 +285,82 @@ TEST(Cenarios, MontarSavesDeTeste) {
         w.equip.arma = "espada_linhagem";
         w.equip.armadura = "cota_malha";
     };
-    // Fase 19: um reino de meio de jogo com o conselho formado e os vizinhos já atentos
-    auto comVizinhos = [&](World& w, std::initializer_list<std::pair<const char*, float>> relacoes) {
+    // Fase 20: reino de meio de jogo no Reino Renascido, com o Mercado Central e o castelo no nível 3 (duas alas)
+    auto comMercadoEAlas = [&](World& w, std::initializer_list<const char*> alas) {
         reinoAvancado(w);
         equipar(w);
         w.estado.populacao = std::min(26, w.resumo().populacaoMax);
         std::vector<std::string> notas;
         w.ajustarPovo(false, notas);
-        w.marcar("conselho_formado", "O Conselho Real", true);
-        for (const auto& [cargo, npc] : {std::pair{"marechal", "oswin"}, {"tesoureiro", "edda"}, {"obras", "bram"}}) ASSERT_TRUE(w.nomear(cargo, npc));
-        for (const char* npc : {"oswin", "edda", "bram"}) w.lealdade[npc] = 70;
-        for (const auto& [f, alvo] : relacoes) w.mudarRelacao(f, alvo - w.relacaoCom(f));
-        w.relogio.minutos = 9 * 60;
+        w.marcar("era:2", "Reino Renascido", true);
+        w.marcar("primeiro_cristal", "", true);
+        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 3000);
+        w.inventario.definir("cristal", 40);
+        for (const auto& b : w.reino.construcoes)
+            if (b.defId == "mercado") {
+                const std::string id = b.id;
+                ASSERT_TRUE(w.melhorarConstrucao(id));
+                break;
+            }
+        while (w.nivelCastelo() < 3) ASSERT_TRUE(w.melhorarConstrucao("castelo"));
+        for (const char* a : alas) ASSERT_TRUE(w.erguerAla(a)) << a;
         w.hordaDia = 0;
-        w.proximaHorda = w.relogio.dia + 12;
+        w.ultimaDecisao = w.relogio.dia;
     };
-    // Save_002 (fase 19): OS VIZINHOS. Anões +35, Ordem +12, Culto -22; justiça +26 (quase "Justo"). O caso do nobre que
-    // pede isenção está aberto: recusar dá +6 aos anões (libera o Juramento da Bigorna, que pede 40) e +8 de justiça
-    // (passa de 30: fama de Justo). Ouro 300 e cristal 10 dão para a Rota da Pedra e o Pacto do Saber (que irrita o Culto)
+    // Save_002 (fase 20): O MERCADO. Fim do outono (dia 18; o inverno começa no dia 22 e a comida sobe 75%), Corvin na
+    // praça. Mercado Central, 500 de comida, colheita, peixe e pratos para vender; uma caixa de sementes encomendada no
+    // dia 15 chega na visita do dia 21. Alas: Salão de Banquetes (festa) e Sala do Tesouro (empréstimo)
     {
         World w = vilarejo();
-        comVizinhos(w, {{"anoes", 35.0f}, {"ordem", 12.0f}, {"culto", -22.0f}});
-        w.reputacao.justica = 26.0f;
-        w.inventario.definir("ouro", 300);
-        w.inventario.definir("cristal", 10);
+        comMercadoEAlas(w, {"salao", "tesouro"});
+        w.relogio.dia = 18;
+        w.relogio.minutos = 9 * 60;
+        w.proximaHorda = w.relogio.dia + 12;
+        w.inventario.definir("madeira", 150);
         w.inventario.definir("pedra", 150);
-        w.inventario.definir("comida", 150);
-        w.decisaoPendente = "nobre_isencao";
-        w.ultimaDecisao = w.relogio.dia;
-        std::printf("[cenário] Save_002: anões %+.0f, Ordem %+.0f, Culto %+.0f; caso aberto: %s\n", w.relacaoCom("anoes"), w.relacaoCom("ordem"),
-                    w.relacaoCom("culto"), w.decisaoPendente.c_str());
+        w.inventario.definir("ouro", 400);
+        w.inventario.definir("comida", 500);
+        for (const auto& [item, q] : std::initializer_list<std::pair<const char*, int>>{{"peixe", 6}, {"ovo", 8}, {"pao", 3}, {"abobora", 4}, {"truta", 2}})
+            w.inventario.definir(item, q);
+        // Duas semanas de preços para a tendência aparecer no painel
+        w.mercado.historico.clear();
+        for (int d = 4; d <= 17; ++d) {
+            w.relogio.dia = d;
+            for (const char* b : {"comida", "madeira", "pedra", "cristal"}) w.mercado.historico[b].push_back(w.precoHoje(b));
+        }
+        w.relogio.dia = 18;
+        w.mercado.encomendas.push_back({"sementes", 15});
+        EXPECT_TRUE(w.corvinNaVila());
+        std::printf("[cenário] Save_002: dia %d (%s), Corvin na vila: %s; comida a %.2f hoje\n", w.relogio.dia, w.estacaoAtual().nome.c_str(),
+                    w.corvinNaVila() ? "sim" : "não", w.precoHoje("comida"));
         w.tirarEventos();
         gravar(w, "Save_002");
-        // Recarregado como o jogo faz: o caso continua aberto e as relações voltam iguais
         World c = vilarejo();
         c.aplicar(*s.carregar("Save_002"));
-        EXPECT_EQ(c.decisaoAtual() ? c.decisaoAtual()->id : "", "nobre_isencao");
-        EXPECT_FLOAT_EQ(c.relacaoCom("anoes"), 35.0f);
+        EXPECT_EQ(c.nivelMercado(), 2);
+        EXPECT_EQ(c.mercado.encomendas.size(), 1u);
+        EXPECT_EQ(c.mercado.historico.at("comida").size(), 14u);
     }
-    // Save_003 (fase 19): A INTRIGA. Edda (Mestre da Moeda, lealdade 5) desviou 18 de ouro e foi descoberta: o caso
-    // "Ouro sumindo do cofre" abre ao carregar. O Culto está hostil (-55: cinzas nas portas a cada 3 noites e não aceita
-    // missões) e o imposto está alto com justiça -29: uma ou duas noites assim e o herdeiro ganha a fama de Tirano
+    // Save_003 (fase 20): AS ALAS E OS SONS. Noite (21:00) no vilarejo (grilos); a horda vem em 2 dias. Alas: Quartel
+    // Real (treinar a guarda) e Biblioteca Real (decifrar: faltam fragmentos da Queda). As minas estão abertas e a cripta
+    // e a floresta a um passeio: cada uma soa diferente
     {
         World w = vilarejo();
-        comVizinhos(w, {{"anoes", 0.0f}, {"ordem", 5.0f}, {"culto", -55.0f}});
-        w.lealdade["edda"] = 5;
-        w.lealdade["oswin"] = 80;
-        w.desvios["edda"] = 18;
-        w.suspeito = "edda";
-        w.marcar("desvio:edda", "Edda", true);
-        w.decisaoPendente = "desvio";
-        w.ultimaDecisao = w.relogio.dia;
-        w.estado.imposto = Imposto::Alto;
-        w.reputacao.justica = -29.0f;
-        w.inventario.definir("ouro", 200);
-        w.inventario.definir("comida", 150);
-        std::printf("[cenário] Save_003: Edda desviou %d de ouro; Culto %+.0f (%s); justiça %+.0f\n", w.desvios["edda"], w.relacaoCom("culto"),
-                    w.faixaCom("culto").c_str(), w.reputacao.justica);
+        comMercadoEAlas(w, {"quartel", "biblioteca"});
+        w.relogio.dia = 10;
+        w.relogio.minutos = 21 * 60;
+        w.hordaDia = w.relogio.dia + 2;
+        w.marcar("minas_abertas", "", true);
+        w.inventario.definir("ouro", 300);
+        w.inventario.definir("comida", 200);
+        std::printf("[cenário] Save_003: alas %zu, horda no dia %d, fragmentos achados %d de %zu\n", w.alas.size(), w.hordaDia,
+                    w.pistasEncontradas(), dados().lore.pistas.size());
         w.tirarEventos();
         gravar(w, "Save_003");
         World c = vilarejo();
         c.aplicar(*s.carregar("Save_003"));
-        EXPECT_EQ(c.decisaoAtual() ? c.decisaoAtual()->id : "", "desvio");
-        EXPECT_EQ(c.suspeito, "edda");
-        EXPECT_EQ(c.faixaCom("culto"), "hostis");
+        EXPECT_TRUE(c.podeAgirAla("quartel").empty());
+        EXPECT_TRUE(c.podeAgirAla("biblioteca").empty());
     }
 }
 TEST(SaveV5, SaveV4GanhaCronicasDoQueJaAconteceu) {

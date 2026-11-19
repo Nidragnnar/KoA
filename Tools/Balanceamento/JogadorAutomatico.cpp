@@ -124,8 +124,12 @@ void JogadorAutomatico::governar() {
 
 // Casa primeiro, depois obras novas (por prioridade), depois a melhoria mais barata (castelo incluído)
 void JogadorAutomatico::construirEMelhorar() {
-    for (int lote = 0; lote < 5 && w_.precoLote("pedra") > 0 && w_.inventario.quantidade("ouro") > 80 + w_.precoLote("pedra"); ++lote)
-        w_.comprarLote("pedra");
+    // Fase 20: a comida que sobra além de 8 dias vai para o mercado (antes ela só estragava); depois compra pedra
+    const int consumo = std::max(1, w_.resumo().comidaConsumida);
+    for (int lote = 0; lote < 4 && w_.inventario.quantidade("comida") > consumo * 8 + 10 && w_.podeNegociar("comida", false).empty(); ++lote)
+        if (w_.venderNoMercado("comida")) comidaVendida_ += 10;
+    for (int lote = 0; lote < 5 && w_.podeNegociar("pedra", true).empty() && w_.inventario.quantidade("ouro") > 80 + w_.precoCompraLote("pedra"); ++lote)
+        w_.comprarNoMercado("pedra");
     for (int tentativa = 0; tentativa < 6; ++tentativa) {
         bool fez = false;
         BuildingData* casa = w_.reino.construcao("casa_herdeiro");
@@ -228,6 +232,10 @@ Amostra JogadorAutomatico::jogarDia() {
     a.culto = w_.relacaoCom("culto");
     a.fama = w_.reputacao;
     a.tratados = static_cast<int>(w_.tratados.size());
+    a.comidaVendida = comidaVendida_;
+    a.ouroVendas = w_.mercado.vendido;
+    a.ouroCompras = w_.mercado.comprado;
+    a.precoComida = w_.precoHoje("comida");
     for (const auto& [npc, q] : w_.desvios) a.sumido += q;
     historico_.push_back(a);
     return a;

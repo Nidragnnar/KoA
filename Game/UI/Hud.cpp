@@ -14,6 +14,17 @@ namespace {
 // Recursos sempre na mesma ordem na interface (o cristal só depois das minas)
 const char* ORDEM_RECURSOS[] = {"madeira", "pedra", "ouro", "comida", "cristal"};
 
+// Corta o texto na largura (sem partir letra acentuada) e põe reticências
+std::string caber(const ke::BitmapFont& f, std::string t, int largura) {
+    if (f.largura(t) <= largura) return t;
+    while (!t.empty() && f.largura(t + "...") > largura) {
+        t.pop_back();
+        while (!t.empty() && (static_cast<unsigned char>(t.back()) & 0xC0) == 0x80) t.pop_back();
+        if (!t.empty() && static_cast<unsigned char>(t.back()) >= 0xC0) t.pop_back();
+    }
+    return t + "...";
+}
+
 // Quebra o texto em linhas que caibam em `largura` pixels
 std::vector<std::string> quebrarLinhas(const ke::BitmapFont& f, const std::string& texto, int largura) {
     std::vector<std::string> linhas;
@@ -69,6 +80,7 @@ void Hud::aviso(std::string texto, glm::vec4 c) {
 bool Hud::mostraCristal(const World& w) { return w.inventario.quantidade("cristal") > 0 || w.visitadas.contains("minas"); }
 
 void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
+    dicas_.clear();
     // Recursos (canto superior esquerdo)
     const int linhas = mostraCristal(w) ? 5 : 4;
     const float extra = (linhas - 4) * 13.0f;
@@ -79,6 +91,10 @@ void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
         f_.desenhar(r, "Povo", {12, 63 + extra}, cor::apagado);
         const glm::vec4 c = w.estado.felicidade >= 50 ? cor::bom : w.estado.felicidade < 25 ? cor::ruim : cor::texto;
         f_.desenhar(r, povo, {116.0f - f_.largura(povo), 63 + extra}, c);
+        // Fase 20: dicas pelo mouse
+        areaDica({6, 60 + extra}, {116, 13},
+                 std::format("Povo: {} de {} lugares. Felicidade {:.0f} (caminha para {:.0f}). Segurança {}.", w.estado.populacao, rr.populacaoMax,
+                             w.estado.felicidade, rr.felicidadeAlvo, rr.seguranca));
     }
     for (int i = 0; i < linhas; ++i) {
         const std::string id = ORDEM_RECURSOS[i];
@@ -89,6 +105,17 @@ void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
         f_.desenhar(r, dados_.nomeRecurso(id), {25, y}, cor::apagado);
         const std::string n = std::to_string(w.inventario.quantidade(id));
         f_.desenhar(r, n, {116.0f - f_.largura(n), y}, p > 0 ? cor::ouro : cor::texto);
+        // Fase 20: o que entra por dia e o preço no mercado
+        const ResumoReino rr = w.resumo();
+        std::string d = dados_.nomeRecurso(id) + ": " + n + ".";
+        if (id == "madeira") d += std::format(" Por dia: {:+}.", rr.madeiraDia);
+        if (id == "pedra") d += std::format(" Por dia: {:+}.", rr.pedraDia);
+        if (id == "ouro") d += std::format(" Por dia: {:+} (impostos {}, obras {}).", rr.impostos + rr.ouroProducao, rr.impostos, rr.ouroProducao);
+        if (id == "comida")
+            d += std::format(" Por dia: {:+} (produz {}, o povo come {}). Cabem {} no celeiro.", rr.comidaProduzida - rr.comidaConsumida, rr.comidaProduzida,
+                             rr.comidaConsumida, rr.capacidadeCeleiro);
+        if (w.nivelMercado() > 0 && dados_.mercado.bem(id)) d += std::format(" No mercado: {:.1f} a unidade hoje.", w.precoHoje(id));
+        areaDica({6, y - 2}, {116, 13}, d);
     }
 
     // Data, hora, era e o título do herdeiro (canto superior direito)
@@ -137,24 +164,51 @@ void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
     f_.desenhar(r, hora, {628.0f - f_.largura(hora), 11}, w.relogio.escuridao() > 0.5f ? glm::vec4(0.6f, 0.7f, 1.0f, 1) : cor::ouro);
     f_.desenhar(r, era, {634 - l + 6, 22}, cor::ouro);
     f_.desenhar(r, titulo, {634 - l + 6, 33}, cor::apagado);
+    areaDica({634 - l, 6}, {l, 38},
+             std::format("{}, {}. Era: {} (desenvolvimento {}). O título vem das conquistas (Crônicas).", w.estacaoAtual().nome, data, era,
+                         w.reino.desenvolvimento()));
+    // Fase 20: o botão do Livro do Reino (canto de baixo, à direita)
+    {
+        const glm::vec2 b{582, 342}, s{52, 14};
+        r.retangulo(b, s, {0.07f, 0.06f, 0.06f, 0.8f});
+        r.contorno(b, s, cor::borda);
+        r.retangulo(b + glm::vec2(4, 3), {7, 8}, {0.55f, 0.18f, 0.16f, 1});  // a capa do livro
+        r.retangulo(b + glm::vec2(5, 4), {1, 6}, cor::ouro);
+        f_.desenhar(r, "Livro", b + glm::vec2(14, 3), cor::texto);
+        cliques.area(b, s, ID_LIVRO);
+        areaDica(b, s, "Livro do Reino (" + teclaLivro_ + "): reino, mercado, terras, conselho, povo, vizinhos, diário, crônicas e avisos.");
+    }
 
     // Avisos: no canto de baixo, à esquerda, o mais novo embaixo (fase 17: o meio da tela fica para o herói)
     acertarRelogio(w.relogio);
+    float yAviso = 296.0f;  // acima da barra do chefe e da dica de controles
     for (size_t k = 0; k < avisos_.size(); ++k) {
         const Aviso& a = avisos_[avisos_.size() - 1 - k];
         glm::vec4 c = a.cor;
         c.a = std::min(1.0f, a.vida * 2.0f);
-        const float y = 296.0f - k * 12.0f;  // acima da barra do chefe e da dica de controles
-        const float lt = static_cast<float>(f_.largura(a.texto));
-        r.retangulo({6, y - 2}, {lt + 12, 12}, {0.05f, 0.04f, 0.04f, 0.7f * c.a});
-        f_.desenhar(r, a.texto, {12, y}, c);
+        if (escalaTexto_ == 1) {
+            const float lt = static_cast<float>(f_.largura(a.texto));
+            r.retangulo({6, yAviso - 2}, {lt + 12, 12}, {0.05f, 0.04f, 0.04f, 0.7f * c.a});
+            f_.desenhar(r, a.texto, {12, yAviso}, c);
+            yAviso -= 12;
+            continue;
+        }
+        // Fase 20: texto grande (letra em dobro, quebrada em linhas), no máximo os três mais novos
+        if (k >= 3) break;
+        const auto ls = quebrarLinhas(f_, a.texto, 300);
+        for (size_t i = ls.size(); i-- > 0;) {
+            const float lt = static_cast<float>(f_.largura(ls[i], 2));
+            r.retangulo({6, yAviso - 8}, {lt + 12, 19}, {0.05f, 0.04f, 0.04f, 0.75f * c.a});
+            f_.desenhar(r, ls[i], {12, yAviso - 6}, c, true, 2);
+            yAviso -= 19;
+        }
     }
     if (!historico_.empty() && avisos_.empty() && tempoDica_ <= 0.0f) f_.desenhar(r, "N: mensagens", {12, 296}, cor::apagado * glm::vec4(1, 1, 1, 0.6f));
 
     // Dica de controles nos primeiros segundos
     if (tempoDica_ > 0.0f) {
         const float a = std::min(1.0f, tempoDica_);
-        const std::string dica = "WASD andar  E interagir  clique atacar  B obras  K reino  R terras  G conselho  L diário  C crônicas";
+        const std::string dica = "WASD andar   E interagir   clique atacar   B obras   " + teclaLivro_ + " Livro do Reino   Esc menu";
         f_.desenharCentralizado(r, dica, {320, 348}, {0.85f, 0.82f, 0.75f, a});
     }
     (void)tempo;
@@ -298,6 +352,7 @@ void Hud::dicaColocacao(ke::Renderer2D& r, const std::string& nome, bool valido,
     desenharPainel(r, {320 - l / 2, 300}, {l, 30});
     f_.desenharCentralizado(r, l1, {320, 309}, cor::ouro);
     f_.desenharCentralizado(r, l2, {320, 321}, valido ? cor::texto : cor::ruim);
+    marcaSimNao(r, {320 - l / 2 + 6, 320}, valido);  // fase 20: ✓/✗ além da cor
 }
 
 void Hud::painelReino(ke::Renderer2D& r, const World& w) {
@@ -591,7 +646,8 @@ void Hud::leitura(ke::Renderer2D& r, const PistaDef& pd) {
 
 void Hud::lojaMercador(ke::Renderer2D& r, const World& w, const NpcDef& npc, int sel) {
     r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.45f});
-    const float alt = 64.0f + npc.loja.size() * 26.0f;
+    const size_t extras = npc.visitante() ? 2 : 0;  // fase 20: vender ao mercador e encomendar
+    const float alt = 64.0f + (npc.loja.size() + extras) * 26.0f;
     const glm::vec2 p{110, std::floor(180 - alt / 2)}, s{420, alt};
     desenharPainel(r, p, s);
     painelClicavel(p, s);
@@ -607,6 +663,16 @@ void Hud::lojaMercador(ke::Renderer2D& r, const World& w, const NpcDef& npc, int
         f_.desenhar(r, it.nome, {p.x + 14, y}, esgotado ? cor::apagado : s1 ? cor::ouro : cor::texto);
         if (esgotado) f_.desenhar(r, "vendido", {p.x + 24, y + 11}, cor::apagado);
         else custoEmLinha(r, it.custo, w.inventario, {p.x + 24, y + 11});
+    }
+    static const char* extra[][2] = {{"Vender a ele", "colheita, peixe e pratos, pelo preço do dia"},
+                                     {"Encomendar", "chega numa visita seguinte, já paga"}};
+    for (size_t i = 0; i < extras; ++i) {
+        const int k = static_cast<int>(npc.loja.size() + i);
+        const float y = p.y + 40 + k * 26.0f;
+        if (k == sel) r.retangulo({p.x + 8, y - 3}, {s.x - 16, 25}, {0.45f, 0.36f, 0.22f, 0.45f});
+        cliques.area({p.x + 8, y - 3}, {s.x - 16, 25}, k);
+        f_.desenhar(r, extra[i][0], {p.x + 14, y}, k == sel ? cor::ouro : cor::texto);
+        f_.desenhar(r, extra[i][1], {p.x + 24, y + 11}, cor::apagado);
     }
     f_.desenharCentralizado(r, "W/S ou mouse escolher   E ou clique comprar   Esc fechar", {320, p.y + s.y + 10}, cor::texto);
 }
@@ -648,7 +714,8 @@ void Hud::relatorioManha(ke::Renderer2D& r, const World& w) {
 }
 
 void Hud::caixaDialogo(ke::Renderer2D& r, const Conversa& c, int linha, int letras, float tempo) {
-    const glm::vec2 p{20, 262}, s{600, 90};
+    const int esc = escalaTexto_;  // fase 20: texto grande = caixa mais alta e letra em dobro
+    const glm::vec2 p{20, esc == 2 ? 222.0f : 262.0f}, s{600, esc == 2 ? 130.0f : 90.0f};
     desenharPainel(r, p, s);
     // Retrato: cabeça e ombros do morador, ampliados 4×
     const ke::SpriteRegion& sp = rec_.regiao("npc_" + c.npc + "_baixo_0");
@@ -677,7 +744,7 @@ void Hud::caixaDialogo(ke::Renderer2D& r, const Conversa& c, int linha, int letr
     if (linha < static_cast<int>(c.falas.size())) {
         const std::u32string tudo = ke::decodificarUtf8(c.falas[linha]);
         // Quebra pelo texto inteiro (as palavras não pulam de linha enquanto aparecem)
-        const auto linhasCheias = quebrarLinhas(f_, c.falas[linha], static_cast<int>(s.x) - 110);
+        const auto linhasCheias = quebrarLinhas(f_, c.falas[linha], (static_cast<int>(s.x) - 110) / esc);
         size_t usado = 0;
         float y = p.y + 30;
         const size_t total = std::min<size_t>(static_cast<size_t>(std::max(0, letras)), tudo.size());
@@ -694,9 +761,9 @@ void Hud::caixaDialogo(ke::Renderer2D& r, const Conversa& c, int linha, int letr
                 else pedaco += static_cast<char>(0xE0 | (ch >> 12)), pedaco += static_cast<char>(0x80 | ((ch >> 6) & 0x3F)),
                      pedaco += static_cast<char>(0x80 | (ch & 0x3F));
             }
-            f_.desenhar(r, pedaco, {p.x + 90, y}, cor::texto);
+            f_.desenhar(r, pedaco, {p.x + 90, y}, cor::texto, true, esc);
             usado += n + 1;  // +1: o espaço que virou quebra de linha
-            y += 11;
+            y += esc == 2 ? 19.0f : 11.0f;
         }
         // Indicador "continua" piscando quando a fala terminou
         if (static_cast<size_t>(letras) >= tudo.size() && std::fmod(tempo, 0.8f) < 0.5f) {
@@ -1199,8 +1266,19 @@ void Hud::painelAlas(ke::Renderer2D& r, const World& w, int sel, float tempo) {
         cliques.area({p.x + 8, y - 3}, {s.x - 16, 29}, static_cast<int>(i));
         f_.desenhar(r, a.nome, {p.x + 14, y}, erguida ? cor::bom : s1 ? cor::ouro : cor::texto);
         f_.desenhar(r, textoAla(a.efeitos), {p.x + 150, y}, cor::bom);
-        if (erguida) f_.desenhar(r, "erguida", {p.x + s.x - 14 - f_.largura("erguida"), y + 12}, cor::bom);
-        else custoEmLinha(r, a.custo, w.inventario, {p.x + 24, y + 12});
+        if (erguida && a.acao) {
+            // Fase 20: a ação da ala (custo, recarga) na segunda linha
+            const std::string falta = w.podeAgirAla(a.id);
+            f_.desenhar(r, "E: " + a.acao->nome, {p.x + 24, y + 12}, falta.empty() ? cor::ouro : cor::apagado);
+            custoEmLinha(r, a.acao->custo, w.inventario, {p.x + 34 + f_.largura("E: " + a.acao->nome), y + 12});
+            const std::string estado = falta.empty() ? "pronta" : falta;
+            f_.desenhar(r, caber(f_, estado, 170), {p.x + s.x - 26 - std::min(170, f_.largura(estado)), y + 12}, falta.empty() ? cor::bom : cor::apagado);
+            marcaSimNao(r, {p.x + s.x - 20, y + 12}, falta.empty());
+        } else if (erguida) {
+            f_.desenhar(r, "erguida", {p.x + s.x - 14 - f_.largura("erguida"), y + 12}, cor::bom);
+        } else {
+            custoEmLinha(r, a.custo, w.inventario, {p.x + 24, y + 12});
+        }
     }
     const AlaDef& d = alas[std::clamp(sel, 0, static_cast<int>(alas.size()) - 1)];
     const float a = 0.8f + 0.2f * std::sin(tempo * 3.0f);
@@ -1294,17 +1372,6 @@ void Hud::painelMensagens(ke::Renderer2D& r, int rolagem) {
 // ---------- Fase 18: o povo com nome ----------
 
 namespace {
-
-// Corta o texto na largura (sem partir letra acentuada) e põe reticências
-std::string caber(const ke::BitmapFont& f, std::string t, int largura) {
-    if (f.largura(t) <= largura) return t;
-    while (!t.empty() && f.largura(t + "...") > largura) {
-        t.pop_back();
-        while (!t.empty() && (static_cast<unsigned char>(t.back()) & 0xC0) == 0x80) t.pop_back();
-        if (!t.empty() && static_cast<unsigned char>(t.back()) >= 0xC0) t.pop_back();
-    }
-    return t + "...";
-}
 
 // "Ouro" vira "ouro" (os nomes dos recursos começam com letra sem acento)
 std::string minusculo(std::string t) {
@@ -1538,4 +1605,171 @@ void Hud::painelVizinhos(ke::Renderer2D& r, const World& w, int sel, float tempo
     rodapeFechar("T ou Esc fechar", {320 + (f_.largura("W/S ou mouse escolher   E assina, rompe ou aceita   ")) / 2.0f, p.y + s.y - 10});
 }
 
+// ---------- Fase 20: o mercado vivo ----------
+
+void Hud::painelMercado(ke::Renderer2D& r, const World& w, bool corvin, int aba, int sel, int rolagem, float tempo) {
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.5f});
+    const glm::vec2 p{50, 20}, s{540, 318};
+    desenharPainel(r, p, s);
+    painelClicavel(p, s);
+    const DadosMercado& dm = dados_.mercado;
+    const int nivel = corvin ? 0 : w.nivelMercado();
+    f_.desenharCentralizado(r, corvin ? "Banca do Corvin" : "Mercado de Valdren", {320, p.y + 11}, cor::ouro);
+    f_.desenharCentralizado(r,
+                            std::format("Ouro {}   negócios hoje {}/{}   taxa {:.0f}%   {}", w.inventario.quantidade("ouro"), w.mercado.negociadosHoje,
+                                        dm.limite(corvin ? 1 : nivel), dm.taxa(nivel) * 100, w.estacaoAtual().nome),
+                            {320, p.y + 23}, cor::apagado);
+    float y = p.y + 34;
+    if (corvin) {  // abas: vender e encomendas (ids 900 e 901)
+        const char* nomes[] = {"Vender", "Encomendas"};
+        for (int a = 0; a < 2; ++a) {
+            const glm::vec2 o{320.0f - 110 + a * 112, y};
+            r.retangulo(o, {108, 13}, a == aba ? glm::vec4{0.45f, 0.36f, 0.22f, 0.7f} : glm::vec4{0.15f, 0.12f, 0.1f, 0.8f});
+            cliques.area(o, {108, 13}, 900 + a);
+            f_.desenharCentralizado(r, nomes[a], {o.x + 54, o.y + 3}, a == aba ? cor::ouro : cor::texto);
+        }
+        y += 18;
+    }
+    if (corvin && aba == 1) {
+        // Encomendas: pagas agora, chegam numa visita do Corvin depois de alguns dias
+        for (size_t k = 0; k < dm.encomendas.size(); ++k, y += 26) {
+            const EncomendaDef& e = dm.encomendas[k];
+            const bool s1 = static_cast<int>(k) == sel;
+            if (s1) r.retangulo({p.x + 10, y - 3}, {s.x - 20, 25}, {0.45f, 0.36f, 0.22f, 0.4f + 0.05f * std::sin(tempo * 4.0f)});
+            cliques.area({p.x + 10, y - 3}, {s.x - 20, 25}, static_cast<int>(k));
+            f_.desenhar(r, e.nome, {p.x + 18, y}, s1 ? cor::ouro : cor::texto);
+            custoEmLinha(r, e.custo, w.inventario, {p.x + 28, y + 11});
+            const auto feita = std::ranges::find(w.mercado.encomendas, e.id, &EncomendaFeita::id);
+            const std::string falta = w.podeEncomendar(e.id);
+            const std::string estado = feita != w.mercado.encomendas.end() ? std::format("a caminho (dia {} ou depois)", w.entregaEncomenda(*feita))
+                                       : falta.empty()                     ? std::format("E encomenda ({} dias)", e.dias)
+                                                                           : falta;
+            f_.desenhar(r, estado, {p.x + s.x - 18 - f_.largura(estado), y},
+                        feita != w.mercado.encomendas.end() ? cor::bom : falta.empty() ? cor::ouro : cor::apagado);
+        }
+        f_.desenharCentralizado(r, "A/D ou clique trocar a aba   W/S escolher   E encomendar   Esc fechar", {320, p.y + s.y - 10}, cor::apagado);
+        rodapeFechar("Esc fechar", {320 + f_.largura("A/D ou clique trocar a aba   W/S escolher   E encomendar   ") / 2.0f, p.y + s.y - 10});
+        return;
+    }
+    // Cabeçalho das colunas
+    const float xTem = p.x + 170, xCompra = p.x + 222, xVenda = p.x + 316, xTend = p.x + 412;
+    f_.desenhar(r, "tem", {xTem, y}, cor::apagado);
+    if (!corvin) f_.desenhar(r, "comprar (E)", {xCompra, y}, cor::apagado);
+    f_.desenhar(r, corvin ? "vender (E)" : "vender (Q)", {xVenda, y}, cor::apagado);
+    f_.desenhar(r, "14 dias", {xTend, y}, cor::apagado);
+    y += 12;
+    const auto bens = w.bensNoMercado(corvin);
+    const int n = static_cast<int>(bens.size());
+    if (n == 0) f_.desenharCentralizado(r, corvin ? "Nada que o Corvin queira: traga colheita, peixe ou pratos." : "Nada para negociar.", {320, y + 20}, cor::apagado);
+    for (int k = rolagem; k < std::min(n, rolagem + linhasMercado()); ++k, y += 17) {
+        const BemDef& b = *bens[k];
+        const bool s1 = k == sel;
+        if (s1) r.retangulo({p.x + 10, y - 3}, {s.x - 20, 16}, {0.45f, 0.36f, 0.22f, 0.4f + 0.05f * std::sin(tempo * 4.0f)});
+        cliques.area({p.x + 10, y - 3}, {s.x - 20, 16}, 2000 + k);  // a linha (só seleciona)
+        const auto def = dados_.recursos.find(b.id);
+        if (def != dados_.recursos.end()) r.sprite(rec_.regiao(def->second.icone), {p.x + 16, y - 1});
+        f_.desenhar(r, caber(f_, dados_.nomeRecurso(b.id) + (b.lote > 1 ? std::format(" ({})", b.lote) : ""), 130), {p.x + 30, y},
+                    s1 ? cor::ouro : cor::texto);
+        f_.desenhar(r, std::to_string(w.inventario.quantidade(b.id)), {xTem, y}, cor::texto);
+        // Botões: comprar (id 2k) e vender (id 2k+1), com ✓/✗ além da cor
+        auto botao = [&](float x, bool comprar, int preco) {
+            const bool pode = w.podeNegociar(b.id, comprar, corvin).empty();
+            r.retangulo({x - 2, y - 2}, {86, 12}, pode ? glm::vec4{0.25f, 0.2f, 0.12f, 0.9f} : glm::vec4{0.12f, 0.1f, 0.09f, 0.7f});
+            cliques.area({x - 2, y - 2}, {86, 12}, 2 * k + (comprar ? 0 : 1));
+            r.sprite(rec_.regiao("icone_ouro"), {x, y - 1});
+            f_.desenhar(r, std::to_string(preco), {x + 12, y}, pode ? cor::texto : cor::apagado);
+            marcaSimNao(r, {x + 74, y}, pode);
+        };
+        if (!b.soVenda && !corvin) botao(xCompra, true, w.precoCompraLote(b.id));
+        botao(xVenda, false, w.precoVendaLote(b.id, corvin));
+        // Tendência: o preço de cada manhã (até 14) e quanto mudou em 7 dias
+        const auto it = w.mercado.historico.find(b.id);
+        if (it != w.mercado.historico.end() && it->second.size() >= 2) {
+            const auto& h = it->second;
+            const auto [mn, mx] = std::ranges::minmax(h);
+            for (size_t i = 0; i < h.size(); ++i) {
+                const float fy = mx > mn ? (h[i] - mn) / (mx - mn) : 0.5f;
+                r.retangulo({xTend + i * 4.0f, y + 7 - std::round(fy * 8)}, {3, 2}, cor::ouro);
+            }
+            const float t = w.tendencia(b.id) * 100;
+            const std::string tt = std::abs(t) < 1 ? "=" : std::format("{:+.0f}%", t);
+            f_.desenhar(r, tt, {xTend + 60, y}, t >= 1 ? cor::ruim : t <= -1 ? cor::bom : cor::apagado);
+        } else {
+            f_.desenhar(r, "-", {xTend, y}, cor::apagado);
+        }
+    }
+    if (rolagem > 0) f_.desenharCentralizado(r, "...", {320, p.y + (corvin ? 60.0f : 42.0f)}, cor::apagado);
+    if (rolagem + linhasMercado() < n) f_.desenharCentralizado(r, "...", {320, y - 4}, cor::apagado);
+    // Detalhe do escolhido: por que o preço está assim e o que impede o negócio
+    if (sel >= 0 && sel < n) {
+        const BemDef& b = *bens[sel];
+        const float ye = p.y + s.y - 46;
+        r.retangulo({p.x + 12, ye - 4}, {s.x - 24, 1}, cor::borda);
+        const auto pr = w.mercado.pressao.find(b.id);
+        const float pressao = pr == w.mercado.pressao.end() ? 0.0f : pr->second;
+        f_.desenhar(r,
+                    caber(f_, std::format("{}: {:.1f} de ouro a unidade hoje. Estação ×{:.2f}, oferta {:+.0f}%{}.", dados_.nomeRecurso(b.id), w.precoHoje(b.id),
+                                          b.fatorEstacao(w.estacaoAtual().id), pressao * 100,
+                                          pressao > 0.05f ? " (anda faltando)" : pressao < -0.05f ? " (sobrando)" : ""),
+                          static_cast<int>(s.x) - 32),
+                    {p.x + 16, ye}, cor::texto);
+        const std::string fc = corvin ? w.podeNegociar(b.id, false, true) : w.podeNegociar(b.id, !b.soVenda, false);
+        const std::string fv = w.podeNegociar(b.id, false, corvin);
+        std::string motivo = corvin ? fv : (fc.empty() || b.soVenda ? fv : fc);
+        if (motivo.empty()) motivo = "Comprar sobe o preço, vender baixa; a cada noite o preço volta um pouco ao normal.";
+        f_.desenhar(r, caber(f_, motivo, static_cast<int>(s.x) - 32), {p.x + 16, ye + 11}, cor::apagado);
+    }
+    const std::string rodape = corvin ? "A/D ou clique trocar a aba   W/S escolher   E vender   Esc fechar"
+                                      : "W/S escolher   E ou clique compra   Q ou clique vende   Esc fechar";
+    f_.desenharCentralizado(r, rodape, {320, p.y + s.y - 10}, cor::apagado);
+    rodapeFechar("Esc fechar", {320 + (f_.largura(rodape) - f_.largura("Esc fechar")) / 2.0f, p.y + s.y - 10});
+}
+
+// ✓ verde ou ✗ vermelho desenhados com pixels (a fonte não tem os símbolos): a cor nunca é a única pista
+void Hud::marcaSimNao(ke::Renderer2D& r, glm::vec2 o, bool sim) {
+    const glm::vec4 c = sim ? cor::bom : cor::ruim;
+    if (sim) {
+        for (int i = 0; i < 3; ++i) r.retangulo({o.x + i, o.y + 4 + i}, {1, 1}, c);
+        for (int i = 0; i < 5; ++i) r.retangulo({o.x + 3 + i, o.y + 6 - i}, {1, 1}, c);
+    } else {
+        for (int i = 0; i < 6; ++i) {
+            r.retangulo({o.x + i, o.y + 1 + i}, {1, 1}, c);
+            r.retangulo({o.x + 5 - i, o.y + 1 + i}, {1, 1}, c);
+        }
+    }
+}
+
+// ---------- Fase 20: o Livro do Reino e as dicas ----------
+
+void Hud::abasLivro(ke::Renderer2D& r, const std::vector<std::string>& nomes, const std::vector<std::string>& teclas, int ativa) {
+    const float l = 640.0f / static_cast<float>(std::max<size_t>(1, nomes.size()));
+    r.retangulo({0, 346}, {640, 14}, {0.05f, 0.04f, 0.04f, 0.92f});
+    for (size_t k = 0; k < nomes.size(); ++k) {
+        const glm::vec2 o{std::floor(k * l), 346};
+        const bool s1 = static_cast<int>(k) == ativa;
+        r.retangulo(o + glm::vec2(1, s1 ? 0.0f : 1.0f), {l - 2, s1 ? 14.0f : 13.0f}, s1 ? glm::vec4{0.45f, 0.36f, 0.22f, 0.95f} : glm::vec4{0.13f, 0.11f, 0.09f, 0.95f});
+        if (s1) r.retangulo(o + glm::vec2(1, 0), {l - 2, 1}, cor::ouro);
+        cliques.area(o, {l, 14}, ID_ABA + static_cast<int>(k));
+        f_.desenharCentralizado(r, nomes[k], {o.x + l / 2, 350}, s1 ? cor::ouro : cor::texto);
+        areaDica(o, {l, 14}, nomes[k] + " (" + teclas[k] + ")   " + teclaLivro_ + ": próxima aba");
+    }
+}
+
+void Hud::desenharDica(ke::Renderer2D& r, glm::vec2 mouse) {
+    const Dica* d = nullptr;
+    for (const Dica& x : dicas_)  // a última registrada vence (fica por cima)
+        if (mouse.x >= x.min.x && mouse.y >= x.min.y && mouse.x < x.max.x && mouse.y < x.max.y) d = &x;
+    if (!d) return;
+    const int esc = escalaTexto_;
+    const auto ls = quebrarLinhas(f_, d->texto, esc == 2 ? 150 : 260);
+    float largura = 0.0f;
+    for (const auto& l : ls) largura = std::max(largura, static_cast<float>(f_.largura(l, esc)));
+    const float alt = ls.size() * (esc == 2 ? 18.0f : 11.0f) + 6;
+    glm::vec2 o = mouse + glm::vec2(10, 12);
+    o.x = std::clamp(o.x, 2.0f, 638.0f - largura - 10);
+    if (o.y + alt > 358) o.y = mouse.y - alt - 4;
+    r.retangulo(o, {largura + 10, alt}, {0.06f, 0.05f, 0.05f, 0.95f});
+    r.contorno(o, {largura + 10, alt}, cor::borda);
+    for (size_t i = 0; i < ls.size(); ++i) f_.desenhar(r, ls[i], o + glm::vec2(5, 4 + i * (esc == 2 ? 18.0f : 11.0f)), cor::texto, true, esc);
+}
 }

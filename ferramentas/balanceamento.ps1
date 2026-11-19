@@ -1,4 +1,4 @@
-﻿# Roda a simulação de balanceamento em vários ritmos de jogo e grava docs\BALANCEAMENTO.md
+# Roda a simulação de balanceamento em vários ritmos de jogo e grava docs\BALANCEAMENTO.md
 Set-Location (Split-Path $PSScriptRoot)
 $env:PATH = "C:\Program Files\Microsoft Visual Studio\18\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;" + $env:PATH
 cmake --build --preset release --target Balanceamento *> build\balanceamento.log
@@ -34,6 +34,6 @@ As estações (7 dias cada) valem na simulação. O jogador automático constró
 inverno quase não o afeta; quem tem poucas hortas sente a comida cair (ex.: 1 horta e 15 moradores = -13 por dia).
 "@ | Set-Content $md -Encoding UTF8
 foreach ($cenario in @(@(12, 30), @(25, 25), @(40, 15), @(25, 0))) {
-    & build\Tools\Release\Balanceamento.exe Data 120 $cenario[0] $cenario[1] $md | Select-Object -First 9
+    & build\Tools\Release\Balanceamento.exe Data 120 $cenario[0] $cenario[1] $md | Select-Object -First 10
 }
 "gravado em $md"

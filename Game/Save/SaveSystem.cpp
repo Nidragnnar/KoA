@@ -25,7 +25,7 @@ struct ModuloSave {
 };
 constexpr ModuloSave MODULOS[] = {{"npcs", 2},     {"relationships", 2}, {"quests", 4},  {"chronicles", 5}, {"regions", 6},
                                   {"council", 7},  {"defense", 8},       {"guild", 9},   {"life", 10},      {"castle", 11},
-                                  {"people", 13}, {"factions", 14}};
+                                  {"people", 13}, {"factions", 14}, {"market", 15}};
 
 std::filesystem::path comSufixo(std::filesystem::path p, const char* sufixo) {
     p += sufixo;
@@ -119,7 +119,10 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
     json castelo = {{"alas", d.alas},
                     {"brasao_criado", d.brasaoCriado},
                     {"brasao", {{"forma", b.forma}, {"divisao", b.divisao}, {"cor1", b.cor1}, {"cor2", b.cor2}, {"simbolo", b.simbolo},
-                                {"cor_simbolo", b.corSimbolo}, {"lema", b.lema}}}};
+                                {"cor_simbolo", b.corSimbolo}, {"lema", b.lema}}},
+                    {"acoes", d.ultimaAcaoAla},  // fase 20
+                    {"guarda_treinada", d.guardaTreinada},
+                    {"emprestimo", {{"volta", d.emprestimoVolta}, {"valor", d.emprestimoValor}, {"dia", d.emprestimoDia}}}};
     json jPovo = json::array();
     for (const Habitante& p : d.povo)
         jPovo.push_back({{"id", p.id}, {"nome", p.nome}, {"familia", p.familia}, {"profissao", p.profissao}, {"traco", p.traco},
@@ -128,11 +131,16 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
     json vizinhos = {{"relacoes", d.relacoes}, {"tratados", d.tratados}, {"desvios", d.desvios}, {"suspeito", d.suspeito},
                      {"reputacao", {{"justica", d.reputacao.justica}, {"generosidade", d.reputacao.generosidade}, {"devocao", d.reputacao.devocao}}}};
 
+    json encs = json::array();
+    for (const EncomendaFeita& e : d.mercado.encomendas) encs.push_back({{"id", e.id}, {"dia", e.dia}});
+    json mercado = {{"pressao", d.mercado.pressao}, {"historico", d.mercado.historico}, {"negociados_hoje", d.mercado.negociadosHoje},
+                    {"encomendas", encs}, {"vendido", d.mercado.vendido}, {"comprado", d.mercado.comprado}};
+
     const std::pair<const char*, const json*> arquivos[] = {
         {"player.json", &player}, {"inventory.json", &inv}, {"kingdom.json", &reino}, {"world.json", &mundo},
         {"npcs.json", &jNpcs}, {"relationships.json", &jRel}, {"quests.json", &quests}, {"chronicles.json", &cronicas},
         {"regions.json", &regioes}, {"council.json", &conselho}, {"defense.json", &defesa}, {"guild.json", &guilda}, {"life.json", &vida},
-        {"castle.json", &castelo}, {"people.json", &pessoas}, {"factions.json", &vizinhos},
+        {"castle.json", &castelo}, {"people.json", &pessoas}, {"factions.json", &vizinhos}, {"market.json", &mercado},
         {"metadata.json", &meta}};  // metadata por último: só existe save "válido" quando tudo foi gravado
     // Fase 17: o save inteiro vai para uma pasta nova e só então troca de lugar com o antigo (que vira o backup).
     // Uma queda no meio nunca mistura arquivos de dois momentos diferentes
@@ -228,6 +236,11 @@ json SaveSystem::migrar(json tudo, int deVersao) {
         // v13 não tinha os vizinhos: as relações e a fama são refeitas pelo que já aconteceu
         tudo["factions"] = {{"padrao", true}};
         deVersao = 14;
+    }
+    if (deVersao < 15) {
+        // v14 não tinha o mercado vivo: começa sem pressão nem histórico
+        tudo["market"] = {{"padrao", true}};
+        deVersao = 15;
     }
     tudo["metadata"]["versao_formato"] = deVersao;
     return tudo;
@@ -362,7 +375,23 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
             const json& jr = jfac["reputacao"];
             d.reputacao = {jr.value("justica", 0.0f), jr.value("generosidade", 0.0f), jr.value("devocao", 0.0f)};
         }
+        const json& jmer = tudo["market"];
+        d.temMercado = !jmer.value("padrao", false);
+        d.mercado.pressao = jmer.value("pressao", std::map<std::string, float>{});
+        d.mercado.historico = jmer.value("historico", std::map<std::string, std::vector<float>>{});
+        d.mercado.negociadosHoje = std::max(0, jmer.value("negociados_hoje", 0));
+        d.mercado.vendido = std::max(0, jmer.value("vendido", 0));
+        d.mercado.comprado = std::max(0, jmer.value("comprado", 0));
+        for (const auto& je : jmer.value("encomendas", json::array())) d.mercado.encomendas.push_back({je.value("id", ""), je.value("dia", 0)});
         const json& jcas = tudo["castle"];
+        d.ultimaAcaoAla = jcas.value("acoes", std::map<std::string, int>{});
+        d.guardaTreinada = std::max(0, jcas.value("guarda_treinada", 0));
+        if (jcas.contains("emprestimo")) {
+            const json& je = jcas["emprestimo"];
+            d.emprestimoVolta = std::max(0, je.value("volta", 0));
+            d.emprestimoValor = std::max(0, je.value("valor", 0));
+            d.emprestimoDia = je.value("dia", 0);
+        }
         d.alas = jcas.value("alas", std::vector<std::string>{});
         d.brasaoCriado = jcas.value("brasao_criado", false);
         if (jcas.contains("brasao")) {

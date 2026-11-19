@@ -268,4 +268,19 @@ captura: 93_vizinhos
 captura: 94_vizinhos_tratado
 [OK] T fecha os vizinhos
 [OK] as decisões justas pesam na fama (justiça +16)
+[OK] o mercado começa a subir
+[OK] V abre o mercado, que já está de pé
+captura: 95_mercado
+[OK] E compra um lote de comida
+[OK] Q vende o lote de volta (a taxa fica com o mercado)
+[OK] o clique na aba troca o painel
+[OK] Tab passa para a próxima aba
+captura: 96_livro_abas
+[OK] Esc fecha o Livro
+[OK] o botão abre o Livro na última aba
+captura: 97_texto_grande
+[OK] a tecla de andar para cima virou I (e foi para o config.json)
+captura: 98_controles
+[OK] Restaurar volta o W
+[OK] Esc volta das opções e do menu
 RESULTADO: 0 falha(s)

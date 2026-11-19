@@ -56,6 +56,10 @@ int main(int argc, char** argv) {
         const Amostra& f = jogador.historico().back();
         resumo += std::format("- Vizinhos no fim: anões {:+.0f}, Ordem {:+.0f}, Culto {:+.0f}; tratados em vigor: {}; fama: justiça {:+.0f}, generosidade {:+.0f}, devoção {:+.0f}\n", f.anoes, f.ordem, f.culto, f.tratados, f.fama.justica, f.fama.generosidade, f.fama.devocao);
         resumo += std::format("- Intriga: desvios descobertos {}; ouro ainda sumido {}\n", f.descobertos, f.sumido);
+        // Fase 20: a comida que sobra tem destino (o preço da comida no dia 60 e no fim mostra que ela segue valendo)
+        const float comida60 = jogador.historico().size() >= 60 ? jogador.historico()[59].precoComida : 0.0f;
+        resumo += std::format("- Mercado: {} de comida vendida; {} de ouro em vendas e {} em compras; comida a {:.2f} a unidade no dia 60 e {:.2f} no fim\n",
+                              f.comidaVendida, f.ouroVendas, f.ouroCompras, comida60, f.precoComida);
     }
     const auto al = alarmes(jogador.historico(), ritmo);
     resumo += al.empty() ? "- Alarmes: nenhum\n" : std::format("- Alarmes: {}\n", al.size());

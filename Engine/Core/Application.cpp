@@ -65,7 +65,7 @@ void Application::executar() {
             debug_.processar(e);
             if (e.type == SDL_EVENT_KEY_DOWN && e.key.scancode == SDL_SCANCODE_F1 && !e.key.repeat) debug_.visivel = !debug_.visivel;
             if (e.type == SDL_EVENT_KEY_DOWN && e.key.scancode == SDL_SCANCODE_F11 && !e.key.repeat) janela_.alternarTelaCheia();
-            if (e.type == SDL_EVENT_KEY_DOWN && e.key.scancode == SDL_SCANCODE_M && !e.key.repeat) audio_.alternarMudo();
+            if (e.type == SDL_EVENT_KEY_DOWN && e.key.scancode == input_.tecla("som", SDL_SCANCODE_M) && !e.key.repeat) audio_.alternarMudo();
             if (debug_.querTeclado() && (e.type == SDL_EVENT_KEY_DOWN || e.type == SDL_EVENT_KEY_UP)) continue;
             if (debug_.querMouse() && (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN || e.type == SDL_EVENT_MOUSE_WHEEL)) continue;
             input_.processar(e);

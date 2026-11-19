@@ -6,7 +6,7 @@ era a era, até a **Alta Fantasia**.
 
 Engine própria em **C++20 + SDL3 + OpenGL 3.3** (Kingdom Engine), com EnTT, Dear ImGui, nlohmann/json e GoogleTest.
 
-## Versão 1.11
+## Versão 1.12
 
 A 2.0 está em andamento (identidade e plano em `docs/VISAO_2.0.md`). A fase 9 trouxe as Crônicas do Reino
 (tecla C), os títulos do herdeiro, o mercador viajante, três monumentos e o começo do mistério da Queda das Cinzas.
@@ -46,6 +46,12 @@ Cinzas reagem ao que acontece em Valdren (o pacto do Golem, as decisões do cons
 um com tratados que pedem confiança e missões próprias; a Ordem e o Culto são rivais. O jeito de governar vira fama
 (justo ou tirano, generoso ou avarento, devoto ou arcano), que muda títulos, falas e o humor dos vizinhos. E o conselho
 ganhou intriga: um conselheiro descontente desvia ouro em silêncio, até alguém descobrir.
+A fase 20 trouxe o mercado vivo, o Livro do Reino e a acessibilidade. Os preços sobem e descem com a oferta, a
+estação e a sorte do dia (comida barata no outono e cara no inverno); o mercado compra a colheita, o peixe e os pratos,
+com taxa e limite por dia, e o Corvin compra também e traz encomendas. O Livro do Reino (Tab ou o botão no canto)
+junta os painéis em abas; o mouse mostra dicas nos números, há texto grande, velocidade do texto e teclas trocáveis
+(Opções → Controles), e a prévia de obra mostra ✓ ou ✗ além da cor. Cada ala do castelo ganhou uma ação (festa,
+empréstimo, treino da guarda, decifrar fragmentos) e cada região, os seus sons de fundo.
 
 As 8 fases do plano de arquitetura da 1.0 estão feitas:
 
@@ -66,10 +72,12 @@ As 8 fases do plano de arquitetura da 1.0 estão feitas:
 | mouse | escolher e confirmar nos menus e painéis (clicar fora fecha) |
 | H | comer (o prato que mais cura, ou 3 de comida) |
 | F | na conversa, dar presente; no fogão, comer o prato escolhido |
-| B / K / R / G / L / C | obras / reino / terras do reino / Conselho Real / diário / Crônicas |
+| Tab | Livro do Reino: todas as abas (Tab de novo passa para a próxima; também pelo botão no canto) |
+| B / K / V / R / G / L / C | obras / reino / mercado / terras do reino / Conselho Real / diário / Crônicas |
 | N | mensagens (os últimos avisos, com dia e hora) |
 | P | o povo (todos os habitantes; clique para a ficha) |
 | T | os vizinhos: tratados, missões das facções e a fama do herdeiro |
+| Opções → Controles | trocar qualquer tecla acima (fica no config.json) |
 | Esc | menu (salvar, opções, controles, título, sair) |
 | F5 | salvar |
 | F11 | tela cheia |

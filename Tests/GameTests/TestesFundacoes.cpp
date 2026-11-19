@@ -48,7 +48,7 @@ fs::path temporaria(const std::string& nome) {
 
 }
 
-// Um save real de cada versão (tirados dos backups do jogo, de v1 a v13; não há save real da v4)
+// Um save real de cada versão (tirados dos backups do jogo, de v1 a v14; não há save real da v4)
 TEST(SavesModelo, TodasAsVersoesAbremEGravamNaAtual) {
     const fs::path modelos = PASTA_FIXTURES "/saves";
     int abertos = 0;
@@ -80,7 +80,7 @@ TEST(SavesModelo, TodasAsVersoesAbremEGravamNaAtual) {
         fs::remove_all(pasta);
         ++abertos;
     }
-    EXPECT_EQ(abertos, 12) << "v1, v2, v3, v5 a v13";
+    EXPECT_EQ(abertos, 13) << "v1, v2, v3, v5 a v14";
 }
 
 TEST(SaveAtomico, OSaveAnteriorViraBackupInteiro) {

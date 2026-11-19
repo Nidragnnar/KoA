@@ -33,6 +33,7 @@ int World::soldadosDosPostos() const {
     if (n > 0 && efeitoCargo("marechal") > 0.0f) ++n;  // o Marechal leva mais um para o portão
     n += efeitosAlas().soldados;                        // fase 16: o Quartel Real manda o seu
     n += efeitosTratados().soldados;                    // fase 19: o Juramento da Bigorna
+    n += guardaTreinada;                                // fase 20: a guarda treinada no Quartel (só nesta horda)
     return n;
 }
 
@@ -194,6 +195,7 @@ void World::terminarBatalha() {
     if (portaoVidaMax() > 0 && portaoVida < portaoVidaMax())
         notasDefesa.push_back(std::format("O portão ficou com {} de {} de vida. Repare no painel da muralha.", portaoVida, portaoVidaMax()));
     marcar(std::string(limpa ? "horda:" : "horda_saqueada:") + std::to_string(hordaNumero), std::to_string(relogio.dia));
+    guardaTreinada = 0;  // fase 20: o treino valia para esta horda
     eventos_.push_back({EventoJogo::Tipo::BatalhaFim, jogador.pos, limpa ? "vitoria" : "saque", "ouro", bonus, texto});
     hordaDia = 0;
     proximaHorda = relogio.dia + dd.intervaloMin + static_cast<int>(hashTile(hordaNumero, 77) % (dd.intervaloMax - dd.intervaloMin + 1));
@@ -232,6 +234,7 @@ void World::resolverHordaSemHeroi(const std::string& motivo) {
     if (portaoVidaMax() > 0 && portaoVida < portaoVidaMax())
         notasDefesa.push_back(std::format("O portão ficou com {} de {} de vida. Repare no painel da muralha.", portaoVida, portaoVidaMax()));
     marcar(std::string(saquesNaBatalha_ == 0 ? "horda:" : "horda_saqueada:") + std::to_string(hordaNumero), std::to_string(relogio.dia));
+    guardaTreinada = 0;
     if (motivo == "longe" || motivo == "saiu")
         eventos_.push_back({EventoJogo::Tipo::Aviso, jogador.pos, r.vitoria ? "bom" : "", "", 0,
                             r.vitoria ? "A horda atacou Valdren; as defesas seguraram sem você." : "A horda atacou Valdren sem você e saqueou a praça!"});

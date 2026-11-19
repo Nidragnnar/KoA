@@ -155,10 +155,7 @@ public:
     int defesaArmadura() const;
     int nivelForja() const;       // maior nível de forja pronta (0 = nenhuma)
     bool forjar(const std::string& equip);
-    // Mercado: troca ouro por um lote de 10 (pedra ou madeira); mais barato quanto maior o mercado
-    int nivelMercado() const;
-    int precoLote(const std::string& recurso) const;  // 0 = não vende
-    bool comprarLote(const std::string& recurso);
+    int nivelMercado() const;     // fase 20: o mercado vivo está mais abaixo
     void reviver();               // depois de derrotado: acorda em casa no dia seguinte
     void renascerInimigos();      // de manhã as criaturas voltam (o chefe não, se já caiu)
 
@@ -337,6 +334,31 @@ public:
     void noiteDasFaccoes(std::vector<std::string>& notas);
     void noiteDaIntriga(std::vector<std::string>& notas);
     void resolverDesvio(const std::string& opcao);
+
+    // Fase 20: o mercado vivo e as encomendas do Corvin
+    EstadoMercado mercado;
+    bool corvinNaVila() const;
+    std::vector<const BemDef*> bensNoMercado(bool corvin) const;  // o que aparece no painel (itens só se o herdeiro tiver)
+    float precoHoje(const std::string& bem) const;                // uma unidade, hoje (sem a taxa)
+    int precoCompraLote(const std::string& bem) const;
+    int precoVendaLote(const std::string& bem, bool corvin = false) const;
+    std::string podeNegociar(const std::string& bem, bool comprar, bool corvin = false) const;  // "" = pode; senão o motivo
+    bool comprarNoMercado(const std::string& bem);
+    bool venderNoMercado(const std::string& bem, bool corvin = false);
+    std::string podeEncomendar(const std::string& encomenda) const;
+    bool encomendar(const std::string& encomenda);
+    int entregaEncomenda(const EncomendaFeita& f) const;  // primeiro dia em que pode chegar
+    float tendencia(const std::string& bem, int dias = 7) const;  // fração: +0,12 = subiu 12%
+    void reagirMercado(const std::string& marco);
+    void manhaDoMercado(std::vector<std::string>& notas);
+    // Fase 20: as ações das alas do castelo (festa, treino, empréstimo, decifrar)
+    std::map<std::string, int> ultimaAcaoAla;  // ala → dia em que agiu pela última vez
+    int guardaTreinada = 0;                    // soldados a mais na próxima horda
+    int emprestimoVolta = 0, emprestimoValor = 0, emprestimoDia = 0;  // o que volta, o que foi emprestado e quando volta
+    std::string podeAgirAla(const std::string& ala) const;  // "" = pode
+    int diasParaAgir(const std::string& ala) const;         // 0 = pronta
+    bool agirAla(const std::string& ala);
+    void manhaDasAlas(std::vector<std::string>& notas);
 
     const std::vector<ke::AABB>& obstaculos() const;  // fase 17: em cache (refeito só quando algo muda)
     std::vector<ke::AABB> calcularObstaculos() const;  // o cálculo completo, sem cache (os testes comparam os dois)

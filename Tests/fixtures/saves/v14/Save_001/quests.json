@@ -1,0 +1,90 @@
+{
+  "abates": {
+    "cavaleiro_caido": 1,
+    "esqueleto": 6,
+    "lobo": 6,
+    "sombra": 12
+  },
+  "marcos": [
+    "cargo:marechal:oswin",
+    "cargo:obras:bram",
+    "cargo:tesoureiro:edda",
+    "casa_reconstruida",
+    "chefe_cavaleiro_caido",
+    "chegada",
+    "conselho_formado",
+    "construiu:campo",
+    "construiu:capela",
+    "construiu:forja",
+    "construiu:mercado",
+    "construiu:moradia",
+    "construiu:taverna",
+    "era:1",
+    "missao:limpar_estrada",
+    "titulo:libertador",
+    "titulo:protetor",
+    "titulo:restaurador",
+    "titulo:senhor_cinzas",
+    "visitou:cripta",
+    "visitou:floresta"
+  ],
+  "missoes": {
+    "cavaleiro_caido": {
+      "base": 0,
+      "concluida": true
+    },
+    "ecos_da_queda": {
+      "base": 0,
+      "concluida": true
+    },
+    "floresta_doente": {
+      "base": 0,
+      "concluida": true
+    },
+    "floresta_sussurra": {
+      "base": 0,
+      "concluida": true
+    },
+    "limpar_estrada": {
+      "base": 0,
+      "concluida": true
+    },
+    "maos_na_terra": {
+      "base": 0,
+      "concluida": true
+    },
+    "martelo_bram": {
+      "base": 0,
+      "concluida": true
+    },
+    "montanha_respira": {
+      "base": 0,
+      "concluida": true
+    },
+    "ossos_cinzas": {
+      "base": 0,
+      "concluida": true
+    },
+    "pacto_lembrado": {
+      "base": 0,
+      "concluida": true
+    },
+    "pao_para_todos": {
+      "base": 0,
+      "concluida": true
+    },
+    "taverna_viva": {
+      "base": 0,
+      "concluida": true
+    },
+    "veios_pedra_funda": {
+      "base": 0,
+      "concluida": true
+    }
+  },
+  "visitadas": [
+    "cripta",
+    "floresta",
+    "vilarejo"
+  ]
+}

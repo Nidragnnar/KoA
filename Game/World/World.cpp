@@ -1110,6 +1110,8 @@ void World::dormir(bool desmaio) {
             ultimoRelatorio.notas.push_back(d.nome + " armou a banca na praça hoje.");
             marcar("visita:" + id, d.nome);
         }
+    manhaDoMercado(ultimoRelatorio.notas);  // fase 20: preços da manhã e encomendas que chegam
+    manhaDasAlas(ultimoRelatorio.notas);    // fase 20: o empréstimo que volta
     if (perda > 0) ultimoRelatorio.variacoes.push_back({"ouro (desmaio)", -perda});
     for (auto it = prontas.rbegin(); it != prontas.rend(); ++it) ultimoRelatorio.notas.insert(ultimoRelatorio.notas.begin(), "Obra concluída: " + *it + "!");
     bloqueio_.clear();

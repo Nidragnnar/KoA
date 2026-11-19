@@ -1,0 +1,50 @@
+{
+  "_como_funciona": "Fase 20. Preço de uma unidade = base × fator da estação × (1 + pressão) × (1 + sorte do dia). Comprar um lote paga o preço × lote × (1 + taxa); vender recebe o preço × lote × (1 - taxa). A taxa cai com o nível do mercado. Cada lote negociado mexe na pressão (comprar sobe 'impacto', vender desce) e, a cada noite, a pressão volta 'recupera' do caminho para zero. Há um limite de lotes por dia (por nível do mercado). 'so_venda': o mercado compra do herdeiro, mas não vende. 'requer': só aparece depois do marco. reacoes: marcos que mexem na pressão (marco terminado em * vale para todos que começam assim). O Corvin compra só o que é 'so_venda', com a taxa dele, e traz encomendas na visita seguinte (pelo menos 'dias' depois).",
+  "lote": 10,
+  "taxa": [0.20, 0.15, 0.10],
+  "limite_dia": [6, 9, 12],
+  "impacto": 0.06,
+  "recupera": 0.25,
+  "sorte": 0.06,
+  "pressao_min": -0.6,
+  "pressao_max": 1.0,
+  "dias_historico": 14,
+  "taxa_corvin": 0.25,
+  "bens": [
+    { "id": "comida", "base": 1.3, "estacoes": { "primavera": 1.0, "verao": 0.9, "outono": 0.8, "inverno": 1.4 } },
+    { "id": "madeira", "base": 1.8, "estacoes": { "inverno": 1.25, "verao": 0.9 } },
+    { "id": "pedra", "base": 2.6, "estacoes": { "inverno": 1.15 } },
+    { "id": "cristal", "base": 9.0, "lote": 1, "requer": "primeiro_cristal" },
+    { "id": "nabo", "base": 3, "lote": 1, "so_venda": true },
+    { "id": "trigo", "base": 4, "lote": 1, "so_venda": true },
+    { "id": "abobora", "base": 6, "lote": 1, "so_venda": true },
+    { "id": "ovo", "base": 3, "lote": 1, "so_venda": true },
+    { "id": "leite", "base": 4, "lote": 1, "so_venda": true },
+    { "id": "peixe", "base": 4, "lote": 1, "so_venda": true },
+    { "id": "truta", "base": 7, "lote": 1, "so_venda": true },
+    { "id": "peixe_dourado", "base": 30, "lote": 1, "so_venda": true },
+    { "id": "sopa_nabo", "base": 9, "lote": 1, "so_venda": true },
+    { "id": "peixe_assado", "base": 8, "lote": 1, "so_venda": true },
+    { "id": "omelete", "base": 9, "lote": 1, "so_venda": true },
+    { "id": "pao", "base": 16, "lote": 1, "so_venda": true },
+    { "id": "ensopado", "base": 26, "lote": 1, "so_venda": true },
+    { "id": "torta_abobora", "base": 26, "lote": 1, "so_venda": true },
+    { "id": "banquete", "base": 55, "lote": 1, "so_venda": true }
+  ],
+  "reacoes": [
+    { "marco": "horda_saqueada:*", "comida": 0.3, "madeira": 0.15 },
+    { "marco": "festival_era*", "comida": 0.2 },
+    { "marco": "minas_abertas", "pedra": -0.2, "cristal": -0.15 },
+    { "marco": "tratado:rota_pedra", "pedra": -0.3 },
+    { "marco": "tratado:pacto_saber", "cristal": -0.25 },
+    { "marco": "evento:lua_sangue", "cristal": 0.4, "comida": 0.1 },
+    { "marco": "evento:meteoros", "cristal": -0.3 }
+  ],
+  "encomendas": [
+    { "id": "cristal", "nome": "Saco de cristal das minas (5)", "custo": { "ouro": 70 }, "ganho": { "cristal": 5 }, "dias": 3 },
+    { "id": "peixe_dourado", "nome": "Peixe dourado do litoral", "custo": { "ouro": 45 }, "ganho": { "peixe_dourado": 1 }, "dias": 3 },
+    { "id": "sementes", "nome": "Caixa de sementes (5 de cada)", "custo": { "ouro": 40 }, "ganho": { "semente_nabo": 5, "semente_trigo": 5, "semente_abobora": 5 }, "dias": 3 },
+    { "id": "pedra_lavrada", "nome": "Pedra lavrada de Pedra-Funda (40)", "custo": { "ouro": 110 }, "ganho": { "pedra": 40 }, "dias": 6 },
+    { "id": "tabuas", "nome": "Tábuas do sul (40 madeira)", "custo": { "ouro": 80 }, "ganho": { "madeira": 40 }, "dias": 6 }
+  ]
+}

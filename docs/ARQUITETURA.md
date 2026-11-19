@@ -185,6 +185,18 @@ O plano da 2.0 está em `docs/VISAO_2.0.md`.
 - **Interface**: `Painel::Vizinhos` na pilha da cena (tecla T); `Hud::acoesVizinhos` dá a ordem das linhas (tratados e missões de cada povo), a mesma do teclado e dos ids de clique.
 - **Testes**: 213 (9 novos da fase 19) e o roteiro com a etapa 56 (T abre os vizinhos, E assina a Rota da Pedra, o clique aceita a missão da Ordem).
 
+## Fase 20 — Mercado vivo, Livro do Reino e acessibilidade (versão 1.12)
+
+- **Regras puras**: `Game/Kingdom/Mercado.h` (`BemDef`, `EncomendaDef`, `DadosMercado`, `EstadoMercado`; `precoUnitario`, `sorteDoDia`, `precoCompra`/`precoVenda` arredondando sempre a favor do mercado, `negociar` e `noiteDoMercado`). `lerMercado` recusa dados em que o impacto de um lote vença a taxa (o que daria lucro comprando e vendendo).
+- **No mundo** (`Game/World/WorldMercado.cpp`): `World::mercado`, `bensNoMercado`, `podeNegociar` (o motivo vira a dica do painel), `comprarNoMercado`/`venderNoMercado`, `encomendar`, `tendencia`. `marcar()` chama `reagirMercado` junto de `reagirAoMarco`; `manhaDoMercado` (depois da virada do dia) recupera a pressão, grava o preço da manhã e entrega as encomendas na visita do Corvin. O mercado antigo (`precoLote`/`comprarLote`) saiu; a construção agora tem a ação `mercado`.
+- **Alas**: `AlaDef::acao` (`AcaoAla` em `Castelo.h`), `World::podeAgirAla`/`agirAla`/`manhaDasAlas`; `guardaTreinada` entra em `soldadosDosPostos` e zera depois da horda.
+- **Áudio**: `ke::Ambiente` e `Sintetizador::definirAmbiente`; os sons de fundo são vozes de efeito agendadas por lugar (o volume dos efeitos manda neles). `sonsDeAmbiente()` conta o que tocou, para os testes.
+- **Entrada**: camada de ações no `ke::Input` (`mapear`, `pressionouAcao`, `segurandoAcao`, `ultimaPressionada`). `Game/UI/Teclas.h` lista as ações e as teclas padrão; `Contexto::aplicarOpcoes` aplica o `config.json`. A cena pergunta pela ação (as setas, Espaço e as teclas dentro dos painéis continuam fixas). A tecla do som (no `Application`) também segue a ação.
+- **Livro do Reino**: `ABAS_LIVRO` na cena liga cada aba a um `Painel` e a uma ação; `abrirAba`, `abaAberta` e `entradaLivro` (Tab e o clique na faixa). O HUD desenha a faixa (`abasLivro`, ids 7100+) e o botão (id 7000).
+- **Interface**: `Hud::areaDica`/`desenharDica` (a dica vai por cima de tudo), `definirEscalaTexto` (texto grande nas conversas, avisos e dicas), `marcaSimNao` (✓/✗ desenhados com pixels). `Opcoes` ganhou `teclas`, `textoGrande` e `velocidadeTexto`.
+- **Save v15**: arquivo novo `market.json` (pressão, histórico, negócios do dia, encomendas, totais). As ações das alas foram para o `castle.json` (campos novos com padrão). Saves v1 a v14 começam com o mercado calmo.
+- **Testes**: 224 (11 novos: 9 do mercado e das alas e 2 da engine, ambiência e teclas) e o roteiro com a etapa 57 (mercado pela tecla, compra e venda, abas pelo clique e pelo Tab, o botão do Livro, texto grande com dica e a troca de tecla nos Controles).
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

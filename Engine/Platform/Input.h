@@ -1,5 +1,7 @@
 #pragma once
 #include <array>
+#include <map>
+#include <string>
 
 #include <SDL3/SDL_scancode.h>
 #include <glm/vec2.hpp>
@@ -19,6 +21,7 @@ public:
         clicou_.fill(false);
         moveu_ = false;
         roda_ = 0.0f;
+        ultima_ = SDL_SCANCODE_UNKNOWN;
     }
     void soltarTudo() {
         segurando_.fill(false);
@@ -29,6 +32,24 @@ public:
 
     bool segurando(SDL_Scancode t) const { return segurando_[t] || simuladoSeg_[t]; }
     bool pressionou(SDL_Scancode t) const { return pressionou_[t]; }
+
+    // Ações com tecla trocável: o jogo dá nome e tecla a cada uma; trocar a tecla não muda o código que pergunta pela ação
+    void mapear(const std::string& acao, SDL_Scancode t) { acoes_[acao] = t; }
+    SDL_Scancode tecla(const std::string& acao, SDL_Scancode padrao = SDL_SCANCODE_UNKNOWN) const {
+        const auto it = acoes_.find(acao);
+        return it == acoes_.end() ? padrao : it->second;
+    }
+    bool pressionouAcao(const std::string& acao) const {
+        const SDL_Scancode t = tecla(acao);
+        return t != SDL_SCANCODE_UNKNOWN && pressionou_[t];
+    }
+    bool segurandoAcao(const std::string& acao) const {
+        const SDL_Scancode t = tecla(acao);
+        return t != SDL_SCANCODE_UNKNOWN && segurando(t);
+    }
+    const std::map<std::string, SDL_Scancode>& acoes() const { return acoes_; }
+    // A última tecla apertada neste passo (para o jogador escolher uma tecla nova); UNKNOWN = nenhuma
+    SDL_Scancode ultimaPressionada() const { return ultima_; }
 
     // Mouse em coordenadas da tela interna (640×360), já descontadas as faixas pretas e a escala
     glm::vec2 mouse() const { return mouse_; }
@@ -43,7 +64,7 @@ public:
     }
 
     // Para roteiros de teste: aperta/segura teclas e clica como se fosse o jogador
-    void simularToque(SDL_Scancode t) { pressionou_[t] = true; }
+    void simularToque(SDL_Scancode t) { pressionou_[t] = true, ultima_ = t; }
     void simularSegurar(SDL_Scancode t, bool s) { simuladoSeg_[t] = s; }
     void limparSimulacao() { simuladoSeg_.fill(false); }
     void simularMouse(glm::vec2 p) { mouse_ = p, moveu_ = true; }
@@ -63,6 +84,8 @@ private:
         int x = 0, y = 0, largura = 0, altura = 0, baseL = 640, baseA = 360;
     } tela_;
     float densidade_ = 1.0f;
+    std::map<std::string, SDL_Scancode> acoes_;
+    SDL_Scancode ultima_ = SDL_SCANCODE_UNKNOWN;
 };
 
 }

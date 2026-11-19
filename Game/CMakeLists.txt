@@ -8,7 +8,7 @@ add_library(KingdomGame STATIC
     Kingdom/Conselho.cpp
     Kingdom/Defesa.cpp
     Kingdom/Guilda.cpp
-    Kingdom/Cotidiano.cpp Kingdom/Castelo.cpp Kingdom/Povo.cpp Kingdom/Clima.cpp Kingdom/Faccoes.cpp
+    Kingdom/Cotidiano.cpp Kingdom/Castelo.cpp Kingdom/Povo.cpp Kingdom/Clima.cpp Kingdom/Faccoes.cpp Kingdom/Mercado.cpp
     NPC/Npc.cpp
     Economy/Economia.cpp
     Combat/Combate.cpp
@@ -27,6 +27,7 @@ add_library(KingdomGame STATIC
     World/WorldCastelo.cpp
     World/WorldPovo.cpp
     World/WorldFaccoes.cpp
+    World/WorldMercado.cpp
     World/Regioes.cpp
     Save/SaveSystem.cpp
     Lore/Lore.cpp)

@@ -12,6 +12,7 @@
 #include "Game/Kingdom/Castelo.h"
 #include "Game/Kingdom/Cotidiano.h"
 #include "Game/Kingdom/Faccoes.h"
+#include "Game/Kingdom/Mercado.h"
 #include "Game/Kingdom/Povo.h"
 #include "Game/Kingdom/Guilda.h"
 #include "Game/Lore/Lore.h"
@@ -24,7 +25,7 @@ namespace koa {
 // v8: hordas e a defesa do portão; v9: guilda, expedições e relíquias; v10: vida cotidiana (horta, pratos, presentes);
 // v11: o castelo (alas) e o brasão da linhagem; v12: a semente do sorteio (cada save segue a própria sorte);
 // v13: o povo com nome (people.json); v14: vizinhos, tratados, reputação e desvios (factions.json)
-constexpr int VERSAO_SAVE = 14;
+constexpr int VERSAO_SAVE = 15;
 
 struct EstadoConstrucao {
     std::string id, def;
@@ -126,6 +127,12 @@ struct DadosSave {
     Reputacao reputacao;
     std::map<std::string, int> desvios;
     std::string suspeito;
+    // market.json (v15). Saves antigos: o mercado começa sem pressão e sem histórico
+    bool temMercado = false;
+    EstadoMercado mercado;
+    // Fase 20, no castle.json: as ações das alas (campos novos com padrão: não mudam a versão sozinhos)
+    std::map<std::string, int> ultimaAcaoAla;
+    int guardaTreinada = 0, emprestimoVolta = 0, emprestimoValor = 0, emprestimoDia = 0;
 };
 
 // Saves em pastas (Saves/Save_001/*.json) com backup antes de sobrescrever

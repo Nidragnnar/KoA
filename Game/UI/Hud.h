@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <deque>
 #include <map>
 #include <string>
@@ -77,6 +78,21 @@ public:
     // "t:<tratado>" e "m:<missão>" (ids de clique = índice nesta lista)
     std::vector<std::string> acoesVizinhos() const;
     void painelVizinhos(ke::Renderer2D& r, const World& w, int sel, float tempo);
+    // Fase 20: o mercado (linhas = World::bensNoMercado; ids de clique: 2k comprar, 2k+1 vender, 2000+k a linha;
+    // no Corvin, abas 900/901 e as encomendas pelo índice)
+    void painelMercado(ke::Renderer2D& r, const World& w, bool corvin, int aba, int sel, int rolagem, float tempo);
+    static int linhasMercado() { return 12; }
+    void marcaSimNao(ke::Renderer2D& r, glm::vec2 pos, bool sim);  // ✓ ou ✗ desenhados (além da cor)
+    // Fase 20: o Livro do Reino (faixa de abas embaixo do painel; ids de clique 7100+aba) e o botão no canto (id 7000)
+    static constexpr int ID_LIVRO = 7000, ID_ABA = 7100;
+    void abasLivro(ke::Renderer2D& r, const std::vector<std::string>& nomes, const std::vector<std::string>& teclas, int ativa);
+    // Dicas ao passar o mouse: as áreas entram enquanto a interface é desenhada; a dica vai por cima de tudo no fim
+    void areaDica(glm::vec2 pos, glm::vec2 tam, std::string texto) { dicas_.push_back({pos, pos + tam, std::move(texto)}); }
+    void desenharDica(ke::Renderer2D& r, glm::vec2 mouse);
+    void limparDicas() { dicas_.clear(); }
+    void definirEscalaTexto(int e) { escalaTexto_ = std::clamp(e, 1, 2); }
+    int escalaTexto() const { return escalaTexto_; }
+    void definirTeclaLivro(std::string t) { teclaLivro_ = std::move(t); }
 
     // Onde cada opção dos painéis apareceu no último quadro (a cena limpa antes de desenhar)
     Cliques cliques;
@@ -106,6 +122,13 @@ private:
     std::deque<Mensagem> historico_;
     std::string quandoVisto_;  // o relógio do último quadro, já escrito (para datar as mensagens)
     float tempoDica_ = 12.0f;
+    struct Dica {
+        glm::vec2 min, max;
+        std::string texto;
+    };
+    std::vector<Dica> dicas_;
+    int escalaTexto_ = 1;  // fase 20: 2 = texto grande (conversas, avisos e dicas)
+    std::string teclaLivro_ = "Tab";
 };
 
 }

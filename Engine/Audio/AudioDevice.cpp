@@ -46,6 +46,11 @@ void AudioDevice::definir(float era, float noite, float tensao) {
     synth_.definirTensao(tensao);
 }
 
+void AudioDevice::definirAmbiente(Ambiente a) {
+    std::lock_guard lk(trava_);
+    synth_.definirAmbiente(a);
+}
+
 void AudioDevice::definirVolumes(float musica, float efeitos) {
     std::lock_guard lk(trava_);
     synth_.definirVolumes(musica, efeitos);

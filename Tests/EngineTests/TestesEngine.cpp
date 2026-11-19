@@ -176,3 +176,57 @@ TEST(Particulas, MorremNoFimDaVida) {
     s.atualizar(0.3f);
     EXPECT_TRUE(s.particulas().empty());
 }
+
+// Fase 20: cada lugar tem os seus sons de fundo (e o volume dos efeitos manda neles)
+TEST(Audio, CadaRegiaoTemAmbienciaPropria) {
+    struct Caso {
+        ke::Ambiente a;
+        float noite, era;
+        std::vector<const char*> espera;
+    };
+    const Caso casos[] = {{ke::Ambiente::Vilarejo, 1.0f, 0.0f, {"grilo"}},
+                          {ke::Ambiente::Vilarejo, 0.0f, 2.0f, {"passaro"}},
+                          {ke::Ambiente::Floresta, 0.0f, 0.0f, {"corvo"}},
+                          {ke::Ambiente::FlorestaEncantada, 0.0f, 3.0f, {"passaro", "brilho"}},
+                          {ke::Ambiente::Cripta, 0.0f, 0.0f, {"gota_eco"}},
+                          {ke::Ambiente::Minas, 0.0f, 0.0f, {"gota", "estrondo"}}};
+    std::vector<std::map<std::string, int>> todos;
+    for (const Caso& c : casos) {
+        ke::Sintetizador s(48000, 11);
+        s.definirVolumes(0.0f, 1.0f);  // só os efeitos (os sons de fundo vão com eles)
+        s.definirAmbiente(c.a);
+        s.definirNoite(c.noite);
+        s.definirEra(c.era);
+        EXPECT_GT(energia(s, 48000 * 40), 1e-8);
+        for (const char* tipo : c.espera) EXPECT_GT(s.sonsDeAmbiente().count(tipo) ? s.sonsDeAmbiente().at(tipo) : 0, 0) << tipo;
+        todos.push_back(s.sonsDeAmbiente());
+    }
+    // Lugares diferentes, sons diferentes (a floresta não soa como as minas)
+    EXPECT_NE(todos[2], todos[5]);
+    EXPECT_NE(todos[4], todos[5]);
+    ke::Sintetizador mudo(48000, 11);
+    mudo.definirVolumes(0.0f, 1.0f);
+    mudo.definirAmbiente(ke::Ambiente::Nenhum);
+    energia(mudo, 48000 * 5);
+    EXPECT_TRUE(mudo.sonsDeAmbiente().empty()) << "no título, nenhum som de fundo";
+}
+
+// Fase 20: as ações do jogo têm tecla trocável
+TEST(Input, AcoesSeguemATeclaEscolhida) {
+    ke::Input in;
+    in.mapear("livro", SDL_SCANCODE_TAB);
+    EXPECT_FALSE(in.pressionouAcao("livro"));
+    in.simularToque(SDL_SCANCODE_TAB);
+    EXPECT_TRUE(in.pressionouAcao("livro"));
+    EXPECT_EQ(in.ultimaPressionada(), SDL_SCANCODE_TAB);
+    in.fimDoPasso();
+    in.mapear("livro", SDL_SCANCODE_O);
+    in.simularToque(SDL_SCANCODE_TAB);
+    EXPECT_FALSE(in.pressionouAcao("livro")) << "a tecla antiga não vale mais";
+    in.simularToque(SDL_SCANCODE_O);
+    EXPECT_TRUE(in.pressionouAcao("livro"));
+    EXPECT_FALSE(in.pressionouAcao("nao_existe"));
+    EXPECT_EQ(in.tecla("som", SDL_SCANCODE_M), SDL_SCANCODE_M) << "sem mapa, o padrão";
+    in.simularSegurar(SDL_SCANCODE_O, true);
+    EXPECT_TRUE(in.segurandoAcao("livro"));
+}

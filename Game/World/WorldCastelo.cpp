@@ -55,4 +55,87 @@ std::string World::requisitoProximoNivel(const BuildingData& b) const {
     return prox->requerTexto.empty() ? "Ainda não é hora de reconstruir." : prox->requerTexto;
 }
 
+// ---------- Fase 20: ações das alas ----------
+
+int World::diasParaAgir(const std::string& id) const {
+    const AlaDef* a = dados().castelo.ala(id);
+    const auto it = ultimaAcaoAla.find(id);
+    if (!a || !a->acao || it == ultimaAcaoAla.end()) return 0;
+    return std::max(0, it->second + a->acao->recarga - relogio.dia);
+}
+
+std::string World::podeAgirAla(const std::string& id) const {
+    const AlaDef* a = dados().castelo.ala(id);
+    if (!a || !a->acao) return "Esta ala não tem o que fazer.";
+    if (std::ranges::find(alas, id) == alas.end()) return "Erga a ala primeiro.";
+    if (const int d = diasParaAgir(id); d > 0) return std::format("De novo em {} dia{}.", d, d == 1 ? "" : "s");
+    if (a->acao->emprestimo > 0 && emprestimoVolta > 0) return "O empréstimo anterior ainda não voltou.";
+    if (a->acao->decifrar &&
+        std::ranges::none_of(dados().lore.pistas, [&](const PistaDef& p) { return !marcos.contains("pista:" + p.id) && !marcos.contains("decifrou:" + p.id); }))
+        return "Não sobrou fragmento para decifrar.";
+    if (!inventario.tem(a->acao->custo)) return "Faltam recursos.";
+    return "";
+}
+
+bool World::agirAla(const std::string& id) {
+    const std::string falta = podeAgirAla(id);
+    const AlaDef* a = dados().castelo.ala(id);
+    const BuildingData* c = reino.construcao("castelo");
+    const glm::vec2 onde = c ? pontoPorta(*c) : jogador.pos;
+    if (!falta.empty()) {
+        eventos_.push_back({EventoJogo::Tipo::Aviso, onde, "", "", 0, falta});
+        return false;
+    }
+    const AcaoAla& x = *a->acao;
+    inventario.pagar(x.custo);
+    ultimaAcaoAla[id] = relogio.dia;
+    std::string texto = x.nome + ".";
+    if (x.felicidade != 0.0f) {
+        estado.felicidade = std::clamp(estado.felicidade + x.felicidade, 0.0f, 100.0f);
+        texto += std::format(" O povo se alegra ({:+.0f}).", x.felicidade);
+    }
+    if (x.soldadosHorda > 0) {
+        guardaTreinada += x.soldadosHorda;
+        texto += std::format(" {} soldados a mais na próxima horda.", guardaTreinada);
+    }
+    if (x.emprestimo > 0) {
+        emprestimoValor = x.custo.contains("ouro") ? x.custo.at("ouro") : 0;
+        emprestimoVolta = x.emprestimo;
+        emprestimoDia = relogio.dia + x.diasEmprestimo;
+        texto += std::format(" Volta {} de ouro no dia {}.", emprestimoVolta, emprestimoDia);
+    }
+    if (x.decifrar) {
+        // O primeiro fragmento que ainda falta (na ordem dos dados), de preferência um que já dá para achar
+        const PistaDef *alvo = nullptr, *depois = nullptr;
+        for (const PistaDef& p : dados().lore.pistas) {
+            if (marcos.contains("pista:" + p.id) || marcos.contains("decifrou:" + p.id)) continue;
+            if (p.requer.empty() || marcos.contains(p.requer)) {
+                alvo = &p;
+                break;
+            }
+            if (!depois) depois = &p;
+        }
+        if (!alvo) alvo = depois;
+        if (alvo) {
+            const std::string onde2 = alvo->regiao.empty() ? "nas mãos de um mercador viajante" : "em " + nomeRegiao(alvo->regiao);
+            texto += std::format(" Os escribas apontam: \"{}\", {}.", alvo->titulo, onde2);
+            marcar("decifrou:" + alvo->id, alvo->titulo, true);
+        }
+    }
+    eventos_.push_back({EventoJogo::Tipo::Aviso, onde, "bom", "", 0, texto});
+    marcar("ala_acao:" + x.id, x.nome, true);
+    reagirAoMarco("ala_acao:" + x.id);  // os vizinhos e a fama reagem a cada vez (o marco só conta na primeira)
+    return true;
+}
+
+// O empréstimo volta: com juros se o povo está bem; só o que foi emprestado se anda triste
+void World::manhaDasAlas(std::vector<std::string>& notas) {
+    if (emprestimoVolta <= 0 || relogio.dia < emprestimoDia) return;
+    const int volta = estado.felicidade >= 40.0f ? emprestimoVolta : emprestimoValor;
+    inventario.adicionar("ouro", volta);
+    ultimoRelatorio.variacoes.push_back({"ouro|empréstimo", volta});
+    notas.push_back(volta > emprestimoValor ? std::format("As famílias pagaram o empréstimo: {} de ouro voltaram ao tesouro.", volta)
+                                            : std::format("O povo anda triste: o empréstimo voltou sem juros ({} de ouro).", volta));
+    emprestimoVolta = emprestimoValor = emprestimoDia = 0;
+}
 }

@@ -40,26 +40,6 @@ bool World::forjar(const std::string& id) {
 
 int World::nivelMercado() const { return static_cast<int>(efeitoMaximo("nivel_mercado")); }
 
-int World::precoLote(const std::string& recurso) const {
-    const int n = nivelMercado();
-    if (n == 0) return 0;
-    const int base = recurso == "pedra" ? 30 : recurso == "madeira" ? 20 : 0;
-    static const float desconto[] = {1.0f, 1.0f, 0.85f, 0.7f};
-    return static_cast<int>(base * desconto[std::min(n, 3)]);
-}
-
-bool World::comprarLote(const std::string& recurso) {
-    const int preco = precoLote(recurso);
-    if (preco <= 0) return false;
-    if (!inventario.remover("ouro", preco)) {
-        eventos_.push_back({EventoJogo::Tipo::Aviso, jogador.pos, "", "", 0, std::format("Precisa de {} de ouro.", preco)});
-        return false;
-    }
-    inventario.adicionar(recurso, 10);
-    eventos_.push_back({EventoJogo::Tipo::Ganhou, jogador.pos - glm::vec2(0, 10), "mercado", recurso, 10});
-    return true;
-}
-
 void World::criarInimigo(const std::string& tipo, glm::ivec2 tile) {
     criarInimigoEm(tipo, {tile.x * LADO + LADO / 2.0f, tile.y * LADO + 12.0f});
 }
