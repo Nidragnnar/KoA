@@ -60,6 +60,7 @@ void World::atualizarMissoes() {
             dar(reg);
             for (auto& [id, g] : guardadas_) dar(g.reg);
         }
+        if (!m.faccao.empty()) mudarRelacao(m.faccao, static_cast<float>(m.relacao));  // fase 19
         eventos_.push_back({EventoJogo::Tipo::MissaoConcluida, jogador.pos, m.id, m.item, 0, m.nome});
         marcar("missao:" + m.id, m.nome);
     }

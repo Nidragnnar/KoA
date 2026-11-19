@@ -21,6 +21,7 @@ const char* CONTROLES[][2] = {
     {"C", "Crônicas do Reino e fragmentos"},
     {"N", "mensagens: reler os últimos avisos"},
     {"P", "o povo: quem mora em Valdren"},
+    {"T", "os vizinhos: tratados, missões e a sua fama"},
     {"F5", "salvar"},
     {"M", "som ligado/desligado"},
     {"F11", "tela cheia"},
@@ -71,14 +72,14 @@ void TelaOpcoes::desenhar(ke::Renderer2D& r, const ke::BitmapFont& f, const Cont
     r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.6f});
     cliques_.limpar();
     if (controles_) {
-        const glm::vec2 p{80, 20}, s{480, 320};  // cresce com a lista (19 linhas)
+        const glm::vec2 p{80, 20}, s{480, 320};  // cresce com a lista (20 linhas)
         desenharPainel(r, p, s);
         f.desenharCentralizado(r, "Controles", {320, p.y + 12}, cor::ouro);
         float y = p.y + 30;
         for (const auto& [tecla, acao] : CONTROLES) {
             f.desenhar(r, tecla, {p.x + 20, y}, cor::ouro);
             f.desenhar(r, acao, {p.x + 124, y}, cor::texto);
-            y += 14;
+            y += 13;
         }
         f.desenharCentralizado(r, "Esc ou clique voltar", {320, p.y + s.y - 12}, cor::apagado);
         return;

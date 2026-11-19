@@ -6,7 +6,7 @@ era a era, até a **Alta Fantasia**.
 
 Engine própria em **C++20 + SDL3 + OpenGL 3.3** (Kingdom Engine), com EnTT, Dear ImGui, nlohmann/json e GoogleTest.
 
-## Versão 1.10
+## Versão 1.11
 
 A 2.0 está em andamento (identidade e plano em `docs/VISAO_2.0.md`). A fase 9 trouxe as Crônicas do Reino
 (tecla C), os títulos do herdeiro, o mercador viajante, três monumentos e o começo do mistério da Queda das Cinzas.
@@ -41,6 +41,11 @@ A fase 18 deu nome ao povo e trouxe o clima: cada habitante tem família, profis
 de ser e um desejo; desejos realizados viram páginas nas Crônicas, e quem cansa de esperar vai embora (e o relatório
 diz quem e por quê). E perto de um aldeão abre a ficha dele, e P mostra o povo inteiro. Cada dia tem o seu tempo:
 a chuva rega a horta, a neve deixa todo mundo mais lento, a neblina esconde a horda e a tempestade traz raios.
+A fase 19 trouxe os vizinhos e a fama do herdeiro (tecla T): os Anões de Pedra-Funda, a Ordem Arcana e o Culto das
+Cinzas reagem ao que acontece em Valdren (o pacto do Golem, as decisões do conselho, a floresta purificada...), cada
+um com tratados que pedem confiança e missões próprias; a Ordem e o Culto são rivais. O jeito de governar vira fama
+(justo ou tirano, generoso ou avarento, devoto ou arcano), que muda títulos, falas e o humor dos vizinhos. E o conselho
+ganhou intriga: um conselheiro descontente desvia ouro em silêncio, até alguém descobrir.
 
 As 8 fases do plano de arquitetura da 1.0 estão feitas:
 
@@ -64,6 +69,7 @@ As 8 fases do plano de arquitetura da 1.0 estão feitas:
 | B / K / R / G / L / C | obras / reino / terras do reino / Conselho Real / diário / Crônicas |
 | N | mensagens (os últimos avisos, com dia e hora) |
 | P | o povo (todos os habitantes; clique para a ficha) |
+| T | os vizinhos: tratados, missões das facções e a fama do herdeiro |
 | Esc | menu (salvar, opções, controles, título, sair) |
 | F5 | salvar |
 | F11 | tela cheia |

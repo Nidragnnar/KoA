@@ -2,6 +2,12 @@
   "_como_funciona": "Para cada morador vale a PRIMEIRA entrada cujas condições batem (de cima para baixo). Condições: primeiro_encontro, ja_falou_hoje, periodo (manha/tarde/noite), estacao (primavera/verao/outono/inverno), casa_nivel_min, afinidade_min, era_min, marco (só depois do acontecimento), sem_marco (só antes), pistas_min (fragmentos da Queda achados), festival (na hora da festa), evento (acontecimento do dia: lua_sangue, aurora, meteoros). 'uma_vez': a entrada vira lembrança e não se repete. {titulo} vira o título atual do herdeiro.",
   "dialogos": {
     "bram": [
+      { "id": "bram_fama_justo", "uma_vez": true, "se": { "marco": "fama:justo" }, "falas": [
+        "Os anões de Pedra-Funda perguntaram de você. Disseram que o herdeiro de Valdren 'pesa certo'.",
+        "Vindo de anão, isso é quase uma declaração de amor."] },
+      { "id": "bram_fama_tirano", "uma_vez": true, "se": { "marco": "fama:tirano" }, "falas": [
+        "Seu pai também começou apertando o povo. Lembra como terminou?",
+        "Martelo que bate demais racha a bigorna, {titulo}."] },
       { "id": "bram_conhece", "se": { "primeiro_encontro": true }, "falas": [
         "Hm. Então o herdeiro voltou.",
         "Espero que saiba segurar um martelo melhor do que seu pai segurou a coroa.",
@@ -37,6 +43,15 @@
       { "se": {}, "falas": ["A forja está fria há sete invernos. Ferro não cai do céu, majestade.", "Se as criaturas da floresta vierem de novo, quero uma lâmina decente na mão."] }
     ],
     "edda": [
+      { "id": "edda_fama_generoso", "uma_vez": true, "se": { "marco": "fama:generoso" }, "falas": [
+        "Na taverna só se fala de você. 'O herdeiro que divide o pão', dizem.",
+        "Cuidado, que fama boa atrai pedinte. Mas hoje a rodada é por minha conta."] },
+      { "id": "edda_fama_avarento", "uma_vez": true, "se": { "marco": "fama:avarento" }, "falas": [
+        "Ouvi um viajante te chamar de 'mão de pedra'. Não gostei. Mas também não discuti.",
+        "O povo conta cada moeda que você guarda, {titulo}."] },
+      { "id": "edda_fama_tirano", "uma_vez": true, "se": { "marco": "fama:tirano" }, "falas": [
+        "As conversas param quando você entra na taverna. Notou?",
+        "Não é respeito. É medo. São coisas diferentes."] },
       { "id": "edda_conhece", "se": { "primeiro_encontro": true }, "falas": [
         "Majestade! Ninguém aqui acreditava que você voltaria. Eu acreditava. Mais ou menos.",
         "Sou Edda. Tinha uma taverna ali na praça, antes do fogo.",
@@ -72,6 +87,15 @@
       { "se": {}, "falas": ["Dizem que a floresta engole quem entra depois do anoitecer.", "Mas dizem tanta coisa... Disseram que você nunca voltaria!"] }
     ],
     "maelis": [
+      { "id": "maelis_fama_devoto", "uma_vez": true, "se": { "marco": "fama:devoto" }, "falas": [
+        "A Ordem Arcana me mandou uma carta. A primeira em vinte anos.",
+        "Dizem que Valdren voltou a acender velas. Eu disse que foi você que acendeu."] },
+      { "id": "maelis_fama_arcano", "uma_vez": true, "se": { "marco": "fama:arcano" }, "falas": [
+        "Você mexe com coisas que a Chama deixou dormir. Sinto o cheiro de cinza em você.",
+        "O Culto vai te amar por isso. Eu não."] },
+      { "id": "maelis_culto_aliado", "uma_vez": true, "se": { "marco": "faccao_aliada:culto" }, "falas": [
+        "Os homens de cinza andam pela praça como se fossem donos dela.",
+        "Fui uma da Ordem, {titulo}. Sei o que eles querem com a Chama. Não é o mesmo que você."] },
       { "id": "maelis_conhece", "se": { "primeiro_encontro": true }, "falas": [
         "A luz não morreu, herdeiro. Apenas dorme. Como você dormiu no exílio.",
         "Sou Maelis. Cuido dos túmulos e dos nomes que ninguém mais lembra.",
@@ -117,6 +141,12 @@
       { "se": {}, "falas": ["Os mortos não pedem muito. Só que alguém lembre deles.", "O castelo ainda guarda segredos sob o entulho. Um dia vamos precisar deles."] }
     ],
     "oswin": [
+      { "id": "oswin_fama_justo", "uma_vez": true, "se": { "marco": "fama:justo" }, "falas": [
+        "Servi três reis. Nenhum deles ouvia o povo antes de decidir.",
+        "Você ouve. Não sei se isso é sabedoria ou juventude, mas o povo chama de justiça."] },
+      { "id": "oswin_desvio", "uma_vez": true, "se": { "marco": "decisao:desvio:prender" }, "falas": [
+        "Prender um conselheiro. Seu avô teria feito o mesmo.",
+        "Seu pai teria fingido não ver. Foi assim que o cofre de Valdren ficou vazio da primeira vez."] },
       { "id": "oswin_conhece", "se": { "primeiro_encontro": true }, "falas": [
         "Alto lá! ...Ah. É você, majestade. Perdão, a vista já não é a mesma.",
         "Oswin, da Guarda Real. O último dela, na verdade.",
@@ -163,6 +193,12 @@
       { "se": {}, "falas": ["Mantenha a tocha acesa e o machado por perto.", "A estrada do leste leva à floresta amaldiçoada. Ainda não é hora de ir lá."] }
     ],
     "tilda": [
+      { "id": "tilda_fama_generoso", "uma_vez": true, "se": { "marco": "fama:generoso" }, "falas": [
+        "Minha mãe disse que no tempo do seu avô ninguém passava fome em Valdren.",
+        "Acho que está voltando a ser assim. Obrigada, {titulo}."] },
+      { "id": "tilda_fama_tirano", "uma_vez": true, "se": { "marco": "fama:tirano" }, "falas": [
+        "O imposto levou metade da colheita. A outra metade, a gente esconde.",
+        "...Eu não disse isso. Você não ouviu."] },
       { "id": "tilda_conhece", "se": { "primeiro_encontro": true }, "falas": [
         "Herdeiro. Tilda. Planto o que der.",
         "A terra aqui é escura, mas não está morta. Ela só precisa de mãos."] },
@@ -193,6 +229,12 @@
       { "se": {}, "falas": ["Comida guardada é gente viva.", "Cogumelos na borda da floresta. Os escuros, não. Os escuros, nunca."] }
     ],
     "corvin": [
+      { "id": "corvin_anoes", "uma_vez": true, "se": { "marco": "faccao_aliada:anoes" }, "falas": [
+        "Anões de Pedra-Funda chamando você de amigo? Em trinta anos de estrada nunca vi isso.",
+        "Se precisar de alguém para levar a pedra deles ao mercado, sabe onde me achar. Comissão pequena. Quase."] },
+      { "id": "corvin_fama_avarento", "uma_vez": true, "se": { "marco": "fama:avarento" }, "falas": [
+        "Um rei que conta moedas como mercador! Finalmente alguém que fala minha língua.",
+        "Mas cuidado: o povo não é freguês. Freguês volta. Povo vai embora."] },
       { "id": "corvin_conhece", "se": { "primeiro_encontro": true }, "falas": [
         "Ora, ora! Então é verdade: há um herdeiro em Valdren!",
         "Corvin, mercador, ao seu dispor. A estrada leste ficou fechada por anos. Alguém a limpou, e eu sigo o ouro.",

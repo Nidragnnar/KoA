@@ -182,7 +182,8 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
     // Fase 18: o povo com nome e o clima
     for (const auto& [arq, ler] : std::initializer_list<std::pair<const char*, std::function<bool(const nlohmann::json&)>>>{
              {"NPCs/povo.json", [&](const nlohmann::json& jj) { return lerPovo(jj, povo, erro); }},
-             {"World/clima.json", [&](const nlohmann::json& jj) { return lerClima(jj, clima, erro); }}}) {
+             {"World/clima.json", [&](const nlohmann::json& jj) { return lerClima(jj, clima, erro); }},
+             {"Kingdom/faccoes.json", [&](const nlohmann::json& jj) { return lerFaccoes(jj, faccoes, erro); }}}) {
         const auto texto = ke::fs::lerTexto(pasta / arq);
         const auto jj = texto ? nlohmann::json::parse(*texto, nullptr, false) : nlohmann::json();
         if (!texto || jj.is_discarded()) {
@@ -191,6 +192,11 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
         }
         if (!ler(jj)) return false;
     }
+    for (const MissaoDef& m : missoes)
+        if (!m.faccao.empty() && !faccoes.faccao(m.faccao)) {
+            if (erro) *erro = "missão " + m.id + " de facção desconhecida: " + m.faccao;
+            return false;
+        }
     for (const ProfissaoDef& p : povo.profissoes)
         if (!p.requer.empty() && !construcoes.contains(p.requer)) {
             if (erro) *erro = "profissão " + p.id + " pede construção inexistente: " + p.requer;

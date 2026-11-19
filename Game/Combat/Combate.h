@@ -43,6 +43,8 @@ struct MissaoDef {
     Custo recompensa;  // recursos (ouro, comida...)
     int amizade = 0;
     std::string item;  // equipamento dado de presente
+    std::string faccao;  // fase 19: missão de um povo vizinho (aceita no painel T; npc vazio)
+    int relacao = 0;     // quanto a relação com a facção sobe ao cumprir
 };
 
 bool lerCombate(const nlohmann::json& inimigos, const nlohmann::json& equipamentos, const nlohmann::json& missoes,

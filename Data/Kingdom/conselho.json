@@ -103,6 +103,21 @@
         "intendente": { "apoia": "banquete", "fala": "Um banquete e eles esquecem por um mês." },
         "marechal": { "apoia": "baixar", "fala": "Povo com fome é povo com raiva. Baixe." }
       } },
+    { "_desvio": "Fase 19: este caso não é sorteado; ele abre quando o desvio de ouro de um conselheiro descontente é descoberto (o nome vai no relatório da manhã).",
+      "id": "desvio", "titulo": "Ouro sumindo do cofre", "manual": true,
+      "texto": ["As contas do conselho não fecham: um dos conselheiros anda desviando ouro do reino. O relatório desta manhã diz quem."],
+      "opcoes": [
+        { "id": "prender", "nome": "Tirar do cargo e cobrar", "descricao": "O culpado sai do conselho e devolve metade do que levou. Os outros ficam mais leais (+5).",
+          "efeitos": { "felicidade": 1 } },
+        { "id": "perdoar", "nome": "Perdoar em segredo", "descricao": "O culpado jura lealdade (+30) e o desvio para. Mas fica a dúvida.",
+          "efeitos": {} },
+        { "id": "vigiar", "nome": "Fingir que não viu", "descricao": "O desvio continua, e alguém de fora parece saber demais.",
+          "efeitos": {} }
+      ],
+      "conselho": {
+        "marechal": { "apoia": "prender", "fala": "Ladrão de cofre é ladrão de reino." },
+        "intendente": { "apoia": "perdoar", "fala": "Todo mundo erra quando passa fome. Dê uma chance." }
+      } },
     { "id": "pregadores", "titulo": "Pregadores das cinzas",
       "requer": { "marco": "evento:lua_sangue" },
       "texto": ["Dois encapuzados pregam na praça que a Chama vai voltar, e que só quem a servir sobreviverá. Alguns param para ouvir."],

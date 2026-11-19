@@ -1474,13 +1474,14 @@ void Roteiro::noMundo(WorldScene& cena) {
             if (quadro_ == 640) {  // 600 quadros de chuva com o vilarejo cheio
                 verificar(ctx_.app.fps() >= 100.0, std::format("{:.0f} quadros por segundo com {} pessoas e chuva", ctx_.app.fps(), w.estado.populacao));
                 // Uma aldeã num lugar livre, parada para conversar
-                for (auto [e, p, a] : w.reg.view<Posicao, Aldeao>().each()) {
+                if (auto vista = w.reg.view<Posicao, Aldeao>(); vista.begin() != vista.end()) {
+                    const entt::entity e = *vista.begin();
+                    Posicao& p = vista.get<Posicao>(e);
                     p.v = {30.0f * 16 + 8, 25.0f * 16};
-                    a.espera = 99.0f;
+                    vista.get<Aldeao>(e).espera = 99.0f;
                     if (auto* mv = w.reg.try_get<Movimento>(e)) mv->caminho.clear();
                     w.jogador.pos = p.v + glm::vec2(0, 8);
                     w.jogador.dir = Direcao::Cima;
-                    break;
                 }
             }
             if (quadro_ == 645) in.simularToque(SDL_SCANCODE_E);
@@ -1510,7 +1511,38 @@ void Roteiro::noMundo(WorldScene& cena) {
             if (quadro_ == 742) proxima();
             return;
         }
-        case 56:
+        // ---------- Fase 19: os vizinhos, a reputação e a intriga ----------
+        case 56: {  // T abre os vizinhos: E assina a Rota da Pedra, o clique aceita a missão da Ordem; a fama aparece nas barras
+            if (cena.decisaoAberta() && quadro_ % 5 == 0) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 1) {
+                w.inventario.definir("ouro", 300);
+                w.mudarRelacao("anoes", 25.0f - w.relacaoCom("anoes"));
+                for (const char* m : {"decisao:refugiados:acolher", "decisao:panelaco:baixar"}) w.marcar(m, "", true);
+            }
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_T);
+            if (quadro_ == 14) {
+                verificar(cena.aberto(Painel::Vizinhos) && w.relogio.parado, "T abre os vizinhos e o relógio para");
+                capturar("93_vizinhos");
+            }
+            if (quadro_ == 16) in.simularToque(SDL_SCANCODE_E);  // a primeira linha: a Rota da Pedra
+            if (quadro_ == 24) {
+                const int ouro = w.inventario.quantidade("ouro");
+                verificar(w.tratados.contains("rota_pedra") && ouro == 260, std::format("E assina a Rota da Pedra (ouro {})", ouro));
+            }
+            if (quadro_ == 26) in.simularClique(ke::BotaoMouse::Esquerdo, {450, 141});  // a primeira missão da Ordem (coluna da direita)
+            if (quadro_ == 36) {
+                verificar(w.missoes.contains("floresta_doente"), "o clique aceita a missão da Ordem Arcana");
+                capturar("94_vizinhos_tratado");
+            }
+            if (quadro_ == 38) in.simularToque(SDL_SCANCODE_T);
+            if (quadro_ == 46) {
+                verificar(cena.pilha().empty(), "T fecha os vizinhos");
+                verificar(w.reputacao.justica >= 12.0f, std::format("as decisões justas pesam na fama (justiça {:+.0f})", w.reputacao.justica));
+            }
+            if (quadro_ == 60) proxima();
+            return;
+        }
+        case 57:
             w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();

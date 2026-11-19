@@ -53,6 +53,7 @@ struct DecisaoDef {
     std::vector<OpcaoDecisao> opcoes;
     std::map<std::string, std::pair<std::string, std::string>> conselho;  // cargo → (opção que apoia, o que diz)
     bool repetir = false;  // pode voltar depois de decidida
+    bool manual = false;   // fase 19: nunca é sorteado (o jogo abre quando acontece, como o desvio de ouro)
 
     const OpcaoDecisao* opcao(const std::string& qual) const;
 };

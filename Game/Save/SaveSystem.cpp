@@ -25,7 +25,7 @@ struct ModuloSave {
 };
 constexpr ModuloSave MODULOS[] = {{"npcs", 2},     {"relationships", 2}, {"quests", 4},  {"chronicles", 5}, {"regions", 6},
                                   {"council", 7},  {"defense", 8},       {"guild", 9},   {"life", 10},      {"castle", 11},
-                                  {"people", 13}};
+                                  {"people", 13}, {"factions", 14}};
 
 std::filesystem::path comSufixo(std::filesystem::path p, const char* sufixo) {
     p += sufixo;
@@ -125,12 +125,14 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
         jPovo.push_back({{"id", p.id}, {"nome", p.nome}, {"familia", p.familia}, {"profissao", p.profissao}, {"traco", p.traco},
                          {"desejo", p.desejo}, {"cumprido", p.cumprido}, {"chegou", p.chegou}, {"esperando", p.esperando}, {"variante", p.variante}});
     json pessoas = {{"habitantes", jPovo}, {"proximo", d.proximoHabitante}};
+    json vizinhos = {{"relacoes", d.relacoes}, {"tratados", d.tratados}, {"desvios", d.desvios}, {"suspeito", d.suspeito},
+                     {"reputacao", {{"justica", d.reputacao.justica}, {"generosidade", d.reputacao.generosidade}, {"devocao", d.reputacao.devocao}}}};
 
     const std::pair<const char*, const json*> arquivos[] = {
         {"player.json", &player}, {"inventory.json", &inv}, {"kingdom.json", &reino}, {"world.json", &mundo},
         {"npcs.json", &jNpcs}, {"relationships.json", &jRel}, {"quests.json", &quests}, {"chronicles.json", &cronicas},
         {"regions.json", &regioes}, {"council.json", &conselho}, {"defense.json", &defesa}, {"guild.json", &guilda}, {"life.json", &vida},
-        {"castle.json", &castelo}, {"people.json", &pessoas},
+        {"castle.json", &castelo}, {"people.json", &pessoas}, {"factions.json", &vizinhos},
         {"metadata.json", &meta}};  // metadata por último: só existe save "válido" quando tudo foi gravado
     // Fase 17: o save inteiro vai para uma pasta nova e só então troca de lugar com o antigo (que vira o backup).
     // Uma queda no meio nunca mistura arquivos de dois momentos diferentes
@@ -221,6 +223,11 @@ json SaveSystem::migrar(json tudo, int deVersao) {
         // v12 não tinha o povo com nome: o jogo dá nome aos habitantes ao carregar
         tudo["people"] = {{"padrao", true}};
         deVersao = 13;
+    }
+    if (deVersao < 14) {
+        // v13 não tinha os vizinhos: as relações e a fama são refeitas pelo que já aconteceu
+        tudo["factions"] = {{"padrao", true}};
+        deVersao = 14;
     }
     tudo["metadata"]["versao_formato"] = deVersao;
     return tudo;
@@ -345,6 +352,16 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
             d.povo.push_back({jp.value("id", 0), jp.value("nome", ""), jp.value("familia", ""), jp.value("profissao", ""), jp.value("traco", ""),
                               jp.value("desejo", ""), jp.value("cumprido", false), jp.value("chegou", 1), std::max(0, jp.value("esperando", 0)),
                               std::clamp(jp.value("variante", 0), 0, 3)});
+        const json& jfac = tudo["factions"];
+        d.temFaccoes = !jfac.value("padrao", false);
+        d.relacoes = jfac.value("relacoes", std::map<std::string, float>{});
+        d.tratados = jfac.value("tratados", std::vector<std::string>{});
+        d.desvios = jfac.value("desvios", std::map<std::string, int>{});
+        d.suspeito = jfac.value("suspeito", "");
+        if (jfac.contains("reputacao")) {
+            const json& jr = jfac["reputacao"];
+            d.reputacao = {jr.value("justica", 0.0f), jr.value("generosidade", 0.0f), jr.value("devocao", 0.0f)};
+        }
         const json& jcas = tudo["castle"];
         d.alas = jcas.value("alas", std::vector<std::string>{});
         d.brasaoCriado = jcas.value("brasao_criado", false);

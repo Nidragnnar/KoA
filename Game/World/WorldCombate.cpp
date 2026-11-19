@@ -9,7 +9,7 @@ using namespace interno;
 
 int World::danoArma() const {
     const auto it = dados().equipamentos.find(equip.arma);
-    return (it == dados().equipamentos.end() ? 1 : it->second.dano) + efeitosReliquias().dano + buffDano;  // relíquias e pratos
+    return (it == dados().equipamentos.end() ? 1 : it->second.dano) + efeitosReliquias().dano + buffDano + efeitosTratados().dano;  // relíquias, pratos e a Chama Compartilhada
 }
 
 int World::defesaArmadura() const {

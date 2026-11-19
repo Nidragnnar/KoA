@@ -115,17 +115,28 @@ Saída da auditoria da versão 1.8 (problemas E1 a E11). Nada novo para jogar; o
 - **Balanceamento**: o limiar do Reino Renascido subiu de 22 para 26 (mais obras desde a fase 9 aceleravam as eras), e a era já alcançada não volta atrás. Na simulação de 120 dias, os 4 ritmos ficam sem alarmes; de 31 a 36 desejos realizados até o dia 60.
 - Fica para depois: moradores do povo no conselho e na guilda, casamentos entre famílias (vai junto da linhagem), falas próprias por profissão.
 
+### Fase 19 — Reputação, facções e intriga (feita, versão 1.11)
+- **Três vizinhos** (`Data/Kingdom/faccoes.json`): os Anões de Pedra-Funda (minas; gostam de justiça), a Ordem Arcana (floresta; gostam de devoção e justiça) e o Culto das Cinzas (cripta; gostam de mão dura e de magia proibida). Relação de -100 a 100 em cinco faixas (hostis, desconfiados, neutros, amistosos, aliados).
+- **Reagem ao que já acontece**: 34 reações ligadas a marcos que o jogo já tinha (o pacto, a purificação ou a destruição do Golem; a floresta purificada; relíquias purificadas ou malditas; hordas vencidas ou com saque; cada saída dos casos do conselho; presentes e banquetes; alas do castelo). Saves antigos refazem as relações pelos marcos que já têm.
+- **Tratados** (dois por povo): pedem relação mínima e um custo; enquanto valem, rendem todo dia (pedra, cristal, ouro, segurança, soldados no portão, força nas expedições, dano, hordas mais fracas) e seguram a relação. Se a relação despencar, o povo rompe. Assinar com a Ordem tira 20 do Culto e vice-versa. Os tratados do Culto pagam bem e custam felicidade.
+- **Missões das facções** (duas por povo), aceitas no painel T; cumpridas, sobem a relação.
+- **Fama do herdeiro** em três eixos: justiça, generosidade e devoção. As decisões e o imposto empurram a fama; passar de 30 marca Justo, Tirano, Generoso, Avarento, Devoto ou Arcano. A fama abre três títulos (o Justo, o Temido, o Bem-Amado), falas novas de seis moradores e, devagar, puxa a relação de cada povo para o que ele gosta.
+- **Intriga no conselho**: um conselheiro com lealdade baixa desvia ouro toda noite sem aparecer no relatório. A chance de descobrir é de 20% por noite (+25 com um Marechal leal, +25 com a Biblioteca no castelo); descoberto, abre o caso `Ouro sumindo do cofre`: tirar do cargo e cobrar metade, perdoar em segredo ou fingir que não viu.
+- **Painel T** com teclado e mouse: as três barras da fama, cada povo com a relação, os tratados à esquerda e as missões à direita, e o detalhe da linha escolhida (descrição, efeitos, custo e o que falta).
+- **Balanceamento**: o jogador automático assina os tratados dos anões e da Ordem quando sobra ouro. Em 120 dias: anões perto de +30, Ordem +16, Culto -13, fama de justiça +23 (abaixo do limite de 30: a fama é para quem governa de propósito), nenhum desvio (o bot não maltrata o conselho). Sem alarmes nos 4 ritmos.
+- Fica para depois: elfos e tribos do norte, guerra entre facções no mapa, emissários andando pelo vilarejo, conselheiros vindos do povo.
+
 ### Próximas fases (plano da auditoria de 18/11/2026)
-- **Fase 19 — Reputação e as três primeiras facções.** **Fase 20 — Mercado vivo e Livro do Reino.** **Fase 21 — Linhagem.** Detalhes e critérios no relatório da auditoria.
+- **Fase 20 — Mercado vivo e Livro do Reino.** **Fase 21 — Linhagem.** Detalhes e critérios no relatório da auditoria.
 
 ### Depois da 2.0 (para decidir mais tarde)
 - Linhagem: casamento, herdeiros, envelhecimento e sucessão.
-- Facções e diplomacia (anões, elfos, tribos do norte, Ordem Arcana, Culto das Cinzas).
+- Mais facções e diplomacia (elfos, tribos do norte) e conflitos entre elas no mapa.
 - Quinta era (Coroa Eterna) como estado pós-história.
 - Moradores que ganham fama e títulos próprios.
 
 ## Notas técnicas
 
-- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`), a 14 para a v9 (`guild.json`), a 15 para a v10 (`life.json`), a 16 para a v11 (`castle.json`), a 17 para a v12 (a semente do sorteio no `metadata.json`) e a 18 para a v13 (`people.json`).
+- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`), a 14 para a v9 (`guild.json`), a 15 para a v10 (`life.json`), a 16 para a v11 (`castle.json`), a 17 para a v12 (a semente do sorteio no `metadata.json`) a 18 para a v13 (`people.json`) e a 19 para a v14 (`factions.json`).
 - Conteúdo (crônicas, títulos, eventos, cargos, estações) em JSON dentro de `Data/`, como missões e diálogos hoje.
 - O roteiro ponta a ponta ganha etapas a cada fase; a arte nova vem do NidraIA em sessão separada.

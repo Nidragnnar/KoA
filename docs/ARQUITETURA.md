@@ -174,6 +174,17 @@ O plano da 2.0 está em `docs/VISAO_2.0.md`.
 - **Save v13**: arquivo novo `people.json` (pessoas e o próximo id). Saves v1 a v12 ganham o povo ao carregar, do tamanho da população, pela sorte do save.
 - **Testes**: 204 (13 novos da fase 18) e o roteiro com a etapa 55 (chuva com 46 pessoas a 120 quadros por segundo, ficha, lista do povo e neve).
 
+## Fase 19 — Reputação, facções e intriga (versão 1.11)
+
+- **Regras puras**: `Game/Kingdom/Faccoes.h` (`Reputacao` com três eixos, `FaccaoDef`, `TratadoDef` e `EfeitosTratado`, `ReacaoMarco`; `DadosFaccoes::reacaoA` soma todas as reações que casam com um marco, aceitando `*` no fim; `textoTratado`). Os dados vêm de `Data/Kingdom/faccoes.json`.
+- **No mundo** (`Game/World/WorldFaccoes.cpp`): `relacoes`, `tratados`, `reputacao`, `desvios` e `suspeito` no `World`. `marcar()` chama `reagirAoMarco` depois de inserir um marco novo: é o único gancho dos acontecimentos, então nenhum sistema antigo precisou saber das facções. `noiteDasFaccoes` roda depois da noite do conselho (fama pelo imposto, deriva de 2% para o que cada povo gosta, emissários, sabotagem do Culto hostil, tratados que rendem ou caem, choque dos rivais) e termina em `noiteDaIntriga`.
+- **Efeitos dos tratados** entram onde o jogo já somava bônus: `modificadorReino` (pedra, ouro, segurança, felicidade), soldados do portão e força da horda (`WorldDefesa`), força das expedições (`WorldGuilda`) e dano da arma (`WorldCombate`). O cristal por dia vai direto ao inventário na noite.
+- **Missões de facção**: `MissaoDef::faccao` e `relacao` (sem `npc`); `aceitarMissaoFaccao` inicia pelo painel; `atualizarMissoes` sobe a relação ao cumprir.
+- **Caso manual**: `DecisaoDef::manual` (o sorteio dos casos nunca escolhe; só a intriga abre `desvio`); `decidir` chama `resolverDesvio`.
+- **Save v14**: arquivo novo `factions.json` (relações, tratados, reputação, desvios, suspeito). Saves v1 a v13 começam nas relações iniciais e refazem relações e fama pelos marcos que já têm (os tratados não, porque não existiam).
+- **Interface**: `Painel::Vizinhos` na pilha da cena (tecla T); `Hud::acoesVizinhos` dá a ordem das linhas (tratados e missões de cada povo), a mesma do teclado e dos ids de clique.
+- **Testes**: 213 (9 novos da fase 19) e o roteiro com a etapa 56 (T abre os vizinhos, E assina a Rota da Pedra, o clique aceita a missão da Ordem).
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

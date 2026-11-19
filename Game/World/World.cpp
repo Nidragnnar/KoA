@@ -324,6 +324,7 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
     criarMoradores();
     posicionarMoradores();
     gerarPovoInicial();  // fase 18: os sobreviventes sem nome do mapa ganham nome
+    iniciarFaccoes();    // fase 19: os vizinhos começam como nos dados
     sincronizarAldeoes();
     criarCanteiros();
     marcar("chegada", "", true);  // a primeira página das Crônicas
@@ -1097,6 +1098,7 @@ void World::dormir(bool desmaio) {
     manhaDoPovo(ultimoRelatorio.notas);  // fase 18: depois da horta crescer (a chuva de hoje rega para amanhã)
     notasDaManha(ontem);
     noiteDoConselho(ultimoRelatorio.notas);
+    noiteDasFaccoes(ultimoRelatorio.notas);  // fase 19: vizinhos, tratados, fama e o ouro que some do cofre
     manhaDaDefesa();
     manhaDaGuilda(ultimoRelatorio.notas);
     for (const auto& [defId, nome] : novas) marcar("construiu:" + defId, nome);

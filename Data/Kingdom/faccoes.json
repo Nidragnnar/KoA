@@ -1,0 +1,80 @@
+{
+  "_como_funciona": "Fase 19. Três povos vizinhos com relação de -100 a 100 com Valdren (faixas abaixo). As relações mudam pelos acontecimentos (reacoes: quando o marco acontece, cada facção e cada eixo da reputação somam o valor; marco terminado em * vale para qualquer um que comece assim), pelas missões das facções, pelos tratados e, devagar, pela reputação do herdeiro (cada facção 'gosta' de um jeito de governar: a relação anda, a cada noite, 2% na direção de gosta × reputação). Rivais: assinar com uma tira 'rival' da outra. Tratados: pedem relação mínima e um custo; enquanto valem, dão os efeitos todo dia e seguram a relação (+0,3 por noite); se a relação cair abaixo do mínimo - 20, a facção rompe. Reputação: três eixos de -100 a 100 (justica: justo + / tirano -; generosidade: generoso + / avarento -; devocao: devoto + / arcano -); imposto alto tira justiça e generosidade a cada noite, imposto baixo dá. Passar de fama.limite marca a fama (e muda títulos e falas).",
+  "faixas": [
+    { "min": 50, "nome": "aliados" },
+    { "min": 10, "nome": "amistosos" },
+    { "min": -10, "nome": "neutros" },
+    { "min": -50, "nome": "desconfiados" },
+    { "min": -101, "nome": "hostis" }
+  ],
+  "faccoes": [
+    { "id": "anoes", "nome": "Anões de Pedra-Funda", "lider": "Hagar Barba-de-Pedra", "territorio": "minas",
+      "descricao": "Cavaram as minas de Valdren antes da Queda e nunca esqueceram o cheiro do cristal.",
+      "gosta": { "justica": 1.0 }, "inicial": 0 },
+    { "id": "ordem", "nome": "Ordem Arcana", "lider": "Arquimaga Iselde Vauren", "territorio": "floresta",
+      "descricao": "Magos que juraram guardar o selo da Chama. Maelis já foi uma deles.",
+      "gosta": { "devocao": 0.6, "justica": 0.4 }, "inicial": 5 },
+    { "id": "culto", "nome": "Culto das Cinzas", "lider": "o Pregador Cinzento", "territorio": "cripta",
+      "descricao": "Acreditam que a Queda foi uma bênção e que a Chama vai voltar para escolher um novo rei.",
+      "gosta": { "justica": -0.6, "devocao": -0.6 }, "inicial": -15 }
+  ],
+  "rivais": [ { "a": "ordem", "b": "culto", "perda": 20 } ],
+  "tratados": [
+    { "id": "rota_pedra", "faccao": "anoes", "nome": "Rota da Pedra", "descricao": "Carroças de pedra das minas toda manhã, por um pouco de ouro.",
+      "requer": 10, "custo": { "ouro": 40 }, "efeitos": { "pedra_dia": 3, "ouro_dia": -2 } },
+    { "id": "juramento_bigorna", "faccao": "anoes", "nome": "Juramento da Bigorna", "descricao": "Dois guerreiros anões no portão quando a horda vier.",
+      "requer": 40, "custo": { "ouro": 80, "pedra": 40 }, "efeitos": { "soldados": 2, "seguranca": 4 } },
+    { "id": "pacto_saber", "faccao": "ordem", "nome": "Pacto do Saber", "descricao": "Mapas da Ordem para as expedições e um cristal por dia.",
+      "requer": 10, "custo": { "ouro": 50, "cristal": 3 }, "efeitos": { "expedicao": 1, "cristal_dia": 1 } },
+    { "id": "guarda_arcana", "faccao": "ordem", "nome": "Guarda Arcana", "descricao": "Selos de proteção na estrada: as hordas chegam mais fracas.",
+      "requer": 40, "custo": { "ouro": 100, "cristal": 6 }, "efeitos": { "seguranca": 6, "forca_horda": -0.15 } },
+    { "id": "tributo_cinzas", "faccao": "culto", "nome": "Tributo das Cinzas", "descricao": "O Culto paga bem por um lugar na praça. O povo não gosta.",
+      "requer": -20, "custo": {}, "efeitos": { "ouro_dia": 6, "felicidade": -3 } },
+    { "id": "chama_compartilhada", "faccao": "culto", "nome": "Chama Compartilhada", "descricao": "Um sopro da Chama na lâmina do herdeiro. Os sonhos ficam piores.",
+      "requer": 30, "custo": { "ouro": 60 }, "efeitos": { "dano": 3, "felicidade": -2 } }
+  ],
+  "reacoes": [
+    { "marco": "escolha:golem_cinzas:derrotar", "anoes": 15, "culto": -5 },
+    { "marco": "escolha:golem_cinzas:purificar", "anoes": 10, "ordem": 20, "culto": -15, "devocao": 5 },
+    { "marco": "escolha:golem_cinzas:pacto", "anoes": -20, "ordem": -30, "culto": 30, "devocao": -25 },
+    { "marco": "purificou:floresta", "ordem": 15, "culto": -5, "devocao": 5 },
+    { "marco": "purificou_reliquia:*", "ordem": 5, "culto": -5, "devocao": 5 },
+    { "marco": "maldicao:*", "culto": 5, "devocao": -5 },
+    { "marco": "minas_abertas", "anoes": 10 },
+    { "marco": "construiu:forja", "anoes": 5 },
+    { "marco": "construiu:capela", "ordem": 3, "culto": -3, "devocao": 10 },
+    { "marco": "horda:*", "anoes": 3, "ordem": 2 },
+    { "marco": "horda_saqueada:*", "anoes": -3, "culto": 3 },
+    { "marco": "chefe_cavaleiro_caido", "ordem": 10, "devocao": -5 },
+    { "marco": "decisao:lenhadores:armar", "anoes": 8, "generosidade": 3 },
+    { "marco": "decisao:lenhadores:recusar", "justica": -3 },
+    { "marco": "decisao:refugiados:acolher", "justica": 6, "generosidade": 6 },
+    { "marco": "decisao:refugiados:recusar", "justica": -8, "generosidade": -5, "culto": 3 },
+    { "marco": "decisao:nobre_isencao:conceder", "justica": -6 },
+    { "marco": "decisao:nobre_isencao:recusar", "anoes": 6, "justica": 8 },
+    { "marco": "decisao:disputa_campo:dividir", "justica": 5 },
+    { "marco": "decisao:panelaco:baixar", "justica": 6, "generosidade": 3 },
+    { "marco": "decisao:panelaco:manter", "justica": -8, "culto": 5 },
+    { "marco": "decisao:panelaco:banquete", "generosidade": 6 },
+    { "marco": "decisao:pregadores:prender", "ordem": 10, "culto": -20, "justica": -4 },
+    { "marco": "decisao:pregadores:tolerar", "ordem": -10, "culto": 15, "devocao": -5 },
+    { "marco": "decisao:pregadores:expulsar", "ordem": 5, "culto": -10, "devocao": 5 },
+    { "marco": "decisao:corvin:aceitar", "anoes": -5, "generosidade": -4 },
+    { "marco": "decisao:desvio:prender", "justica": 8, "anoes": 3 },
+    { "marco": "decisao:desvio:perdoar", "generosidade": 6, "justica": -2 },
+    { "marco": "decisao:desvio:vigiar", "culto": 3 },
+    { "marco": "presente:*", "generosidade": 2 },
+    { "marco": "cozinhou:banquete", "generosidade": 5 },
+    { "marco": "ala:jardim", "generosidade": 3 },
+    { "marco": "ala:quartel", "anoes": 5 },
+    { "marco": "ala:biblioteca", "ordem": 8 }
+  ],
+  "fama": {
+    "limite": 30,
+    "marcos": {
+      "justica": ["fama:justo", "fama:tirano"],
+      "generosidade": ["fama:generoso", "fama:avarento"],
+      "devocao": ["fama:devoto", "fama:arcano"]
+    }
+  }
+}

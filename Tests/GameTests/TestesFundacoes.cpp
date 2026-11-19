@@ -48,7 +48,7 @@ fs::path temporaria(const std::string& nome) {
 
 }
 
-// Um save real de cada versão (tirados dos backups do jogo, de v1 a v11; não há save real da v4)
+// Um save real de cada versão (tirados dos backups do jogo, de v1 a v13; não há save real da v4)
 TEST(SavesModelo, TodasAsVersoesAbremEGravamNaAtual) {
     const fs::path modelos = PASTA_FIXTURES "/saves";
     int abertos = 0;
@@ -66,6 +66,7 @@ TEST(SavesModelo, TodasAsVersoesAbremEGravamNaAtual) {
         EXPECT_GE(w.relogio.dia, 1);
         EXPECT_EQ(w.canteiros.size(), dados().cotidiano.canteiros.size());
         ASSERT_NE(w.reino.construcao("castelo"), nullptr) << "o castelo existe mesmo em saves de antes dele";
+        EXPECT_EQ(w.relacoes.size(), dados().faccoes.faccoes.size()) << "os vizinhos existem mesmo em saves de antes deles";
         for (const auto& [id, q] : w.inventario.todos()) EXPECT_GE(q, 0) << id;
         // Grava no formato atual e abre de novo
         ASSERT_TRUE(s.salvar(w.capturar()));
@@ -79,7 +80,7 @@ TEST(SavesModelo, TodasAsVersoesAbremEGravamNaAtual) {
         fs::remove_all(pasta);
         ++abertos;
     }
-    EXPECT_EQ(abertos, 10) << "v1, v2, v3, v5 a v11";
+    EXPECT_EQ(abertos, 12) << "v1, v2, v3, v5 a v13";
 }
 
 TEST(SaveAtomico, OSaveAnteriorViraBackupInteiro) {

@@ -73,6 +73,10 @@ public:
     void fichaHabitante(ke::Renderer2D& r, const World& w, int id);
     void painelPovo(ke::Renderer2D& r, const World& w, int sel, int rolagem);
     static int linhasPovo() { return 18; }
+    // Fase 19: os vizinhos (reputação, relações, tratados e missões). As linhas que se usam, na ordem:
+    // "t:<tratado>" e "m:<missão>" (ids de clique = índice nesta lista)
+    std::vector<std::string> acoesVizinhos() const;
+    void painelVizinhos(ke::Renderer2D& r, const World& w, int sel, float tempo);
 
     // Onde cada opção dos painéis apareceu no último quadro (a cena limpa antes de desenhar)
     Cliques cliques;

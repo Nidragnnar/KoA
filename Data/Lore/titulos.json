@@ -12,6 +12,13 @@
       "requer": { "marcos": ["chefe_cavaleiro_caido"] } },
     { "id": "guardiao_memoria", "nome": "Guardião da Memória", "descricao": "Reuniu todos os fragmentos da Queda das Cinzas.",
       "requer": { "marcos": ["misterio:primeiro_ato"] } },
+    { "_fama": "Fase 19: títulos pela fama (a reputação que o herdeiro construiu) somada a um reino de pé.",
+      "id": "justo", "nome": "O Justo", "descricao": "Um reino de pé e um povo que confia na palavra do herdeiro.",
+      "requer": { "marcos": ["fama:justo"], "construcoes_min": 6 } },
+    { "id": "temido", "nome": "O Temido", "descricao": "Um reino de pé e um povo que baixa os olhos quando o herdeiro passa.",
+      "requer": { "marcos": ["fama:tirano"], "construcoes_min": 6 } },
+    { "id": "bem_amado", "nome": "O Bem-Amado", "descricao": "Generoso com quem chega: trinta moradores e nenhum esquecido.",
+      "requer": { "marcos": ["fama:generoso"], "populacao_min": 30 } },
     { "id": "rei_estandartes", "nome": "Rei dos Sete Estandartes", "descricao": "Sete tipos de obra de pé num reino renascido.",
       "requer": { "tipos_min": 7, "era_min": 2 } }
   ]

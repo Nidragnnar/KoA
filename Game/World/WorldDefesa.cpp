@@ -32,6 +32,7 @@ int World::soldadosDosPostos() const {
     int n = static_cast<int>(efeitoTotal("soldados"));
     if (n > 0 && efeitoCargo("marechal") > 0.0f) ++n;  // o Marechal leva mais um para o portão
     n += efeitosAlas().soldados;                        // fase 16: o Quartel Real manda o seu
+    n += efeitosTratados().soldados;                    // fase 19: o Juramento da Bigorna
     return n;
 }
 
@@ -54,6 +55,7 @@ int World::forcaProximaHorda() const {
         f = f * 3 / 2;  // horda em noite de Lua de Sangue vem maior
     // Fase 18: na neblina a horda chega escondida (e maior)
     f = static_cast<int>(std::round(f * tempoDoDia(hordaDia > 0 ? hordaDia : relogio.dia).forcaHorda));
+    f = static_cast<int>(std::round(f * std::max(0.2f, 1.0f + efeitosTratados().forcaHorda)));  // fase 19: a Guarda Arcana
     return f;
 }
 

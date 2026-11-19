@@ -113,6 +113,13 @@ void JogadorAutomatico::governar() {
         w_.decidir(escolha);
     }
     if (const Custo c = w_.custoReparo(); !c.empty() && w_.inventario.tem(c)) w_.repararPortao();
+    // Tratados com os anões e a Ordem quando sobra ouro (o do Culto custa felicidade: o jogador médio evita)
+    for (const TratadoDef& t : dados_.faccoes.tratados) {
+        const auto ouro = t.custo.find("ouro");
+        if (t.faccao != "culto" && w_.podeAssinar(t.id).empty() &&
+            w_.inventario.quantidade("ouro") >= (ouro == t.custo.end() ? 0 : ouro->second) + 150)
+            w_.assinarTratado(t.id);
+    }
 }
 
 // Casa primeiro, depois obras novas (por prioridade), depois a melhoria mais barata (castelo incluído)
@@ -215,7 +222,13 @@ Amostra JogadorAutomatico::jogarDia() {
     a.nivelCastelo = w_.nivelCastelo();
     a.alas = static_cast<int>(w_.alas.size());
     a.expedicoes = expedicoes_;
-    for (const auto& m : w_.marcos) a.desejos += m.starts_with("desejo_"), a.partiram += m.starts_with("partiu:");
+    for (const auto& m : w_.marcos) a.desejos += m.starts_with("desejo_"), a.partiram += m.starts_with("partiu:"), a.descobertos += m.starts_with("desvio:");
+    a.anoes = w_.relacaoCom("anoes");
+    a.ordem = w_.relacaoCom("ordem");
+    a.culto = w_.relacaoCom("culto");
+    a.fama = w_.reputacao;
+    a.tratados = static_cast<int>(w_.tratados.size());
+    for (const auto& [npc, q] : w_.desvios) a.sumido += q;
     historico_.push_back(a);
     return a;
 }

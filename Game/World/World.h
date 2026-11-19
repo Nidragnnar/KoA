@@ -307,6 +307,21 @@ public:
     const TempoDef& tempoAqui() const;  // o de hoje, ou céu limpo debaixo da terra
     void ajustarPovo(bool fome, std::vector<std::string>& notas);  // chegadas e partidas para bater com a população
     void gerarPovoInicial();  // jogo novo (depois de sortear a semente) e saves de antes do povo com nome
+
+    // Fase 19: os povos vizinhos, a reputação do herdeiro e a intriga no conselho
+    std::map<std::string, float> relacoes;  // facção → -100..100
+    std::set<std::string> tratados;         // assinados
+    Reputacao reputacao;
+    std::map<std::string, int> desvios;     // conselheiro → ouro desviado (ainda não resolvido)
+    std::string suspeito;                   // quem o caso do desvio acusa
+    float relacaoCom(const std::string& faccao) const;
+    std::string faixaCom(const std::string& faccao) const;  // "aliados", "neutros"...
+    std::string podeAssinar(const std::string& tratado) const;  // "" = pode; senão o motivo
+    bool assinarTratado(const std::string& tratado);
+    bool romperTratado(const std::string& tratado);
+    bool aceitarMissaoFaccao(const std::string& missao);
+    EfeitosTratado efeitosTratados() const;
+    void mudarRelacao(const std::string& faccao, float delta);
     int nivelCastelo() const;
     int vagasAlas() const;                        // quantas alas o nível do castelo permite (erguidas ou não)
     bool erguerAla(const std::string& id);
@@ -315,6 +330,13 @@ public:
     // O que falta para o próximo nível de uma construção ("" = nada: só os recursos)
     std::string requisitoProximoNivel(const BuildingData& b) const;
     void manhaDoPovo(std::vector<std::string>& notas);  // fase 18: desejos que se cumprem e quem desiste de esperar
+    // Fase 19
+    void iniciarFaccoes();
+    void reagirAoMarco(const std::string& marco);  // o que cada povo e a reputação acham do que aconteceu
+    void verificarFama();
+    void noiteDasFaccoes(std::vector<std::string>& notas);
+    void noiteDaIntriga(std::vector<std::string>& notas);
+    void resolverDesvio(const std::string& opcao);
 
     const std::vector<ke::AABB>& obstaculos() const;  // fase 17: em cache (refeito só quando algo muda)
     std::vector<ke::AABB> calcularObstaculos() const;  // o cálculo completo, sem cache (os testes comparam os dois)

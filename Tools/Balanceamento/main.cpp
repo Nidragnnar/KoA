@@ -52,6 +52,11 @@ int main(int argc, char** argv) {
     if (!jogador.historico().empty())
         resumo += std::format("- Desejos realizados: {} (dia 60: {}); desistiram de esperar: {}\n", jogador.historico().back().desejos,
                               jogador.historico().size() >= 60 ? jogador.historico()[59].desejos : 0, jogador.historico().back().partiram);
+    if (!jogador.historico().empty()) {
+        const Amostra& f = jogador.historico().back();
+        resumo += std::format("- Vizinhos no fim: anões {:+.0f}, Ordem {:+.0f}, Culto {:+.0f}; tratados em vigor: {}; fama: justiça {:+.0f}, generosidade {:+.0f}, devoção {:+.0f}\n", f.anoes, f.ordem, f.culto, f.tratados, f.fama.justica, f.fama.generosidade, f.fama.devocao);
+        resumo += std::format("- Intriga: desvios descobertos {}; ouro ainda sumido {}\n", f.descobertos, f.sumido);
+    }
     const auto al = alarmes(jogador.historico(), ritmo);
     resumo += al.empty() ? "- Alarmes: nenhum\n" : std::format("- Alarmes: {}\n", al.size());
     for (size_t i = 0; i < al.size() && i < 6; ++i) resumo += "  - " + al[i] + "\n";

@@ -1,0 +1,32 @@
+{
+  "buff_dano": 0,
+  "buff_defesa": 0,
+  "canteiros": [
+    {
+      "crescidos": 0,
+      "cultura": "",
+      "maduro": false,
+      "regado_dia": 0
+    },
+    {
+      "crescidos": 0,
+      "cultura": "",
+      "maduro": false,
+      "regado_dia": 0
+    },
+    {
+      "crescidos": 0,
+      "cultura": "",
+      "maduro": false,
+      "regado_dia": 0
+    },
+    {
+      "crescidos": 0,
+      "cultura": "",
+      "maduro": false,
+      "regado_dia": 0
+    }
+  ],
+  "carinhos": {},
+  "presente_dia": {}
+}

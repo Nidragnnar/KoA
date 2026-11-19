@@ -72,7 +72,7 @@ TEST(Regioes, CarregaFlorestaECripta) {
     EXPECT_GT(w.regioes.at("floresta").spawns.size(), 10u);
     EXPECT_EQ(dados().inimigos.size(), 6u);
     EXPECT_EQ(dados().equipamentos.size(), 11u);
-    EXPECT_EQ(dados().missoes.size(), 10u);
+    EXPECT_EQ(dados().missoes.size(), 16u);  // fase 19: + 6 das facções
     EXPECT_GT(w.regioes.at("floresta").escuridaoMin, 0.3f) << "a floresta é escura mesmo de dia";
 }
 

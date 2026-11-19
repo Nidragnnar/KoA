@@ -1,0 +1,173 @@
+{
+  "habitantes": [
+    {
+      "chegou": 1,
+      "cumprido": false,
+      "desejo": "capela",
+      "esperando": 3,
+      "familia": "da Ponte",
+      "id": 1,
+      "nome": "Brida",
+      "profissao": "pedreiro",
+      "traco": "festeiro",
+      "variante": 2
+    },
+    {
+      "chegou": 1,
+      "cumprido": false,
+      "desejo": "castelo",
+      "esperando": 6,
+      "familia": "da Ponte",
+      "id": 2,
+      "nome": "Vera",
+      "profissao": "lavrador",
+      "traco": "rabugento",
+      "variante": 2
+    },
+    {
+      "chegou": 1,
+      "cumprido": false,
+      "desejo": "seguranca",
+      "esperando": 1,
+      "familia": "Serrano",
+      "id": 3,
+      "nome": "Joana",
+      "profissao": "lavrador",
+      "traco": "rabugento",
+      "variante": 3
+    },
+    {
+      "chegou": 2,
+      "cumprido": false,
+      "desejo": "castelo",
+      "esperando": 0,
+      "familia": "Corvo-Branco",
+      "id": 4,
+      "nome": "Fausto",
+      "profissao": "curandeira",
+      "traco": "rabugento",
+      "variante": 2
+    },
+    {
+      "chegou": 2,
+      "cumprido": false,
+      "desejo": "brasao",
+      "esperando": 0,
+      "familia": "Corvo-Branco",
+      "id": 5,
+      "nome": "Dalva",
+      "profissao": "pedreiro",
+      "traco": "trabalhador",
+      "variante": 3
+    },
+    {
+      "chegou": 2,
+      "cumprido": false,
+      "desejo": "alegria",
+      "esperando": 0,
+      "familia": "Corvo-Branco",
+      "id": 6,
+      "nome": "Teodoro",
+      "profissao": "mercador",
+      "traco": "trabalhador",
+      "variante": 3
+    },
+    {
+      "chegou": 2,
+      "cumprido": false,
+      "desejo": "brasao",
+      "esperando": 0,
+      "familia": "Corvo-Branco",
+      "id": 7,
+      "nome": "Flora",
+      "profissao": "lenhador",
+      "traco": "festeiro",
+      "variante": 3
+    },
+    {
+      "chegou": 2,
+      "cumprido": false,
+      "desejo": "horta",
+      "esperando": 0,
+      "familia": "Orvalho",
+      "id": 8,
+      "nome": "Ulric",
+      "profissao": "lenhador",
+      "traco": "devoto",
+      "variante": 3
+    },
+    {
+      "chegou": 2,
+      "cumprido": false,
+      "desejo": "fartura",
+      "esperando": 0,
+      "familia": "Orvalho",
+      "id": 9,
+      "nome": "Selma",
+      "profissao": "lavrador",
+      "traco": "trabalhador",
+      "variante": 0
+    },
+    {
+      "chegou": 2,
+      "cumprido": false,
+      "desejo": "seguranca",
+      "esperando": 0,
+      "familia": "Orvalho",
+      "id": 10,
+      "nome": "Vera",
+      "profissao": "pescador",
+      "traco": "devoto",
+      "variante": 3
+    },
+    {
+      "chegou": 2,
+      "cumprido": false,
+      "desejo": "brasao",
+      "esperando": 0,
+      "familia": "Orvalho",
+      "id": 11,
+      "nome": "Pedro",
+      "profissao": "lavrador",
+      "traco": "festeiro",
+      "variante": 1
+    },
+    {
+      "chegou": 2,
+      "cumprido": false,
+      "desejo": "casa_pedra",
+      "esperando": 0,
+      "familia": "Ferro-Velho",
+      "id": 12,
+      "nome": "Pedro",
+      "profissao": "pedreiro",
+      "traco": "rabugento",
+      "variante": 0
+    },
+    {
+      "chegou": 2,
+      "cumprido": false,
+      "desejo": "seguranca",
+      "esperando": 0,
+      "familia": "Ferro-Velho",
+      "id": 13,
+      "nome": "Brida",
+      "profissao": "lenhador",
+      "traco": "sonhador",
+      "variante": 3
+    },
+    {
+      "chegou": 2,
+      "cumprido": false,
+      "desejo": "brasao",
+      "esperando": 0,
+      "familia": "Ferro-Velho",
+      "id": 14,
+      "nome": "Nilo",
+      "profissao": "lenhador",
+      "traco": "devoto",
+      "variante": 2
+    }
+  ],
+  "proximo": 15
+}

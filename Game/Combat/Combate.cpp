@@ -43,7 +43,9 @@ bool lerCombate(const nlohmann::json& ji, const nlohmann::json& je, const nlohma
             MissaoDef d;
             d.id = m.at("id").get<std::string>();
             d.nome = m.value("nome", d.id);
-            d.npc = m.at("npc").get<std::string>();
+            d.npc = m.value("npc", "");
+            d.faccao = m.value("faccao", "");
+            d.relacao = m.value("relacao", 0);
             d.descricao = m.value("descricao", "");
             d.requer = m.value("requer", "");
             const auto& o = m.at("objetivo");

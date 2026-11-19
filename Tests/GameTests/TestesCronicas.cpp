@@ -236,7 +236,7 @@ TEST(Cenarios, MontarSavesDeTeste) {
     free(pasta);
     auto gravar = [&](World& w, const std::string& slot) {
         DadosSave d = w.capturar();
-        d.versaoJogo = "1.10.0";
+        d.versaoJogo = "1.11.0";
         d.dataHora = "cenário de teste";
         ASSERT_TRUE(s.salvar(d, slot));
     };
@@ -285,52 +285,70 @@ TEST(Cenarios, MontarSavesDeTeste) {
         w.equip.arma = "espada_linhagem";
         w.equip.armadura = "cota_malha";
     };
-    // Fase 18: um reino de meio de jogo, com o povo para conhecer (E perto de um aldeão; P para a lista)
-    auto comPovo = [&](World& w, const std::string& tempo, int minutos) {
+    // Fase 19: um reino de meio de jogo com o conselho formado e os vizinhos já atentos
+    auto comVizinhos = [&](World& w, std::initializer_list<std::pair<const char*, float>> relacoes) {
         reinoAvancado(w);
         equipar(w);
         w.estado.populacao = std::min(26, w.resumo().populacaoMax);
         std::vector<std::string> notas;
         w.ajustarPovo(false, notas);
-        while (w.tempoDoDia(w.relogio.dia).id != tempo) ++w.relogio.dia;
-        w.relogio.minutos = static_cast<float>(minutos);
+        w.marcar("conselho_formado", "O Conselho Real", true);
+        for (const auto& [cargo, npc] : {std::pair{"marechal", "oswin"}, {"tesoureiro", "edda"}, {"obras", "bram"}}) ASSERT_TRUE(w.nomear(cargo, npc));
+        for (const char* npc : {"oswin", "edda", "bram"}) w.lealdade[npc] = 70;
+        for (const auto& [f, alvo] : relacoes) w.mudarRelacao(f, alvo - w.relacaoCom(f));
+        w.relogio.minutos = 9 * 60;
         w.hordaDia = 0;
         w.proximaHorda = w.relogio.dia + 12;
-        w.ultimaDecisao = w.relogio.dia;
     };
-    // Save_002 (fase 18): DIA DE CHUVA, 9:00, ~20 pessoas com nome. A primeira da lista (P) quer uma capela e há
-    // recursos para erguê-la: construa e durma para ver o desejo realizado nas Crônicas. A segunda é rabugenta,
-    // espera o castelo há 6 dias e o povo está a 45 de felicidade: amanhã ela vai embora, e o relatório diz por quê
+    // Save_002 (fase 19): OS VIZINHOS. Anões +35, Ordem +12, Culto -22; justiça +26 (quase "Justo"). O caso do nobre que
+    // pede isenção está aberto: recusar dá +6 aos anões (libera o Juramento da Bigorna, que pede 40) e +8 de justiça
+    // (passa de 30: fama de Justo). Ouro 300 e cristal 10 dão para a Rota da Pedra e o Pacto do Saber (que irrita o Culto)
     {
         World w = vilarejo();
-        comPovo(w, "chuva", 9 * 60);
-        ASSERT_GE(w.povo.size(), 2u);
-        w.povo[0].desejo = "capela";
-        w.povo[0].esperando = 3;
-        w.povo[1].desejo = "castelo";
-        w.povo[1].traco = "rabugento";
-        w.povo[1].esperando = 6;
-        w.estado.felicidade = 45.0f;
-        w.inventario.definir("madeira", 200);
-        w.inventario.definir("pedra", 200);
-        w.inventario.definir("ouro", 200);
+        comVizinhos(w, {{"anoes", 35.0f}, {"ordem", 12.0f}, {"culto", -22.0f}});
+        w.reputacao.justica = 26.0f;
+        w.inventario.definir("ouro", 300);
+        w.inventario.definir("cristal", 10);
+        w.inventario.definir("pedra", 150);
         w.inventario.definir("comida", 150);
-        std::printf("[cenário] Save_002: %zu pessoas com nome, tempo %s\n", w.povo.size(), w.tempoHoje().nome.c_str());
+        w.decisaoPendente = "nobre_isencao";
+        w.ultimaDecisao = w.relogio.dia;
+        std::printf("[cenário] Save_002: anões %+.0f, Ordem %+.0f, Culto %+.0f; caso aberto: %s\n", w.relacaoCom("anoes"), w.relacaoCom("ordem"),
+                    w.relacaoCom("culto"), w.decisaoPendente.c_str());
         w.tirarEventos();
         gravar(w, "Save_002");
+        // Recarregado como o jogo faz: o caso continua aberto e as relações voltam iguais
+        World c = vilarejo();
+        c.aplicar(*s.carregar("Save_002"));
+        EXPECT_EQ(c.decisaoAtual() ? c.decisaoAtual()->id : "", "nobre_isencao");
+        EXPECT_FLOAT_EQ(c.relacaoCom("anoes"), 35.0f);
     }
-    // Save_003 (fase 18): INVERNO COM NEVE, 10:00 (todos andam 20% mais devagar, as criaturas também).
-    // A próxima horda vem no próximo dia de neblina (mais forte); o painel da data mostra o tempo
+    // Save_003 (fase 19): A INTRIGA. Edda (Mestre da Moeda, lealdade 5) desviou 18 de ouro e foi descoberta: o caso
+    // "Ouro sumindo do cofre" abre ao carregar. O Culto está hostil (-55: cinzas nas portas a cada 3 noites e não aceita
+    // missões) e o imposto está alto com justiça -29: uma ou duas noites assim e o herdeiro ganha a fama de Tirano
     {
         World w = vilarejo();
-        comPovo(w, "neve", 10 * 60);
-        int neblina = w.relogio.dia + 1;
-        while (w.tempoDoDia(neblina).id != "neblina" && neblina < w.relogio.dia + 40) ++neblina;
-        w.hordaDia = neblina;
+        comVizinhos(w, {{"anoes", 0.0f}, {"ordem", 5.0f}, {"culto", -55.0f}});
+        w.lealdade["edda"] = 5;
+        w.lealdade["oswin"] = 80;
+        w.desvios["edda"] = 18;
+        w.suspeito = "edda";
+        w.marcar("desvio:edda", "Edda", true);
+        w.decisaoPendente = "desvio";
+        w.ultimaDecisao = w.relogio.dia;
+        w.estado.imposto = Imposto::Alto;
+        w.reputacao.justica = -29.0f;
+        w.inventario.definir("ouro", 200);
         w.inventario.definir("comida", 150);
-        std::printf("[cenário] Save_003: neve hoje; horda no dia %d (%s)\n", neblina, w.tempoDoDia(neblina).nome.c_str());
+        std::printf("[cenário] Save_003: Edda desviou %d de ouro; Culto %+.0f (%s); justiça %+.0f\n", w.desvios["edda"], w.relacaoCom("culto"),
+                    w.faixaCom("culto").c_str(), w.reputacao.justica);
         w.tirarEventos();
         gravar(w, "Save_003");
+        World c = vilarejo();
+        c.aplicar(*s.carregar("Save_003"));
+        EXPECT_EQ(c.decisaoAtual() ? c.decisaoAtual()->id : "", "desvio");
+        EXPECT_EQ(c.suspeito, "edda");
+        EXPECT_EQ(c.faixaCom("culto"), "hostis");
     }
 }
 TEST(SaveV5, SaveV4GanhaCronicasDoQueJaAconteceu) {

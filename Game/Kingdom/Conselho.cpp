@@ -93,6 +93,7 @@ bool lerConselho(const nlohmann::json& j, DadosConselho& d, std::string* erro) {
             dd.titulo = jd.at("titulo").get<std::string>();
             dd.texto = jd.value("texto", std::vector<std::string>{});
             dd.repetir = jd.value("repetir", false);
+            dd.manual = jd.value("manual", false);
             if (jd.contains("requer")) {
                 const auto& r = jd["requer"];
                 dd.requer.populacaoMin = r.value("populacao_min", 0);

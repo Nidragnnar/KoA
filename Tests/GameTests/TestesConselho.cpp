@@ -64,7 +64,7 @@ int afinidade(World& w, const std::string& npc) {
 TEST(Conselho, DadosDosCargosLeisEDecisoes) {
     const DadosConselho& c = dados().conselho;
     EXPECT_EQ(c.cargos.size(), 4u);
-    EXPECT_EQ(c.decisoes.size(), 7u);
+    EXPECT_EQ(c.decisoes.size(), 8u);  // fase 19: o desvio (só pela intriga)
     EXPECT_EQ(c.leis.size(), 4u);
     EXPECT_FLOAT_EQ(c.cargo("marechal")->aptidaoDe("oswin"), 1.0f);
     EXPECT_FLOAT_EQ(c.cargo("obras")->aptidaoDe("bram"), 1.0f);

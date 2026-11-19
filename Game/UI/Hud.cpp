@@ -1306,6 +1306,12 @@ std::string caber(const ke::BitmapFont& f, std::string t, int largura) {
     return t + "...";
 }
 
+// "Ouro" vira "ouro" (os nomes dos recursos começam com letra sem acento)
+std::string minusculo(std::string t) {
+    if (!t.empty()) t[0] = static_cast<char>(std::tolower(static_cast<unsigned char>(t[0])));
+    return t;
+}
+
 std::string oficioDe(const DadosPovo& d, const Habitante& h) {
     const ProfissaoDef* p = d.profissao(h.profissao);
     const TracoDef* t = d.traco(h.traco);
@@ -1390,6 +1396,146 @@ void Hud::painelPovo(ke::Renderer2D& r, const World& w, int sel, int rolagem) {
     if (n == 0) f_.desenharCentralizado(r, "Ainda não chegou ninguém além dos sobreviventes.", {320, y + 20}, cor::apagado);
     f_.desenharCentralizado(r, "W/S ou roda   E ou clique: ficha   P ou Esc fechar", {320, p.y + s.y - 12}, cor::apagado);
     rodapeFechar("P ou Esc fechar", {320 + f_.largura("W/S ou roda   E ou clique: ficha   ") / 2.0f, p.y + s.y - 12});
+}
+
+// ---------- Fase 19: os vizinhos ----------
+
+std::vector<std::string> Hud::acoesVizinhos() const {
+    std::vector<std::string> v;
+    for (const FaccaoDef& f : dados_.faccoes.faccoes) {
+        for (const TratadoDef& t : dados_.faccoes.tratados)
+            if (t.faccao == f.id) v.push_back("t:" + t.id);
+        for (const MissaoDef& m : dados_.missoes)
+            if (m.faccao == f.id) v.push_back("m:" + m.id);
+    }
+    return v;
+}
+
+void Hud::painelVizinhos(ke::Renderer2D& r, const World& w, int sel, float tempo) {
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.5f});
+    const glm::vec2 p{36, 14}, s{568, 332};
+    desenharPainel(r, p, s);
+    painelClicavel(p, s);
+    f_.desenharCentralizado(r, "Os Vizinhos de Valdren", {320, p.y + 11}, cor::ouro);
+    const DadosFaccoes& df = dados_.faccoes;
+    // A reputação: três barras de -100 a 100, com o nome de cada ponta (centralizadas)
+    static const std::tuple<const char*, const char*, const char*> eixos[] = {
+        {"justica", "Tirano", "Justo"}, {"generosidade", "Avarento", "Generoso"}, {"devocao", "Arcano", "Devoto"}};
+    constexpr float LB = 44.0f, GAP = 18.0f;
+    float total = -GAP;
+    for (const auto& [eixo, neg, pos] : eixos) total += f_.largura(neg) + 5 + LB + 5 + f_.largura(pos) + GAP;
+    float x = 320 - total / 2;
+    for (const auto& [eixo, neg, pos] : eixos) {
+        const float v = w.reputacao.eixo(eixo);
+        f_.desenhar(r, neg, {x, p.y + 26}, v <= -df.limiteFama ? cor::ruim : cor::apagado);
+        const float bx = x + f_.largura(neg) + 5;
+        r.retangulo({bx, p.y + 28}, {LB, 4}, {0.12f, 0.1f, 0.09f, 1});
+        r.retangulo({bx + LB / 2, p.y + 26}, {1, 8}, cor::borda);
+        r.retangulo({std::floor(bx + LB / 2 + v / 100.0f * LB / 2) - 1, p.y + 25}, {3, 10}, cor::ouro);
+        f_.desenhar(r, pos, {bx + LB + 5, p.y + 26}, v >= df.limiteFama ? cor::bom : cor::apagado);
+        x = bx + LB + 5 + f_.largura(pos) + GAP;
+    }
+    r.retangulo({p.x + 12, p.y + 40}, {s.x - 24, 1}, cor::borda);
+    // Cada povo: relação e, em duas colunas, tratados (esquerda) e missões (direita); W/S segue a ordem de acoesVizinhos
+    const auto acoes = acoesVizinhos();
+    const float cw = (s.x - 28) / 2;
+    float y = p.y + 46;
+    int k = 0;
+    for (const FaccaoDef& f : df.faccoes) {
+        const float rel = w.relacaoCom(f.id);
+        const glm::vec4 cr = rel >= 10 ? cor::bom : rel <= -10 ? cor::ruim : cor::texto;
+        f_.desenhar(r, f.nome, {p.x + 14, y}, cor::ouro);
+        const std::string faixa = std::format("{:+.0f} {}", rel, w.faixaCom(f.id));
+        const float fx = p.x + s.x - 14 - f_.largura(faixa);
+        f_.desenhar(r, faixa, {fx, y}, cr);
+        barra(r, {fx - 78, y + 1}, 70, (rel + 100.0f) / 200.0f, cr);
+        y += 13;
+        int linhas = 0, nt = 0, nm = 0;
+        while (k < static_cast<int>(acoes.size())) {
+            const bool tratado = acoes[k].starts_with("t:");
+            const std::string id = acoes[k].substr(2);
+            std::string nome, detalhe, estado;
+            glm::vec4 corEstado = cor::apagado;
+            if (tratado) {
+                const TratadoDef* t = df.tratado(id);
+                if (!t || t->faccao != f.id) break;
+                nome = t->nome;
+                detalhe = textoTratado(t->efeitos);
+                if (w.tratados.contains(id)) estado = "em vigor", corEstado = cor::bom;
+                else if (w.relacaoCom(f.id) < t->requer) estado = std::format("pede {:+d}", t->requer);
+                else if (!w.inventario.tem(t->custo)) estado = "sem recursos", corEstado = cor::ruim;
+                else estado = "E assina", corEstado = cor::ouro;
+            } else {
+                const auto it = std::ranges::find(dados_.missoes, id, &MissaoDef::id);
+                if (it == dados_.missoes.end() || it->faccao != f.id) break;
+                nome = it->nome;
+                detalhe = it->descricao;
+                const auto em = w.missoes.find(id);
+                if (em == w.missoes.end()) estado = "E aceita", corEstado = cor::ouro;
+                else if (em->second.concluida) estado = "cumprida", corEstado = cor::bom;
+                else estado = std::format("{}/{}", std::min(w.progressoMissao(*it), it->objetivo.quantidade), it->objetivo.quantidade);
+            }
+            const int linha = tratado ? nt++ : nm++;
+            linhas = std::max(linhas, linha + 1);
+            const glm::vec2 o{p.x + 10 + (tratado ? 0.0f : cw + 8), y + linha * 22.0f};
+            const bool s1 = k == sel;
+            if (s1) r.retangulo({o.x, o.y - 2}, {cw, 22}, {0.45f, 0.36f, 0.22f, 0.4f + 0.05f * std::sin(tempo * 4.0f)});
+            cliques.area({o.x, o.y - 2}, {cw, 22}, k);
+            f_.desenhar(r, estado, {o.x + cw - 4 - f_.largura(estado), o.y}, corEstado);
+            f_.desenhar(r, caber(f_, nome, static_cast<int>(cw) - 16 - f_.largura(estado)), {o.x + 4, o.y}, s1 ? cor::ouro : cor::texto);
+            f_.desenhar(r, caber(f_, detalhe, static_cast<int>(cw) - 14), {o.x + 10, o.y + 10}, cor::apagado);
+            ++k;
+        }
+        y += linhas * 22.0f + 6;
+    }
+    // Detalhes da linha escolhida: descrição, efeitos, custo e o que falta
+    r.retangulo({p.x + 12, y}, {s.x - 24, 1}, cor::borda);
+    y += 5;
+    if (sel >= 0 && sel < static_cast<int>(acoes.size())) {
+        const std::string id = acoes[sel].substr(2);
+        const float lx = p.x + 16;
+        const int larg = static_cast<int>(s.x) - 32;
+        auto descricao = [&](const std::string& t) {
+            const auto ls = quebrarLinhas(f_, t, larg);
+            for (size_t i = 0; i < std::min<size_t>(2, ls.size()); ++i, y += 11) f_.desenhar(r, ls[i], {lx, y}, cor::texto);
+        };
+        const FaccaoDef* f = nullptr;
+        if (acoes[sel].starts_with("t:")) {
+            const TratadoDef* t = df.tratado(id);
+            f = df.faccao(t->faccao);
+            f_.desenhar(r, f->nome + " - Tratado: " + t->nome, {lx, y}, cor::ouro);
+            y += 12;
+            descricao(t->descricao);
+            f_.desenhar(r, "Todo dia: " + textoTratado(t->efeitos), {lx, y}, cor::bom);
+            y += 12;
+            const std::string falta = w.podeAssinar(id);
+            float cx = lx;
+            if (!t->custo.empty()) {
+                f_.desenhar(r, "Custa:", {lx, y}, cor::apagado);
+                custoEmLinha(r, t->custo, w.inventario, {lx + f_.largura("Custa:") + 6, y});
+                cx = lx + 200;
+            }
+            const std::string estado = w.tratados.contains(id) ? "Em vigor. Romper custa 15 de relação."
+                                       : falta.empty()         ? "Pronto para assinar (E)."
+                                                               : falta;
+            f_.desenhar(r, caber(f_, estado, static_cast<int>(p.x + s.x - 16 - cx)), {cx, y}, falta.empty() ? cor::bom : cor::apagado);
+            y += 12;
+        } else {
+            const auto it = std::ranges::find(dados_.missoes, id, &MissaoDef::id);
+            f = df.faccao(it->faccao);
+            f_.desenhar(r, f->nome + " - Missão: " + it->nome, {lx, y}, cor::ouro);
+            y += 12;
+            descricao(it->descricao);
+            std::string premio;
+            for (const auto& [rid, q] : it->recompensa) premio += std::format("{}{} de {}", premio.empty() ? "" : ", ", q, minusculo(dados_.nomeRecurso(rid)));
+            premio += std::format("{}+{} de relação", premio.empty() ? "" : " e ", it->relacao);
+            f_.desenhar(r, "Recompensa: " + premio, {lx, y}, cor::bom);
+            y += 12;
+        }
+        f_.desenhar(r, caber(f_, std::format("{}, em {}. {}", f->lider, w.nomeRegiao(f->territorio), f->descricao), larg), {lx, y}, cor::apagado);
+    }
+    f_.desenharCentralizado(r, "W/S ou mouse escolher   E assina, rompe ou aceita   T ou Esc fechar", {320, p.y + s.y - 10}, cor::apagado);
+    rodapeFechar("T ou Esc fechar", {320 + (f_.largura("W/S ou mouse escolher   E assina, rompe ou aceita   ")) / 2.0f, p.y + s.y - 10});
 }
 
 }

@@ -68,6 +68,7 @@ float World::efeitoCargo(const std::string& cargo) const {
 }
 
 bool World::decisaoPossivel(const DecisaoDef& d) const {
+    if (d.manual) return false;
     const RequisitoDecisao& r = d.requer;
     if (estado.populacao < r.populacaoMin || static_cast<int>(reino.eraAlvo()) < r.eraMin) return false;
     if (r.impostoMin >= 0 && static_cast<int>(estado.imposto) < r.impostoMin) return false;
@@ -151,6 +152,7 @@ bool World::decidir(const std::string& opcao) {
     if (!e.revogar.empty()) leis.erase(e.revogar);
     if (e.imposto >= 0) estado.imposto = static_cast<Imposto>(e.imposto);
     const std::string id = d->id, nome = o->nome;
+    if (id == "desvio") resolverDesvio(opcao);  // fase 19: tirar do cargo, perdoar ou fingir que não viu
     decisaoPendente.clear();  // o caso está resolvido antes de virar página nas Crônicas
     marcar("decisao:" + id + ":" + opcao, nome);
     eventos_.push_back({EventoJogo::Tipo::Decidiu, jogador.pos, id, opcao, 0, nome});

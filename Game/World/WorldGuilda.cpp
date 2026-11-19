@@ -65,7 +65,7 @@ int World::margemSemSorte(const DestinoDef& d, const std::vector<std::string>& g
     int poder = 0;
     for (const auto& id : grupo)
         if (const AventureiroDef* a = dados().guilda.aventureiro(id)) poder += poderAventureiro(*a, nivelAventureiro(id), d);
-    if (!grupo.empty()) poder += efeitosAlas().expedicao;  // fase 16: os mapas da Biblioteca Real
+    if (!grupo.empty()) poder += efeitosAlas().expedicao + efeitosTratados().expedicao;  // fases 16 e 19: Biblioteca Real e Pacto do Saber
     return poder - d.perigo * 2;
 }
 

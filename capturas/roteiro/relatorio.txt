@@ -261,4 +261,11 @@ captura: 91_povo
 [OK] Esc e P fecham a ficha e a lista
 [OK] um dia de neve no inverno
 captura: 92_neve
+[OK] T abre os vizinhos e o relógio para
+captura: 93_vizinhos
+[OK] E assina a Rota da Pedra (ouro 260)
+[OK] o clique aceita a missão da Ordem Arcana
+captura: 94_vizinhos_tratado
+[OK] T fecha os vizinhos
+[OK] as decisões justas pesam na fama (justiça +16)
 RESULTADO: 0 falha(s)

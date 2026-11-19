@@ -1,7 +1,7 @@
 #pragma once
 // Fase 17: o jogador automático do balanceamento, usado pela ferramenta (Tools/Balanceamento) e por um teste.
 // Joga com a lógica real do jogo: coleta, constrói, cuida da horta, nomeia o conselho, decide os casos, repara o
-// portão, manda expedições, reconstrói o castelo e ergue alas. Não luta (a horda é resolvida pelas defesas).
+// portão, manda expedições, reconstrói o castelo, ergue alas e assina os tratados que não mexem com o Culto. Não luta (a horda é resolvida pelas defesas).
 #include <string>
 #include <vector>
 
@@ -22,6 +22,10 @@ struct Amostra {
     float diasDeComida = 0.0f;  // estoque dividido pelo consumo de um dia
     int obras = 0, nivelCastelo = 0, alas = 0, expedicoes = 0, hordas = 0, saques = 0, estragou = 0;
     int desejos = 0, partiram = 0;  // fase 18: desejos realizados e gente que desistiu de esperar (desde o começo)
+    // Fase 19: relação com cada povo, a fama, tratados em vigor e a intriga (desvios descobertos, ouro ainda sumido)
+    float anoes = 0.0f, ordem = 0.0f, culto = 0.0f;
+    Reputacao fama;
+    int tratados = 0, descobertos = 0, sumido = 0;
 };
 
 class JogadorAutomatico {

@@ -14,6 +14,7 @@
 #include "Game/Kingdom/Povo.h"
 #include "Game/Kingdom/Conselho.h"
 #include "Game/Kingdom/Cotidiano.h"
+#include "Game/Kingdom/Faccoes.h"
 #include "Game/Kingdom/Defesa.h"
 #include "Game/Kingdom/Guilda.h"
 #include "Game/Kingdom/Estacoes.h"
@@ -82,6 +83,7 @@ struct GameData {
     DadosCastelo castelo;                        // fase 16: alas do castelo e o brasão da linhagem
     DadosPovo povo;                              // fase 18: nomes, profissões, traços e desejos do povo
     DadosClima clima;                            // fase 18: o tempo de cada estação
+    DadosFaccoes faccoes;                        // fase 19: povos vizinhos, tratados e reputação
     DadosCotidiano cotidiano;                    // fase 15: horta, pesca, animais, cozinha e presentes
 
     const InimigoDef* inimigoPorLetra(char c) const {

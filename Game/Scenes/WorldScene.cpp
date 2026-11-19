@@ -200,6 +200,11 @@ void WorldScene::entradaJogo() {
         return;
     }
     if (in.pressionou(SDL_SCANCODE_F5)) salvar();
+    if (in.pressionou(SDL_SCANCODE_T)) {  // fase 19: os vizinhos, tratados e a reputação
+        abrir(Painel::Vizinhos);
+        selVizinhos_ = 0;
+        return;
+    }
     if (in.pressionou(SDL_SCANCODE_P)) {  // fase 18: o povo de Valdren
         abrir(Painel::Povo);
         selPovo_ = rolagemPovo_ = 0;
@@ -630,6 +635,29 @@ void WorldScene::entradaFicha() {
     if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_SPACE) || in.pressionou(SDL_SCANCODE_RETURN) ||
         cliqueFecha(in, hud_.cliques) || (in.clicou(ke::BotaoMouse::Esquerdo) && hud_.cliques.em(in.mouse()) == Cliques::PAINEL))
         fechar(Painel::Ficha);
+}
+
+void WorldScene::entradaVizinhos() {
+    ke::Input& in = ctx_.app.input();
+    if (in.pressionou(SDL_SCANCODE_T) || in.pressionou(SDL_SCANCODE_ESCAPE) || cliqueFecha(in, hud_.cliques)) {
+        fechar(Painel::Vizinhos);
+        return;
+    }
+    const auto acoes = hud_.acoesVizinhos();
+    const int n = static_cast<int>(acoes.size());
+    if (n == 0) return;
+    if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selVizinhos_ = (selVizinhos_ + n - 1) % n;
+    if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selVizinhos_ = (selVizinhos_ + 1) % n;
+    const bool clique = listaComMouse(in, hud_.cliques, selVizinhos_, n);
+    if (!(in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique)) return;
+    const std::string& a = acoes[selVizinhos_];
+    const std::string id = a.substr(2);
+    if (a.starts_with("t:")) {
+        if (mundo_.tratados.contains(id)) mundo_.romperTratado(id);
+        else mundo_.assinarTratado(id);
+    } else if (!mundo_.missoes.contains(id)) {
+        mundo_.aceitarMissaoFaccao(id);
+    }
 }
 
 void WorldScene::entradaPovo() {
@@ -1331,6 +1359,7 @@ void WorldScene::atualizar(double dtD) {
     else if (aberto(Painel::Mensagens)) entradaMensagens();
     else if (aberto(Painel::Ficha)) entradaFicha();
     else if (aberto(Painel::Povo)) entradaPovo();
+    else if (aberto(Painel::Vizinhos)) entradaVizinhos();
     else if (aberto(Painel::Regioes)) {
         ke::Input& in = ctx_.app.input();
         if (in.pressionou(SDL_SCANCODE_R) || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques))
@@ -1487,6 +1516,7 @@ void WorldScene::renderizar(float) {
     if (aberto(Painel::Brasao)) hud_.editorBrasao(r, mundo_, rascunho_, selBrasao_, tempo_);
     if (aberto(Painel::Mensagens)) hud_.painelMensagens(r, rolagemMensagens_);
     if (aberto(Painel::Povo)) hud_.painelPovo(r, mundo_, selPovo_, rolagemPovo_);
+    if (aberto(Painel::Vizinhos)) hud_.painelVizinhos(r, mundo_, selVizinhos_, tempo_);
     if (aberto(Painel::Ficha)) hud_.fichaHabitante(r, mundo_, fichaId_);
     if (aberto(Painel::Decisao) && mundo_.decisaoAtual()) {
         hud_.cliques.limpar();  // por cima do conselho: só as opções do caso valem para o mouse

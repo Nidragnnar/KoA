@@ -77,6 +77,13 @@ DadosSave World::capturar() const {
     d.temPovoNomeado = true;
     d.povo = povo;
     d.proximoHabitante = proximoHabitante;
+    // Fase 19
+    d.temFaccoes = true;
+    d.relacoes = relacoes;
+    d.tratados.assign(tratados.begin(), tratados.end());
+    d.reputacao = reputacao;
+    d.desvios = desvios;
+    d.suspeito = suspeito;
     return d;
 }
 
@@ -248,6 +255,21 @@ void World::aplicar(const DadosSave& d) {
     }
     posicionarMoradores();
     sincronizarAldeoes();
+    // Fase 19: os vizinhos (saves antigos: refeitos repassando os marcos que já existem)
+    iniciarFaccoes();
+    if (d.temFaccoes) {
+        for (const auto& [f, v] : d.relacoes)
+            if (dados().faccoes.faccao(f)) relacoes[f] = std::clamp(v, -100.0f, 100.0f);
+        for (const auto& t : d.tratados)
+            if (dados().faccoes.tratado(t)) tratados.insert(t);
+        reputacao = d.reputacao;
+        for (const auto& [npc, q] : d.desvios)
+            if (q > 0) desvios[npc] = q;
+        suspeito = d.suspeito;
+    } else {
+        const std::set<std::string> jaAconteceu = marcos;
+        for (const auto& m : jaAconteceu) reagirAoMarco(m);
+    }
     atualizarPistas();
     atualizarEspeciais();
     atualizarMeteorito();
