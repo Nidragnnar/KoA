@@ -33,6 +33,29 @@ const ke::SpriteRegion& WorldRenderer::comEra(const std::string& nome, int era) 
     return *it->second[std::clamp(era, 0, 3)];
 }
 
+const ke::SpriteRegion& WorldRenderer::comEstilo(const std::string& estilo, const std::string& nome, int era) {
+    if (estilo.empty()) return comEra(nome, era);
+    const std::string chave = estilo + "|" + nome;
+    auto it = cacheEstilo_.find(chave);
+    if (it == cacheEstilo_.end()) {
+        const std::string proprio = estilo + "_" + nome;
+        it = cacheEstilo_.emplace(chave, rec_.temRegiao(proprio) ? &rec_.regiao(proprio) : nullptr).first;
+    }
+    return it->second ? *it->second : comEra(nome, era);
+}
+
+const WorldRenderer::TabelaTiles& WorldRenderer::tilesDoEstilo(const std::string& estilo) {
+    auto it = tilesEstilo_.find(estilo);
+    if (it == tilesEstilo_.end()) {
+        TabelaTiles t{};
+        for (int ter = 0; ter < T_QTD; ++ter)
+            for (int v = 0; v < 4; ++v)
+                if (const std::string n = std::format("{}_terreno_{}_{}", estilo, ter, v); rec_.temRegiao(n)) t[ter][v] = &rec_.regiao(n);
+        it = tilesEstilo_.emplace(estilo, t).first;
+    }
+    return it->second;
+}
+
 const ke::SpriteRegion& WorldRenderer::spriteConstrucao(const World& w, const BuildingData& b) {
     const BuildingDef* d = w.def(b);
     if (!d) return rec_.regiao("?");
@@ -93,7 +116,9 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     const int x1 = std::min(w.mapa.largura() - 1, static_cast<int>(canto.x + cam.vista.x) / lado + 1);
     const int y1 = std::min(w.mapa.altura() - 1, static_cast<int>(canto.y + cam.vista.y) / lado + 1);
 
-    // 1) Terreno (só o que a câmera vê)
+    // 1) Terreno (só o que a câmera vê); com estilo, os tiles próprios da região (ou da Coroa Eterna)
+    const std::string estilo = w.estiloVisual();
+    const TabelaTiles* proprios = estilo.empty() ? nullptr : &tilesDoEstilo(estilo);
     const int quadroAgua = static_cast<int>(tempo * 2.0f);
     for (int y = y0; y <= y1; ++y)
         for (int x = x0; x <= x1; ++x) {
@@ -102,7 +127,8 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
             const int era = w.eraNoTile({x, y});
             int terreno = std::min<int>(t.terreno, T_QTD - 1);
             if (era >= 2 && terreno == T_LAMA) terreno = T_CALCADA;  // no Reino Renascido as estradas são calçadas
-            r.sprite(*tiles_[terreno][v][era], {x * lado, y * lado});
+            const ke::SpriteRegion* s = proprios ? (*proprios)[terreno][v] : nullptr;
+            r.sprite(s ? *s : *tiles_[terreno][v][era], {x * lado, y * lado});
         }
 
     // Enfeites só aparecem quando a era chega ao lugar deles
@@ -140,7 +166,7 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
         if (const auto* a = w.reg.try_get<Animado>(e))
             nome = std::format("{}_{}", a->base, static_cast<int>(tempo * a->fps + p.v.x) % a->quadros);
         if (const auto* tr = w.reg.try_get<TrocaPorEra>(e); tr && era >= tr->era) nome = tr->sprite;
-        const ke::SpriteRegion& s = comEra(nome, era);
+        const ke::SpriteRegion& s = comEstilo(estilo, nome, era);
         const bool grande = w.reg.all_of<Decoracao>(e);
         glm::vec2 pos{p.v.x - s.tamanho.x / 2, p.v.y - s.tamanho.y + (grande ? 0 : 2)};
         if (v.tremor > 0.0f) pos.x += std::round(std::sin(tempo * 70.0f) * 1.5f);

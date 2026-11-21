@@ -273,3 +273,12 @@ SDL 3.2.30 · glm 1.0.1 · EnTT 3.15.0 · nlohmann/json 3.12.0 · Dear ImGui 1.9
 - **Desenho**: o círculo do golpe no chão enche até o golpe cair, e o chefe pisca. As 6 criaturas da 1.16 e os 2 chefes da 1.17 têm procedurais próprios (`criaturasDosAtos`, em `Sprites.cpp`) e a arte do NidraIA; o `aparencia`/`tinta`/`escala` ficou para quem quiser reaproveitar desenho.
 - **Save**: não muda.
 - **Testes**: 3 novos de chefe (postura, golpe em área avisado e o revide contra quem golpeia sem parar) e o do golpe carregado refeito; o roteiro testa o golpe forte pelo mouse (etapa 61) e captura o aviso de Varek (`113_chefe_golpe_area`).
+
+## Arte própria do Pântano, da Torre do Selo e da Coroa Eterna (versão 1.20)
+
+- **Estilo visual**: a região diz no JSON o prefixo da sua arte (`"estilo": "pantano"` no pântano, `"selo"` na Torre). No vilarejo, a Coroa Eterna usa o estilo `coroa`. `World::estiloVisual()` responde qual vale onde o herdeiro está.
+- **Desenho** (`WorldRenderer::comEstilo` e `tilesDoEstilo`): para cada tile e objeto, `"<estilo>_<nome>"` entra no lugar de `"<nome>"` quando o atlas tem essa versão; senão fica a arte comum da era. O mapa, os ids e o save não mudam: é só desenho.
+- **Sprites**: `estilos()` em `Sprites.cpp` faz os procedurais. Pântano: 5 chãos (musgo, turfa, margem, água parada e lajes afundadas), 3 salgueiros com barba-de-velho, juncos, pedras com limo e o toco podre. Torre: piso e paredes rúnicos, e tochas violeta (a luz delas vem de `"luz_tochas"` na região). Coroa: grama florida, terra clara, água limpa, mármore com filetes de ouro, muro branco e o cristal vivo das ruas (a lama vira calçada no Reino Renascido, então não tem versão). A cor de cada final continua vindo da grade da tela.
+- **NidraIA**: todos com a arte final, menos as tochas violeta (procedurais, como as tochas comuns) e o `pantano_arbusto_0`, que é o junco 1 espelhado (duas sementes deram só um tufinho). Na Coroa, `saturacao` 0,7 a 0,8 e `ajusteBrilho` 1: sem isso a grama saía verde-limão e a calçada, branca demais. O atlas segue em 1024×2048 (agora com 753 sprites); a ideia de que estava cheio veio da conta das cópias por era, e estes sprites não têm cópias por era.
+- **Save**: não muda.
+- **Testes**: `Atos.EstiloVisualDasRegioes` (o estilo de cada lugar, as tochas violeta e nenhuma arte própria sem um sprite comum para substituir); o roteiro confere o estilo no pântano, na Torre e na Coroa e ganhou a captura `114_coroa_dia`.

@@ -79,6 +79,9 @@ A versão 1.19 deixou os chefes mais duros: cada um aguenta alguns golpes sem re
 cambaleia) e tem um golpe em área avisado, em que para, brilha e marca um círculo no chão antes de acertar (esquive ou
 saia dele). O golpe forte sai sozinho quando a espada carrega, segurando o J ou o botão do mouse. As criaturas novas
 e os chefes dos atos ganharam a arte do NidraIA.
+A versão 1.20 deu arte própria do NidraIA ao Pântano das Cinzas (musgo, água parada, salgueiros com barba-de-velho,
+juncos), à Torre do Selo (piso e paredes rúnicos, tochas violeta) e ao vilarejo da Coroa Eterna (grama florida,
+mármore com ouro, água limpa e o cristal vivo nas ruas).
 
 As 8 fases do plano de arquitetura da 1.0 estão feitas:
 

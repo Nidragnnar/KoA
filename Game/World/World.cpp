@@ -76,6 +76,8 @@ InfoRegiao World::lerInfoRegiao(const std::string& id, const nlohmann::json& j) 
     info.hostil = j.value("hostil", false);
     info.curaComEra = j.value("cura_com_era", false);
     info.subterranea = j.value("subterranea", false);
+    info.estilo = j.value("estilo", "");
+    if (j.contains("luz_tochas")) info.luzTochas = {j["luz_tochas"][0].get<float>(), j["luz_tochas"][1].get<float>(), j["luz_tochas"][2].get<float>()};
     for (const auto& s : j.value("saidas", nlohmann::json::array())) {
         Saida x;
         x.tile = {s.at("tile")[0].get<int>(), s.at("tile")[1].get<int>()};
@@ -89,6 +91,12 @@ InfoRegiao World::lerInfoRegiao(const std::string& id, const nlohmann::json& j) 
     }
     lerVidaRegiao(j, info.vida);
     return info;
+}
+
+std::string World::estiloVisual() const {
+    if (noVilarejo()) return coroaEterna() ? "coroa" : "";
+    const auto it = regioes.find(regiaoAtual);
+    return it == regioes.end() ? "" : it->second.estilo;
 }
 
 bool World::adicionarRegiao(const std::string& id, const std::string& texto, const nlohmann::json& j, std::string* erro) {
@@ -105,9 +113,11 @@ bool World::adicionarRegiao(const std::string& id, const std::string& texto, con
         return false;
     }
     const glm::vec2 spawnVila = spawn;
+    luzTochas_ = info.luzTochas;
     const bool ok = lerMapa(texto, info, erro);
     spawn = spawnVila;
     prefixoIds_.clear();
+    luzTochas_ = InfoRegiao{}.luzTochas;
     std::swap(mapa, r.mapa);
     std::swap(reg, r.reg);
     if (!ok) return false;
@@ -527,7 +537,7 @@ void World::criarObjeto(char c, int x, int y) {
         reg.emplace<Visual>(e, "tocha_0");
         reg.emplace<Animado>(e, "tocha", 3, 9.0f);
         reg.emplace<Colisor>(e, glm::vec2{2, 2}, glm::vec2{0, -2});
-        reg.emplace<Luz>(e);
+        reg.emplace<Luz>(e).cor = luzTochas_;
         break;
     }
     case 'f': {  // cerca quebrada

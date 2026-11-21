@@ -1805,6 +1805,7 @@ void Roteiro::noMundo(WorldScene& cena) {
             }
             if (quadro_ == 60) {
                 verificar(w.regiaoAtual == "pantano", "com o primeiro ato, a floresta leva ao Pântano das Cinzas");
+                verificar(w.estiloVisual() == "pantano", "o pântano usa a arte própria (1.20)");
                 w.jogador.pos = {20 * 16.0f, 12 * 16.0f};
                 w.jogador.invulneravel = 99.0f;
             }
@@ -1818,6 +1819,7 @@ void Roteiro::noMundo(WorldScene& cena) {
             }
             if (quadro_ == 160) {
                 verificar(w.regiaoAtual == "torre", "com o segundo ato, o pântano leva à Torre do Selo");
+                verificar(w.estiloVisual() == "selo", "a Torre do Selo usa a arte própria (1.20)");
                 w.jogador.pos = {14 * 16.0f + 8, 12 * 16.0f};
             }
             if (quadro_ == 200) capturar("110_torre_selo");
@@ -1862,8 +1864,13 @@ void Roteiro::noMundo(WorldScene& cena) {
             }
             if (quadro_ == 14) in.simularToque(SDL_SCANCODE_E);
             if (quadro_ == 22) in.simularToque(SDL_SCANCODE_E);  // o relatório da manhã, se estiver por baixo
-            if (quadro_ == 90) capturar("112_coroa_vilarejo");
-            if (quadro_ == 92) proxima();
+            if (quadro_ == 90) {
+                verificar(w.estiloVisual() == "coroa", "o vilarejo da Coroa Eterna usa a arte própria (1.20)");
+                capturar("112_coroa_vilarejo");
+                w.relogio.minutos = 12 * 60;  // 1.20: e de dia, com o chão e o cristal novos
+            }
+            if (quadro_ == 110) capturar("114_coroa_dia");
+            if (quadro_ == 112) proxima();
             return;
         }
         case 64:

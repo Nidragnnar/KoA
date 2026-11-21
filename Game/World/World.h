@@ -115,6 +115,8 @@ struct InfoRegiao {
     bool curaComEra = false;        // a floresta clareia conforme o reino prospera
     bool subterranea = false;       // fase 18: o tempo (chuva, neve, neblina) não chega lá
     VidaRegiaoDef vida;             // fase 11: corrupção, segurança, prosperidade e transformações
+    std::string estilo;             // 1.20: prefixo da arte própria ("pantano" usa pantano_terreno_0_0, pantano_arvore_morta_0...)
+    glm::vec3 luzTochas{1.0f, 0.6f, 0.3f};  // 1.20: cor da luz das tochas (violeta na Torre do Selo)
 };
 
 // A partida em si: mapa, objetos (ECS), reino, herói e inventário. Sem janela nem OpenGL.
@@ -151,6 +153,8 @@ public:
 
     // Regiões (vilarejo, floresta, cripta): só a ativa vive em `mapa`/`reg`
     bool noVilarejo() const { return regiaoAtual == "vilarejo"; }
+    // 1.20: prefixo da arte própria do lugar: o da região, ou "coroa" no vilarejo da Coroa Eterna ("" = arte comum)
+    std::string estiloVisual() const;
     const InfoRegiao& infoAtual() const { return regioes.at(regiaoAtual); }
     void entrarRegiao(const std::string& id, glm::ivec2 chegada, Direcao dir);
     float escuridao() const;      // relógio + escuridão mínima da região
@@ -554,6 +558,7 @@ private:
     };
     std::map<std::string, RegiaoGuardada> guardadas_;  // regiões fora de cena
     std::string prefixoIds_;        // "floresta:" ao carregar outra região (ids únicos no save)
+    glm::vec3 luzTochas_{1.0f, 0.6f, 0.3f};  // 1.20: cor das tochas da região sendo carregada
     bool derrotaPendente_ = false;
     glm::ivec2 centroReino_{32, 16};  // de onde a onda das eras parte
     int eraAnunciada_ = 0;          // última era anunciada (para avisar só na virada)

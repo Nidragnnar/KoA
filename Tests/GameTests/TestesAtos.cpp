@@ -1,6 +1,9 @@
 // Segundo e terceiro atos da Queda (1.17): o Pântano das Cinzas, a Torre do Selo, os fragmentos novos, a Sacerdotisa,
 // Varek e os três finais; as regiões novas no save
 #include <gtest/gtest.h>
+#include <nlohmann/json.hpp>
+
+#include "Engine/Platform/FileSystem.h"
 
 #include "Game/Exploration/Components.h"
 #include "Game/World/World.h"
@@ -135,4 +138,41 @@ TEST(Atos, RegioesNovasNoSave) {
     EXPECT_TRUE(w2.marcos.contains("misterio:segundo_ato"));
     EXPECT_TRUE(atravessar(w2, "pantano")) << "carregou na Torre e sai de volta para o pântano";
     std::filesystem::remove_all(pasta);
+}
+
+// 1.20: a arte própria do Pântano, da Torre do Selo e da Coroa Eterna. O renderer troca "<nome>" por "<estilo>_<nome>"
+// quando o atlas tem essa versão; aqui, o estilo de cada lugar e o atlas sem arte própria órfã
+TEST(Atos, EstiloVisualDasRegioes) {
+    World w = vilarejo();
+    EXPECT_EQ(w.estiloVisual(), "");
+    w.entrarRegiao("pantano", {4, 2}, Direcao::Baixo);
+    EXPECT_EQ(w.estiloVisual(), "pantano");
+    w.entrarRegiao("torre", {14, 18}, Direcao::Cima);
+    EXPECT_EQ(w.estiloVisual(), "selo");
+    int tochas = 0;
+    for (auto [e, v, l] : w.reg.view<const Visual, const Luz>().each())
+        if (v.sprite.starts_with("tocha")) {
+            ++tochas;
+            EXPECT_GT(l.cor.b, l.cor.r) << "as tochas do selo são violeta";
+        }
+    EXPECT_GT(tochas, 0);
+    w.entrarRegiao("floresta", {10, 10}, Direcao::Baixo);
+    EXPECT_EQ(w.estiloVisual(), "") << "a floresta segue com a arte comum";
+    w.entrarRegiao("vilarejo", {60, 18}, Direcao::Esquerda);
+    w.marcar("era:coroa_eterna", "", true);
+    EXPECT_EQ(w.estiloVisual(), "coroa") << "o vilarejo da Coroa Eterna";
+
+    const auto texto = ke::fs::lerTexto(std::filesystem::path(PASTA_DATA).parent_path() / "Assets/Sprites/atlas.json");
+    ASSERT_TRUE(texto);
+    const auto atlas = nlohmann::json::parse(*texto);
+    for (const std::string estilo : {"pantano", "selo", "coroa"}) {
+        int tiles = 0;
+        for (const auto& [nome, r] : atlas.items()) {
+            if (!nome.starts_with(estilo + "_")) continue;
+            const std::string comum = nome.substr(estilo.size() + 1);
+            EXPECT_TRUE(atlas.contains(comum)) << nome << " não substitui nenhum sprite";
+            tiles += comum.starts_with("terreno_") ? 1 : 0;
+        }
+        EXPECT_GE(tiles, 8) << estilo << ": pelo menos dois terrenos próprios";
+    }
 }

@@ -4,6 +4,7 @@
   "escuridao_min": 0.5,
   "ambiente": [0.42, 0.52, 0.44],
   "hostil": true,
+  "estilo": "pantano",
   "saidas": [
     { "tile": [3, 0], "tam": [4, 1], "destino": "floresta", "chegada": [7, 33], "dir": "cima" },
     { "tile": [43, 10], "tam": [1, 4], "destino": "torre", "chegada": [14, 18], "dir": "cima", "requer": "misterio:segundo_ato" }

@@ -4,6 +4,8 @@
   "escuridao_min": 0.65,
   "ambiente": [0.45, 0.38, 0.55],
   "hostil": true,
+  "estilo": "selo",
+  "luz_tochas": [0.7, 0.45, 1.0],
   "saidas": [
     { "tile": [13, 21], "tam": [4, 1], "destino": "pantano", "chegada": [41, 11], "dir": "esquerda" }
   ]

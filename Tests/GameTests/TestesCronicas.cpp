@@ -236,7 +236,7 @@ TEST(Cenarios, MontarSavesDeTeste) {
     free(pasta);
     auto gravar = [&](World& w, const std::string& slot) {
         DadosSave d = w.capturar();
-        d.versaoJogo = "1.18.0";
+        d.versaoJogo = "1.20.0";
         d.dataHora = "cenário de teste";
         ASSERT_TRUE(s.salvar(d, slot));
     };
@@ -308,30 +308,31 @@ TEST(Cenarios, MontarSavesDeTeste) {
         w.ultimaDecisao = w.relogio.dia;
         w.relogio.minutos = 9 * 60;
     };
-    // Save_002 (1.15 a 1.17): O SEGUNDO ATO E A GUARDA. O primeiro ato da Queda está fechado: a floresta (canto de baixo
-    // à esquerda) leva ao Pântano das Cinzas, onde estão dois fragmentos novos e a Sacerdotisa. A genealogia está na
-    // cripta; a memória, com os escribas da Biblioteca (castelo, Alas: Decifrar). A Guarda Real (U) tem uma esquadra de
-    // lanceiros de reserva e ouro para mais. A Lâmina de Cristal está na mão (atravessa a defesa); Shift esquiva
+    // Save_002 (1.18 e 1.20): A COROA ETERNA. Varek foi aprisionado e o reino amanheceu na Quinta Era (a Chama Guardada):
+    // o chão, o muro, a água e o cristal vivo das ruas com a arte própria do NidraIA. De manhã, para olhar com calma
     {
         World w = vilarejo();
         adiantado(w);
-        for (const PistaDef& p : dados().lore.pistas)
-            if (p.ato == 1) w.marcar("pista:" + p.id, p.titulo, true);
-        EXPECT_TRUE(w.marcos.contains("misterio:primeiro_ato"));
-        ASSERT_TRUE(w.formarEsquadra("lanceiros"));
-        w.inventario.definir("ouro", 600);
-        w.equip.possuidos.insert("espada_cristal");
-        w.equip.arma = "espada_cristal";
-        std::printf("[cenário] Save_002: primeiro ato %s; esquadras %zu; arma %s\n", w.marcos.contains("misterio:primeiro_ato") ? "fechado" : "aberto",
-                    w.esquadras.size(), w.equip.arma.c_str());
+        for (const PistaDef& p : dados().lore.pistas) w.marcar("pista:" + p.id, p.titulo, true);
+        ASSERT_TRUE(w.escolher("sacerdotisa", "entregar"));
+        w.marcar("era:3", "Reino da Alta Fantasia", true);
+        w.reino.eraConquistada = 3;
+        w.reino.eraVisual = 3.0f;
+        ASSERT_TRUE(w.escolher("chama_final", "aprisionar"));
+        w.dormir(false);
+        w.relogio.minutos = 9 * 60;
+        w.jogador.pos = {31.0f * 16, 20.0f * 16};
+        std::printf("[cenário] Save_002: Coroa Eterna %s; cristal nas ruas %s; estilo %s\n", w.coroaEterna() ? "sim" : "não",
+                    w.marcos.contains("coroa:cristal") ? "sim" : "não", w.estiloVisual().c_str());
+        EXPECT_TRUE(w.coroaEterna());
         w.tirarEventos();
         gravar(w, "Save_002");
         World c = vilarejo();
         c.aplicar(*s.carregar("Save_002"));
-        EXPECT_EQ(c.esquadras.size(), 1u);
-        EXPECT_TRUE(c.marcos.contains("misterio:primeiro_ato"));
+        EXPECT_TRUE(c.coroaEterna());
+        EXPECT_EQ(c.estiloVisual(), "coroa");
     }
-    // Save_003 (1.17 e 1.18): DIANTE DE VAREK. O segundo ato está fechado e o herdeiro está na Torre do Selo, com a Lâmina
+    // Save_003 (1.17, 1.18 e 1.20): DIANTE DE VAREK. O segundo ato está fechado e o herdeiro está na Torre do Selo (a saída de baixo leva ao Pântano), com a Lâmina
     // da Chama (queima) e o reino na Alta Fantasia. Varek investe sem parar na fase 2 e se rende com 30% da vida: a escolha
     // final (aprisionar, unir-se, destruir). Na noite seguinte começa a Quinta Era, Coroa Eterna, com o epílogo
     {

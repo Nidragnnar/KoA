@@ -2454,6 +2454,350 @@ void criaturasDosAtos(Lista& l) {
         for (int q = 0; q < 2; ++q) l.emplace_back(std::format("inimigo_{}_{}", id, q), f(q));
 }
 
+// ---------- 1.20: estilos (Pântano das Cinzas, Torre do Selo e Coroa Eterna) ----------
+// "<estilo>_<nome>" entra no lugar de "<nome>" na região do estilo (ou no vilarejo da Coroa Eterna)
+
+// Pântano: musgo encharcado, com poças escuras entre os tufos
+Img musgoBrejo(int v) {
+    std::mt19937 r(3100 + v);
+    Img t(16, 16);
+    t.rect(0, 0, 16, 16, hex("#2e3c28"));
+    t.salpicar(r, 44, hex("#263220"));
+    t.salpicar(r, 24, hex("#3c4c2e"));
+    std::uniform_int_distribution<int> d(0, 15);
+    for (int k = 0; k < 3; ++k) {  // poças
+        const int x = d(r), y = d(r);
+        t.rect(x, y, 2, 1, hex("#1e2824"));
+        t.px(x, y, hex("#35443e"));
+    }
+    if (v == 1) t.salpicar(r, 5, hex("#6a6838"));    // capim seco
+    if (v == 3) t.px(d(r), d(r), hex("#b0a878"));    // cogumelo pálido
+    return t;
+}
+
+// Pântano: trilha de turfa preta e úmida
+Img turfa(int v) {
+    std::mt19937 r(3200 + v);
+    Img t(16, 16);
+    t.rect(0, 0, 16, 16, hex("#3a3128"));
+    t.salpicar(r, 34, hex("#2e2720"));
+    t.salpicar(r, 12, hex("#463c30"));
+    std::uniform_int_distribution<int> d(1, 14);
+    for (int k = 0; k < 2 + v % 2; ++k) {  // gravetos afundados
+        const int x = d(r), y = d(r);
+        t.rect(x, y, 3, 1, hex("#54452f"));
+    }
+    if (v % 2 == 0) t.elipse(4 + v * 2, 10, 2, 1, hex("#262c2a"));  // água na pegada
+    return t;
+}
+
+// Pântano: margem de lodo com raízes e tocos de junco
+Img margemLodo(int v) {
+    std::mt19937 r(3300 + v);
+    Img t(16, 16);
+    t.rect(0, 0, 16, 16, hex("#3a3a2a"));
+    t.salpicar(r, 30, hex("#30301f"));
+    t.salpicar(r, 14, hex("#4a4a32"));
+    std::uniform_int_distribution<int> d(0, 15);
+    for (int k = 0; k < 4; ++k) {  // tocos de junco
+        const int x = d(r), y = 3 + d(r) % 11;
+        t.px(x, y, hex("#5a6a34"));
+        t.px(x, y + 1, hex("#3e4a26"));
+    }
+    t.linha(v * 3, 12, v * 3 + 6, 14, hex("#2a2418"));  // raiz
+    return t;
+}
+
+// Pântano: água parada, verde-escura, com lentilha-d'água boiando
+Img aguaBrejo(int v) {
+    std::mt19937 r(3400);  // mesma base em todos os quadros: só as ondas andam
+    Img t(16, 16);
+    t.rect(0, 0, 16, 16, hex("#1f2c26"));
+    t.salpicar(r, 22, hex("#1a241f"));
+    t.salpicar(r, 10, hex("#3e5a2c"));  // lentilha-d'água
+    for (int k = 0; k < 3; ++k) {
+        const int y = (k * 5 + 2) % 16;
+        const int x = (k * 6 + v * 2) % 16;
+        for (int i = 0; i < 3; ++i) t.px((x + i) % 16, y, hex("#30443a"));
+    }
+    return t;
+}
+
+// Pântano: lajes antigas meio afundadas no lodo
+Img lajesAfundadas(int v) {
+    std::mt19937 r(3500 + v);
+    Img t(16, 16);
+    t.rect(0, 0, 16, 16, hex("#33362a"));
+    std::uniform_int_distribution<int> falta(0, 9), tom(-6, 6);
+    for (int fy = 0; fy < 2; ++fy)
+        for (int fx = -1; fx < 2; ++fx) {
+            const int x = fx * 9 + (fy % 2) * 4, y = fy * 8;
+            if (falta(r) < 2) continue;  // laje sumida no lodo
+            const Cor base = clarear(hex("#555a4a"), tom(r) / 100.0f);
+            t.rect(x + 1, y + 1, 8, 6, base);
+            t.rect(x + 1, y + 1, 8, 1, clarear(base, 0.1f));
+            t.rect(x + 1, y + 6, 8, 1, clarear(base, -0.18f));
+        }
+    t.salpicar(r, 14, hex("#45542e"));  // musgo
+    return t;
+}
+
+// Pântano: salgueiro morto com barba-de-velho pendurada (v = 2: tronco seco, sem copa)
+Img salgueiroBrejo(int v) {
+    std::mt19937 r(3600 + v);
+    Img t(32, 48);
+    t.linha(9, 47, 14, 43, hex("#2a2620"));  // raízes de mangue
+    t.linha(22, 47, 18, 43, hex("#2a2620"));
+    t.linha(5, 46, 13, 44, hex("#2a2620"));
+    t.linha(26, 46, 19, 45, hex("#2a2620"));
+    for (int y = 46; y >= 20; --y) {
+        const float k = (46 - y) / 26.0f;
+        const int larg = static_cast<int>(6 - k * 3.0f);
+        const int x = 13 + static_cast<int>(std::sin(y * 0.2f + v * 2) * 1.5f);
+        t.rect(x, y, larg, 1, hex("#3a3630"));
+        t.px(x, y, hex("#28251f"));
+        if (larg > 2) t.px(x + larg - 1, y, hex("#4c473c"));
+    }
+    const float base = -std::numbers::pi_v<float> / 2;
+    galho(t, r, 15, 22, base - 0.5f, 10, 2, 2);
+    galho(t, r, 16, 22, base + 0.55f, 10, 2, 2);
+    galho(t, r, 15, 28, base - 1.1f, 7, 1, 1);
+    if (v < 2) {
+        // Copa rala e caída, verde-oliva
+        const std::pair<int, int> tufos[] = {{10, 12}, {21, 12}, {15, 7}, {6, 17}, {25, 17}};
+        const Cor tons[] = {hex("#26321f"), hex("#324028"), hex("#3e4e30")};
+        for (int c = 0; c < 3; ++c)
+            for (const auto& [x, y] : tufos) t.elipse(x, y - c, 5 - c, 3 - c / 2, tons[c]);
+    }
+    // Barba-de-velho: fios pendurados dos galhos
+    std::uniform_int_distribution<int> dx(4, 27), comp(5, 12);
+    for (int k = 0; k < (v < 2 ? 11 : 6); ++k) {
+        const int x = dx(r), y0 = 10 + (k % 4) * 3, c = comp(r);
+        for (int y = y0; y < y0 + c && y < 40; ++y) t.px(x + ((y - y0) / 4) % 2, y, y % 3 ? hex("#5a6448") : hex("#6c7656"));
+    }
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Pântano: toco podre com cogumelos
+Img tocoBrejo() {
+    Img t(16, 16);
+    t.rect(4, 8, 8, 6, hex("#3a332a"));
+    t.rect(4, 8, 1, 6, hex("#28231d"));
+    t.elipse(8, 8, 4, 2, hex("#54483a"));
+    t.elipse(8, 8, 2, 1, hex("#2e281f"));  // miolo podre
+    t.elipse(12, 11, 2, 1, hex("#c0a880"));  // cogumelos
+    t.px(12, 12, hex("#e0d0b0"));
+    t.elipse(4, 12, 1, 1, hex("#a89070"));
+    t.linha(2, 14, 5, 13, hex("#2a2620"));
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Pântano: touceira de junco com as espigas marrons (taboa)
+Img junco(int v) {
+    std::mt19937 r(3700 + v);
+    Img t(16, 16);
+    std::uniform_int_distribution<int> d(-5, 5);
+    for (int k = 0; k < 8; ++k) {
+        const int topo = 2 + std::abs(d(r)) / 2, x = 8 + d(r);
+        t.linha(8 + (x - 8) / 3, 15, x, topo, k % 2 ? hex("#4e5e30") : hex("#3c4a26"));
+        if (k % 3 == v) t.rect(x, topo, 1, 3, hex("#6a4a2a")), t.px(x, topo - 1, hex("#4e5e30"));  // espiga
+    }
+    return t;
+}
+
+// Pântano: pedra coberta de limo, com fungos
+Img pedraBrejo(int v) {
+    std::mt19937 r(3800 + v);
+    Img t(16, 16);
+    if (v == 0) {
+        t.elipse(8, 10, 6, 4, hex("#4c5046"));
+        t.elipse(7, 8, 4, 3, hex("#5e6356"));
+    } else {
+        t.elipse(6, 11, 5, 3, hex("#4c5046"));
+        t.elipse(11, 9, 4, 4, hex("#555a4c"));
+        t.elipse(10, 8, 2, 2, hex("#666b5c"));
+    }
+    t.salpicar(r, 14, hex("#4a5a30"), 1, 4, 15, 9);  // limo por cima
+    t.px(4 + v * 6, 12, hex("#c8b890"));              // fungo
+    t.px(5 + v * 6, 12, hex("#b0a078"));
+    t.rect(2, 14, 12, 1, hex("#2e3028"));             // linha d'água
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Torre do Selo: lajes de pedra violeta-escura com runas apagadas
+Img pisoSelo(int v) {
+    std::mt19937 r(3900 + v);
+    Img t(16, 16);
+    t.rect(0, 0, 16, 16, hex("#26222e"));  // juntas
+    std::uniform_int_distribution<int> tom(-5, 5);
+    for (int fy = 0; fy < 2; ++fy)
+        for (int fx = 0; fx < 2; ++fx) {
+            const Cor base = clarear(hex("#3e3848"), tom(r) / 100.0f);
+            t.rect(fx * 8 + 1, fy * 8 + 1, 7, 7, base);
+            t.rect(fx * 8 + 1, fy * 8 + 1, 7, 1, clarear(base, 0.1f));
+        }
+    if (v == 1 || v == 3) {  // runa gravada
+        const Cor runa = hex("#7a5aa8");
+        t.linha(4, 3, 4, 7, runa);
+        t.linha(3, 4, 6, 6, runa);
+        if (v == 3) t.linha(11, 10, 13, 13, runa), t.px(12, 10, runa);
+    }
+    t.salpicar(r, 6, hex("#1e1a26"));  // rachaduras
+    return t;
+}
+
+// Torre do Selo: blocos grandes de pedra escura com uma runa acesa
+Img paredeSelo(int v) {
+    std::mt19937 r(4000 + v);
+    Img t(16, 16);
+    t.rect(0, 0, 16, 16, hex("#221e28"));
+    for (int fy = 0; fy < 3; ++fy)
+        for (int fx = -1; fx < 2; ++fx) {
+            const int x = fx * 10 + (fy % 2) * 5, y = fy * 5;
+            t.rect(x + 1, y + 1, 9, 4, hex("#3a3444"));
+            t.rect(x + 1, y + 1, 9, 1, hex("#4a4456"));
+        }
+    if (v == 2) t.rect(7, 6, 2, 3, hex("#9a70e0")), t.px(7, 7, hex("#d0b8ff"));  // runa acesa
+    t.salpicar(r, 5, hex("#2c2834"));
+    t.rect(0, 14, 16, 2, hex("#18151c"));  // sombra na base
+    return t;
+}
+
+// Torre do Selo: braseiro de pedra com a chama violeta do selo
+Img tochaSelo(int q) {
+    Img t(8, 20);
+    t.rect(3, 10, 2, 10, hex("#3a3444"));
+    t.rect(3, 10, 1, 10, hex("#4a4456"));
+    t.rect(1, 8, 6, 3, hex("#2a2632"));  // braseiro
+    t.rect(1, 8, 6, 1, hex("#4a4456"));
+    const int h = 5 + (q == 1 ? 1 : 0), dx = q == 2 ? 1 : 0;
+    t.elipse(4, 8 - h / 2, 2, h / 2, hex("#6a3aa8"));
+    t.elipse(4 + dx, 7 - h / 2, 1, h / 2, hex("#a070f0"));
+    t.px(4 + dx, 6, hex("#e0d0ff"));
+    t.px(4 - dx, 7, hex("#e0d0ff"));
+    t.px(4 + dx, 1 + q, hex("#5030a0"));
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Coroa Eterna: grama viva e clara, salpicada de flores
+Img gramaCoroa(int v) {
+    std::mt19937 r(4100 + v);
+    Img t(16, 16);
+    t.rect(0, 0, 16, 16, hex("#4e8a3e"));
+    t.salpicar(r, 36, hex("#447a36"));
+    t.salpicar(r, 24, hex("#5e9c48"));
+    std::uniform_int_distribution<int> d(0, 15);
+    static const char* flores[] = {"#f4ecd8", "#f0b0d0", "#f4d870", "#b0d0f8"};
+    for (int k = 0; k < 2 + v % 2; ++k) t.px(d(r), d(r), hex(flores[(k + v) % 4]));
+    return t;
+}
+
+// Coroa Eterna: caminho de terra clara e batida
+Img terraCoroa(int v) {
+    std::mt19937 r(4200 + v);
+    Img t(16, 16);
+    t.rect(0, 0, 16, 16, hex("#9a7e5a"));
+    t.salpicar(r, 28, hex("#8a7050"));
+    t.salpicar(r, 16, hex("#ac9068"));
+    std::uniform_int_distribution<int> d(1, 14);
+    for (int k = 0; k < 2; ++k) t.px(d(r), d(r), hex("#c8b490"));
+    return t;
+}
+
+// Coroa Eterna: água limpa e azul, com brilhos
+Img aguaCoroa(int v) {
+    std::mt19937 r(4300);
+    Img t(16, 16);
+    t.rect(0, 0, 16, 16, hex("#3a86a8"));
+    t.salpicar(r, 20, hex("#347898"));
+    for (int k = 0; k < 4; ++k) {
+        const int y = (k * 4 + 1) % 16, x = (k * 7 + v * 3) % 16;
+        for (int i = 0; i < 3; ++i) t.px((x + i) % 16, y, hex("#5aa8c8"));
+        t.px((x + 1) % 16, (y + 15) % 16, hex("#d8f4ff"));
+    }
+    return t;
+}
+
+// Coroa Eterna: calçada de mármore claro com filetes dourados
+Img calcadaCoroa(int v) {
+    std::mt19937 r(4400 + v);
+    Img t(16, 16);
+    t.rect(0, 0, 16, 16, hex("#a89868"));  // juntas douradas
+    std::uniform_int_distribution<int> tom(-4, 4);
+    for (int fy = 0; fy < 4; ++fy)
+        for (int fx = -1; fx < 3; ++fx) {
+            const int x = fx * 6 + (fy % 2) * 3, y = fy * 4;
+            const Cor base = clarear(hex("#c4beb0"), tom(r) / 100.0f);
+            t.rect(x + 1, y + 1, 5, 3, base);
+            t.rect(x + 1, y + 1, 5, 1, clarear(base, 0.08f));
+        }
+    if (v == 2) t.px(8, 8, hex("#f0d070"));
+    return t;
+}
+
+// Coroa Eterna: muro de pedra branca com friso de ouro
+Img muroCoroa(int v) {
+    std::mt19937 r(4500 + v);
+    Img t(16, 16);
+    t.rect(0, 0, 16, 16, hex("#a8a296"));
+    for (int fy = 0; fy < 4; ++fy)
+        for (int fx = -1; fx < 3; ++fx) {
+            const int x = fx * 7 + (fy % 2) * 3, y = fy * 4;
+            t.rect(x + 1, y + 1, 6, 3, hex("#c6c0b2"));
+            t.rect(x + 1, y + 1, 6, 1, hex("#e8e2d6"));
+        }
+    t.rect(0, 0, 16, 1, hex("#d0a848"));  // friso dourado
+    t.salpicar(r, 3, hex("#c0b8a8"));
+    t.rect(0, 14, 16, 2, hex("#7a7468"));
+    return t;
+}
+
+// Coroa Eterna: cristal vivo brotando entre as pedras da rua
+Img cristalCoroa() {
+    Img t(20, 30);
+    t.elipse(10, 28, 8, 2, hex("#000000", 70));
+    t.elipse(10, 26, 7, 3, hex("#8a8478"));  // pedras rachadas da base
+    t.elipse(9, 25, 4, 2, hex("#a8a294"));
+    auto ponta = [&](int cx, int base, int alto, int meia) {
+        for (int y = 0; y < alto; ++y) {
+            const int m = std::max(1, meia - (alto - y < meia * 2 ? (meia * 2 - (alto - y)) / 2 : 0));
+            const int yy = base - alto + y;
+            const int mm = y < 3 ? std::min(m, y / 2 + 1) : m;
+            t.rect(cx - mm, yy, mm * 2, 1, y % 3 ? hex("#6ac8f0") : hex("#8ad8ff"));
+        }
+        t.rect(cx - 1, base - alto + 2, 1, alto - 4, hex("#e0f8ff"));
+    };
+    ponta(10, 25, 22, 3);  // o maior, no meio
+    ponta(5, 26, 12, 2);
+    ponta(15, 26, 14, 2);
+    t.contornar(hex("#1a3a5a"));
+    return t;
+}
+
+void estilos(Lista& l) {
+    // Pântano das Cinzas
+    Img (*pantano[])(int) = {musgoBrejo, turfa, margemLodo, aguaBrejo, lajesAfundadas};
+    for (int t = 0; t < 5; ++t)
+        for (int v = 0; v < 4; ++v) l.emplace_back(std::format("pantano_terreno_{}_{}", t, v), pantano[t](v));
+    for (int v = 0; v < 3; ++v) l.emplace_back(std::format("pantano_arvore_morta_{}", v), salgueiroBrejo(v));
+    l.emplace_back("pantano_toco", tocoBrejo());
+    for (int v = 0; v < 2; ++v) l.emplace_back(std::format("pantano_arbusto_{}", v), junco(v));
+    for (int v = 0; v < 2; ++v) l.emplace_back(std::format("pantano_rocha_{}", v), pedraBrejo(v));
+    // Torre do Selo
+    for (int v = 0; v < 4; ++v) l.emplace_back(std::format("selo_terreno_4_{}", v), pisoSelo(v));
+    for (int v = 0; v < 4; ++v) l.emplace_back(std::format("selo_terreno_5_{}", v), paredeSelo(v));
+    for (int q = 0; q < 3; ++q) l.emplace_back(std::format("selo_tocha_{}", q), tochaSelo(q));
+    // Coroa Eterna (a lama vira calçada no Reino Renascido, então não tem versão própria)
+    const std::pair<int, Img (*)(int)> coroa[] = {{0, gramaCoroa}, {1, terraCoroa}, {3, aguaCoroa}, {4, calcadaCoroa}, {5, muroCoroa}};
+    for (const auto& [t, f] : coroa)
+        for (int v = 0; v < 4; ++v) l.emplace_back(std::format("coroa_terreno_{}_{}", t, v), f(v));
+    l.emplace_back("coroa_cristal", cristalCoroa());
+}
+
 std::vector<std::pair<std::string, Img>> gerarTodos() {
     Lista l;
     const char* nomes[] = {"grama", "terra", "lama", "agua", "calcada", "muro"};
@@ -2497,6 +2841,7 @@ std::vector<std::pair<std::string, Img>> gerarTodos() {
     fase15(l);
     fase16(l);
     criaturasDosAtos(l);
+    estilos(l);
     return l;
 }
 

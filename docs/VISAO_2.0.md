@@ -185,9 +185,9 @@ P4.3 da auditoria, como ela recomendou: não um degrau a mais de desenvolvimento
 - Música própria (lá lídio, coro, sinos e bordão).
 - A ameaça nova: o eco da Chama em terras distantes atiça as criaturas (toda horda vem 25% mais forte), com notícias a cada 14 dias.
 - A partida continua: o reinado é eterno, e a linhagem segue (fase 21).
-- **Limite assumido**: não há arte `_e4`. Os sprites são os da Alta Fantasia, sob a cor de cada Coroa; o atlas de 1024×2048 já está cheio e a arte nova é do NidraIA.
+- **Limite assumido** na 1.18: não havia arte `_e4`. Na 1.20 o vilarejo da Coroa ganhou chão, muro, água e cristal próprios do NidraIA (estilo `coroa`); as construções seguem com a arte da Alta Fantasia, sob a cor de cada Coroa.
 ### Depois do plano da auditoria (para decidir mais tarde)
-- Todos os itens da auditoria estão feitos. Próximos passos naturais: a arte própria do que foi feito com sprites emprestados (criaturas novas, pântano, torre, a Coroa Eterna), escoltar e guardar com a Guarda a partir do mapa, e mais facções (elfos, tribos do norte).
+- Todos os itens da auditoria estão feitos. A arte própria do que usava sprites emprestados ficou pronta (criaturas novas na 1.19; pântano, torre e Coroa Eterna na 1.20). Próximos passos naturais: escoltar e guardar com a Guarda a partir do mapa, e mais facções (elfos, tribos do norte).
 ### Depois da 2.0 (para decidir mais tarde)
 - Linhagem: casamento, herdeiros, envelhecimento e sucessão.
 - Mais facções e diplomacia (elfos, tribos do norte) e conflitos entre elas no mapa.

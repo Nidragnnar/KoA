@@ -30,11 +30,18 @@ public:
 
     // Versão do sprite para a era (cai para a era anterior se não houver)
     const ke::SpriteRegion& comEra(const std::string& nome, int era);
+    // 1.20: "<estilo>_<nome>" quando existe (arte própria da região ou da Coroa Eterna); senão, a versão da era
+    const ke::SpriteRegion& comEstilo(const std::string& estilo, const std::string& nome, int era);
 
 private:
+    using TabelaTiles = std::array<std::array<const ke::SpriteRegion*, 4>, T_QTD>;  // [terreno][variante]; nullptr = sem versão própria
+    const TabelaTiles& tilesDoEstilo(const std::string& estilo);
+
     ke::ResourceManager& rec_;
     std::array<std::array<std::array<const ke::SpriteRegion*, 4>, 4>, T_QTD> tiles_{};  // [terreno][variante][era]
     std::unordered_map<std::string, std::array<const ke::SpriteRegion*, 4>> cacheEra_;
+    std::unordered_map<std::string, TabelaTiles> tilesEstilo_;
+    std::unordered_map<std::string, const ke::SpriteRegion*> cacheEstilo_;  // "estilo|nome" -> sprite próprio (nullptr = não tem)
 };
 
 }
