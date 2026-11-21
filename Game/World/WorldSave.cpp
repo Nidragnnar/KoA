@@ -95,6 +95,8 @@ DadosSave World::capturar() const {
     // Fase 21
     d.temLinhagem = true;
     d.linhagem = linhagem;
+    d.temMundo = true;
+    d.mundo = mundoVivo;
     return d;
 }
 
@@ -311,6 +313,16 @@ void World::aplicar(const DadosSave& d) {
         const int vida = jogador.vida;
         iniciarLinhagem();
         jogador.vida = std::clamp(vida, 1, jogador.vidaMax);
+    }
+    // Mundo vivo: só as aldeias e pedidos que ainda existem nos dados (saves antigos: como nos dados)
+    iniciarMundoVivo();
+    if (d.temMundo) {
+        const DadosMundo& dm = dados().mundo;
+        for (const auto& [id, e] : d.mundo.aldeias)
+            if (dm.aldeia(id)) mundoVivo.aldeias[id] = e;
+        for (const PedidoAberto& p : d.mundo.pedidos)
+            if (p.aldeia.empty() ? dm.viajante(p.def) != nullptr : dm.aldeia(p.aldeia) && dm.ajuda(p.def)) mundoVivo.pedidos.push_back(p);
+        mundoVivo.noticias = d.mundo.noticias;
     }
     atualizarPistas();
     atualizarEspeciais();

@@ -185,7 +185,8 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
              {"World/clima.json", [&](const nlohmann::json& jj) { return lerClima(jj, clima, erro); }},
              {"Kingdom/faccoes.json", [&](const nlohmann::json& jj) { return lerFaccoes(jj, faccoes, erro); }},
              {"Kingdom/mercado.json", [&](const nlohmann::json& jj) { return lerMercado(jj, mercado, erro); }},
-             {"Kingdom/linhagem.json", [&](const nlohmann::json& jj) { return lerLinhagem(jj, linhagem, erro); }}}) {
+             {"Kingdom/linhagem.json", [&](const nlohmann::json& jj) { return lerLinhagem(jj, linhagem, erro); }},
+             {"World/mundo.json", [&](const nlohmann::json& jj) { return lerMundo(jj, mundo, erro); }}}) {
         const auto texto = ke::fs::lerTexto(pasta / arq);
         const auto jj = texto ? nlohmann::json::parse(*texto, nullptr, false) : nlohmann::json();
         if (!texto || jj.is_discarded()) {
@@ -203,6 +204,12 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
     for (const ConjugeDef& cj : linhagem.conjuges)
         if ((!cj.npc.empty() && !npcs.contains(cj.npc)) || (!cj.faccao.empty() && !faccoes.faccao(cj.faccao))) {
             if (erro) *erro = "linhagem: cônjuge desconhecido: " + cj.id();
+            return false;
+        }
+    // Mundo vivo: aldeias de facções que existem
+    for (const AldeiaDef& al : mundo.aldeias)
+        if (!al.faccao.empty() && !faccoes.faccao(al.faccao)) {
+            if (erro) *erro = "mundo: aldeia de facção desconhecida: " + al.id;
             return false;
         }
     for (const auto& [cargo, t] : linhagem.tutores)

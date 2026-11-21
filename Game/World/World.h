@@ -377,6 +377,16 @@ public:
     int diasDeReinado() const { return relogio.dia - linhagem.inicioReinado; }
     int anoDoReino() const { return relogio.ano() + linhagem.anosSaltados; }
     void noiteDaLinhagem(std::vector<std::string>& notas);
+    // Mundo vivo (1.14): aldeias vizinhas, caravanas, viajantes e a terra tomada que avança, longe do herdeiro
+    EstadoMundo mundoVivo;
+    void iniciarMundoVivo();
+    bool mundoVivoAtivo() const;  // depois da estrada leste limpa
+    float corrupcaoPerto(const AldeiaDef& a) const;
+    std::string textoPedido(const PedidoAberto& p) const;
+    Custo custoPedido(const PedidoAberto& p) const;
+    std::string podeAtender(int pedido) const;  // "" = pode
+    bool atenderPedido(int pedido);
+    void noiteDoMundo(std::vector<std::string>& notas);
 
     const std::vector<ke::AABB>& obstaculos() const;  // fase 17: em cache (refeito só quando algo muda)
     std::vector<ke::AABB> calcularObstaculos() const;  // o cálculo completo, sem cache (os testes comparam os dois)

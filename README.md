@@ -6,7 +6,7 @@ era a era, até a **Alta Fantasia**.
 
 Engine própria em **C++20 + SDL3 + OpenGL 3.3** (Kingdom Engine), com EnTT, Dear ImGui, nlohmann/json e GoogleTest.
 
-## Versão 1.13
+## Versão 1.14
 
 A 2.0 está em andamento (identidade e plano em `docs/VISAO_2.0.md`). A fase 9 trouxe as Crônicas do Reino
 (tecla C), os títulos do herdeiro, o mercador viajante, três monumentos e o começo do mistério da Queda das Cinzas.
@@ -56,6 +56,10 @@ A fase 21 trouxe a linhagem (tecla Y): o herdeiro casa com um morador de amizade
 uma facção aliada; os filhos nascem, crescem em cerca de um ano de jogo e herdam um traço dos pais e outro do tutor
 (um conselheiro). Com um filho adulto, a coroa passa e a história salta 15 anos: o reino continua, o novo herdeiro
 joga com os próprios traços e as Crônicas se dividem por reinado. Quem reina demais envelhece e morre.
+A versão 1.14 deu vida ao mundo longe do herdeiro: três aldeias vizinhas crescem ou definham com a corrupção ao redor,
+pedem ajuda (fome, criaturas, bandidos) e podem ser abandonadas (os sobreviventes vêm para Valdren); as caravanas delas
+barateiam o mercado e pagam pedágio, ou são atacadas na estrada; viajantes e mercenários aparecem com pedidos de um dia;
+e a terra tomada avança para as vizinhas. O relatório da manhã traz no máximo duas notícias, e as Terras (R) mostram tudo.
 
 As 8 fases do plano de arquitetura da 1.0 estão feitas:
 
@@ -77,7 +81,7 @@ As 8 fases do plano de arquitetura da 1.0 estão feitas:
 | H | comer (o prato que mais cura, ou 3 de comida) |
 | F | na conversa, dar presente; no fogão, comer o prato escolhido |
 | Tab | Livro do Reino: todas as abas (Tab de novo passa para a próxima; também pelo botão no canto) |
-| B / K / V / R / G / L / C | obras / reino / mercado / terras do reino / Conselho Real / diário / Crônicas |
+| B / K / V / R / G / L / C | obras / reino / mercado / terras, aldeias e pedidos / Conselho Real / diário / Crônicas |
 | N | mensagens (os últimos avisos, com dia e hora) |
 | P | o povo (todos os habitantes; clique para a ficha) |
 | T | os vizinhos: tratados, missões das facções e a fama do herdeiro |

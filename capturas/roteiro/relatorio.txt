@@ -295,4 +295,10 @@ captura: 101_sucessao
 [OK] as Crônicas abrem o segundo reinado
 captura: 102_cronicas_reinados
 [OK] Esc fecha as Crônicas
+[OK] 2 notícia(s) no relatório da manhã (de 2 da noite)
+captura: 103_noticias_manha
+[OK] R abre as Terras com o pedido do Vau Cinzento
+captura: 104_terras_aldeias
+[OK] E atende: Valdren ajudou o Vau Cinzento
+[OK] Esc fecha as Terras
 RESULTADO: 0 falha(s)

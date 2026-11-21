@@ -58,6 +58,8 @@ int main(int argc, char** argv) {
         resumo += std::format("- Intriga: desvios descobertos {}; ouro ainda sumido {}\n", f.descobertos, f.sumido);
         // Fase 20: a comida que sobra tem destino (o preço da comida no dia 60 e no fim mostra que ela segue valendo)
         const float comida60 = jogador.historico().size() >= 60 ? jogador.historico()[59].precoComida : 0.0f;
+        resumo += std::format("- Mundo vivo: {} de {} aldeias de pé no fim; {} ajudas dadas; no máximo {} notícias num relatório\n", f.aldeiasVivas,
+                              w.mundoVivo.aldeias.size(), f.ajudas, f.noticiasMax);
         resumo += std::format("- Mercado: {} de comida vendida; {} de ouro em vendas e {} em compras; comida a {:.2f} a unidade no dia 60 e {:.2f} no fim\n",
                               f.comidaVendida, f.ouroVendas, f.ouroCompras, comida60, f.precoComida);
     }

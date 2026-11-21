@@ -1,0 +1,28 @@
+{
+  "anos_saltados": 0,
+  "atual": 1,
+  "inicio_reinado": 1,
+  "membros": [
+    {
+      "adulto": true,
+      "conjuge": 0,
+      "faccao": "",
+      "genitor": 0,
+      "id": 1,
+      "nasceu": 0,
+      "nome": "Aren",
+      "npc": "",
+      "outro_genitor": 0,
+      "reinado": 1,
+      "reinou": 1,
+      "tracos": [
+        "valente"
+      ],
+      "tutor": "",
+      "vivo": true
+    }
+  ],
+  "proximo_id": 2,
+  "proximo_nascimento": 0,
+  "reinado": 1
+}

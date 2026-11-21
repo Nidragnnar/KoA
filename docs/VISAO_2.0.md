@@ -146,8 +146,18 @@ Saída da auditoria da versão 1.8 (problemas E1 a E11). Nada novo para jogar; o
 - **Crônicas por reinado** e um título novo (Herdeiro da Dinastia). O brasão passa de geração. Falas novas de Bram, Edda, Maelis e Oswin.
 - Fica para depois: arte própria para crianças e para cada herdeiro (hoje o herói tem a mesma aparência), filhos andando pela vila, casamento dos filhos com gente das facções, regência quando ninguém pode herdar.
 
+### Mundo vivo (feito, versão 1.14)
+Escolhido pelo Nidragnnar entre os itens de depois do plano (P3.5 da auditoria). Uma simulação de fundo, só à noite, por regras puras (`Data/World/mundo.json`), que começa quando a estrada leste é limpa.
+- **Aldeias vizinhas**: Vau Cinzento (perto da floresta), Pedra Alta (dos anões, perto das minas) e Ermo das Velas (da Ordem, perto da cripta). A prosperidade de cada uma anda para o que a corrupção ao redor deixa; com prosperidade alta o povo cresce, com baixa ele vai embora.
+- **Pedidos de ajuda**: fome (prosperidade baixa: pede comida), criaturas (corrupção alta: pede ouro para uma escolta, que ainda limpa um pouco a região) e bandidos (sorte). Cada um fica aberto de 2 a 3 dias nas Terras (R): ajudar dá prosperidade e gratidão (duas ajudas e a aldeia manda tributo a cada 7 dias; a facção dela gosta; a fama de generoso sobe). Ignorar tira prosperidade e 30% do povo. Abaixo de 6 pessoas a aldeia é abandonada e os sobreviventes vêm para Valdren, se houver casa.
+- **Caravanas** de cada aldeia, a cada 5 a 7 dias: chegando, os preços do que elas trazem caem e o reino recebe pedágio (com o mercado de pé); atacadas na estrada (risco pela corrupção da rota, menor com o reino seguro), os preços sobem e a aldeia sofre.
+- **Viajantes e mercenários** com pedidos de um dia: comida para um faminto, ouro para um bardo, um desertor que defende o portão na próxima horda, mercenários que limpam a floresta ou as minas, uma curandeira.
+- **A terra tomada avança**: região com corrupção 85 ou mais empurra as vizinhas (+1,5 por noite) e castiga as aldeias perto.
+- **Notícias**: no máximo duas no relatório da manhã, as mais importantes primeiro (aldeia abandonada, pedido de ajuda, pedido ignorado, avanço, caravana atacada...); todas ficam no painel das Terras, que agora mostra as regiões, as aldeias, os pedidos (E ou clique atende, com ✓/✗) e as notícias.
+- **Balanceamento**: o jogador automático limpa a estrada no dia 5 e ajuda as aldeias quando sobra o dobro do pedido: cerca de 16 ajudas em 120 dias, as três aldeias de pé no fim, nunca mais de 2 notícias por manhã. Sem alarmes nos 4 ritmos.
+- Fica para depois: escoltar caravanas e guardar regiões com a Guarda Real, aldeias novas surgindo, caravanas visíveis na estrada.
 ### Depois do plano da auditoria (para decidir mais tarde)
-- Guarda Real (P3.4), Mundo vivo (P3.5), combate com escolhas (P2.5) em paralelo à arte, segundo e terceiro atos (P4.1), regiões novas (P4.2) e a Quinta Era como desfecho (P4.3).
+- Guarda Real (P3.4), combate com escolhas (P2.5) em paralelo à arte, segundo e terceiro atos (P4.1), regiões novas (P4.2) e a Quinta Era como desfecho (P4.3).
 ### Depois da 2.0 (para decidir mais tarde)
 - Linhagem: casamento, herdeiros, envelhecimento e sucessão.
 - Mais facções e diplomacia (elfos, tribos do norte) e conflitos entre elas no mapa.
@@ -156,6 +166,6 @@ Saída da auditoria da versão 1.8 (problemas E1 a E11). Nada novo para jogar; o
 
 ## Notas técnicas
 
-- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`), a 14 para a v9 (`guild.json`), a 15 para a v10 (`life.json`), a 16 para a v11 (`castle.json`), a 17 para a v12 (a semente do sorteio no `metadata.json`) a 18 para a v13 (`people.json`) a 19 para a v14 (`factions.json`) a 20 para a v15 (`market.json`) e a 21 para a v16 (`family.json`).
+- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`), a 14 para a v9 (`guild.json`), a 15 para a v10 (`life.json`), a 16 para a v11 (`castle.json`), a 17 para a v12 (a semente do sorteio no `metadata.json`) a 18 para a v13 (`people.json`) a 19 para a v14 (`factions.json`) a 20 para a v15 (`market.json`) a 21 para a v16 (`family.json`) e o mundo vivo para a v17 (`villages.json`).
 - Conteúdo (crônicas, títulos, eventos, cargos, estações) em JSON dentro de `Data/`, como missões e diálogos hoje.
 - O roteiro ponta a ponta ganha etapas a cada fase; a arte nova vem do NidraIA em sessão separada.

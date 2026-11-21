@@ -1,0 +1,15 @@
+{
+  "desvios": {},
+  "relacoes": {
+    "anoes": 5.0,
+    "culto": -17.700000762939453,
+    "ordem": 60.0
+  },
+  "reputacao": {
+    "devocao": 5.0,
+    "generosidade": 0.0,
+    "justica": 0.0
+  },
+  "suspeito": "",
+  "tratados": []
+}

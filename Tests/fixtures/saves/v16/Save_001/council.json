@@ -1,0 +1,13 @@
+{
+  "cargos": {
+    "marechal": "oswin",
+    "tesoureiro": "bram"
+  },
+  "decisao_pendente": "",
+  "lealdade": {
+    "bram": 80,
+    "oswin": 80
+  },
+  "leis": [],
+  "ultima_decisao": 2
+}

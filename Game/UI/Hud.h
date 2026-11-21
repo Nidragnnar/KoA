@@ -45,7 +45,8 @@ public:
     void lojaMercador(ke::Renderer2D& r, const World& w, const NpcDef& npc, int sel);
     static int paginasVisiveis() { return 5; }  // quantas páginas das Crônicas cabem de uma vez
     // Fase 11
-    void painelRegioes(ke::Renderer2D& r, const World& w);
+    // Mundo vivo (1.14): as regiões, as aldeias, os pedidos (ids de clique = índice em World::mundoVivo.pedidos) e as notícias
+    void painelRegioes(ke::Renderer2D& r, const World& w, int sel, float tempo);
     void painelEscolha(ke::Renderer2D& r, const World& w, const EscolhaDef& d, int sel, float tempo);
     static bool mostraCristal(const World& w);  // a linha de cristal aparece depois das minas
     // Fase 12: `proposto` é quem o herdeiro está olhando para o cargo selecionado (A/D), antes de nomear

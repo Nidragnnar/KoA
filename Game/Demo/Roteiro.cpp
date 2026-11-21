@@ -1677,8 +1677,46 @@ void Roteiro::noMundo(WorldScene& cena) {
             }
             return;
         }
-        case 59:
-            w.reino.eraForcada = 0;
+        // ---------- Mundo vivo (1.14) ----------
+        case 59: {  // uma aldeia com fome: a notícia chega de manhã (no máximo 2) e R permite ajudar
+            if (cena.decisaoAberta() && quadro_ % 5 == 0) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 1) {
+                w.inventario.definir("comida", 300);
+                w.marcar("missao:limpar_estrada", "", true);
+                w.mundoVivo.aldeias.at("vau_cinzento").prosperidade = 22.0f;
+                w.mundoVivo.aldeias.at("vau_cinzento").sumiu = false;
+                w.mundoVivo.pedidos.clear();
+                int noites = 0;
+                while (std::ranges::none_of(w.mundoVivo.pedidos, [](const PedidoAberto& p) { return p.aldeia == "vau_cinzento"; }) && noites < 10) {
+                    w.mundoVivo.aldeias.at("vau_cinzento").prosperidade = 22.0f;
+                    w.dormir(false);
+                    ++noites;
+                }
+                const auto n = std::ranges::count_if(w.ultimoRelatorio.notas, [](const std::string& s) { return s.starts_with("Notícia: "); });
+                verificar(n >= 1 && n <= 2, std::format("{} notícia(s) no relatório da manhã (de {} da noite)", n, w.mundoVivo.noticias.size()));
+                // O pedido do Vau na primeira linha do painel
+                std::ranges::stable_partition(w.mundoVivo.pedidos, [](const PedidoAberto& p) { return p.aldeia == "vau_cinzento"; });
+                w.relogio.minutos = 10 * 60;
+            }
+            if (quadro_ == 8) capturar("103_noticias_manha");
+            if (quadro_ == 10) in.simularToque(SDL_SCANCODE_E);  // fecha o relatório
+            if (quadro_ == 20) in.simularToque(SDL_SCANCODE_R);
+            if (quadro_ == 30) {
+                verificar(cena.aberto(Painel::Regioes) && !w.mundoVivo.pedidos.empty(), "R abre as Terras com o pedido do Vau Cinzento");
+                capturar("104_terras_aldeias");
+            }
+            if (quadro_ == 32) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 40) {
+                verificar(w.mundoVivo.aldeias.at("vau_cinzento").gratidao == 1, "E atende: Valdren ajudou o Vau Cinzento");
+                in.simularToque(SDL_SCANCODE_ESCAPE);
+            }
+            if (quadro_ == 48) {
+                verificar(cena.pilha().empty(), "Esc fecha as Terras");
+                proxima();
+            }
+            return;
+        }
+        case 60:            w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();
             return;

@@ -25,6 +25,12 @@ std::string caber(const ke::BitmapFont& f, std::string t, int largura) {
     return t + "...";
 }
 
+// "Ouro" vira "ouro" (os nomes dos recursos começam com letra sem acento)
+std::string minusculo(std::string t) {
+    if (!t.empty()) t[0] = static_cast<char>(std::tolower(static_cast<unsigned char>(t[0])));
+    return t;
+}
+
 // Quebra o texto em linhas que caibam em `largura` pixels
 std::vector<std::string> quebrarLinhas(const ke::BitmapFont& f, const std::string& texto, int largura) {
     std::vector<std::string> linhas;
@@ -1114,63 +1120,114 @@ void Hud::painelGuilda(ke::Renderer2D& r, const World& w, int aba, int sel, int 
 
 // ---------- Fase 11: terras do reino e chefes com escolha ----------
 
-void Hud::painelRegioes(ke::Renderer2D& r, const World& w) {
+void Hud::painelRegioes(ke::Renderer2D& r, const World& w, int sel, float tempo) {
     r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.45f});
-    const glm::vec2 p{110, 30}, s{420, 300};
+    const glm::vec2 p{30, 12}, s{580, 332};
     desenharPainel(r, p, s);
     painelClicavel(p, s);
-    f_.desenharCentralizado(r, "Terras do Reino", {320, p.y + 12}, cor::ouro);
-    f_.desenharCentralizado(r, "O que as cinzas ainda dominam fora do vilarejo", {320, p.y + 24}, cor::apagado);
-    float y = p.y + 42;
-    const float xR = p.x + 16, xV = p.x + 130;
+    f_.desenharCentralizado(r, "Terras do Reino", {320, p.y + 11}, cor::ouro);
+    f_.desenharCentralizado(r, "O que acontece longe do herdeiro", {320, p.y + 23}, cor::apagado);
+    // Esquerda: as regiões que o herdeiro já pisou (a dica de cada uma aparece com o mouse no nome)
+    const float xE = p.x + 14, xD = p.x + 300;
+    float y = p.y + 38;
+    f_.desenhar(r, "Regiões", {xE, y}, cor::ouro);
+    y += 13;
     int mostradas = 0;
     for (const auto& id : w.regioesComVida()) {
-        if (!w.visitadas.contains(id)) continue;  // terra que o herdeiro ainda não pisou não aparece
+        if (!w.visitadas.contains(id)) continue;
         ++mostradas;
         const EstadoRegiao& e = w.estadoRegioes.at(id);
         const TransformacaoRegiao* t = w.transformacao(id);
         const VidaRegiaoDef& v = w.regioes.at(id).vida;
-        // Nome e situação, em palavras
         std::string sit;
         glm::vec4 cs = cor::bom;
-        if (e.corrupcao >= regra::INVASAO) sit = "Tomada pelas criaturas", cs = cor::ruim;
-        else if (e.corrupcao >= 60.0f) sit = t ? "Ameaçada" : "Dominada pelas cinzas", cs = cor::ruim;
-        else if (e.corrupcao >= 30.0f) sit = "Disputada", cs = cor::ouro;
-        else sit = t ? "Em paz" : "Calma";
+        if (e.corrupcao >= regra::INVASAO) sit = "tomada", cs = cor::ruim;
+        else if (e.corrupcao >= 60.0f) sit = t ? "ameaçada" : "dominada", cs = cor::ruim;
+        else if (e.corrupcao >= 30.0f) sit = "disputada", cs = cor::ouro;
+        else sit = t ? "em paz" : "calma";
         if (abandonada(e, w.relogio.dia)) sit += std::format(", sem visita há {} dias", w.relogio.dia - e.ultimaVisita);
-        // Nome e, ao lado (ou embaixo, se não couber), a situação
         const std::string nome = w.nomeRegiao(id);
-        f_.desenhar(r, nome, {xR, y}, cor::ouro);
-        if (f_.largura(nome) + f_.largura(sit) + 20 > s.x - 32) {
-            y += 12;
-            f_.desenhar(r, sit, {xR + 6, y}, cs);
-        } else {
-            f_.desenhar(r, sit, {p.x + s.x - 16 - f_.largura(sit), y}, cs);
-        }
-        y += 14;
-        auto linhaBarra = [&](const char* rotulo, float valor, glm::vec4 c) {
-            f_.desenhar(r, rotulo, {xR + 6, y}, cor::apagado);
-            barra(r, {xV, y + 1}, 160, valor / 100.0f, c);
-            f_.desenhar(r, std::format("{:.0f}", valor), {xV + 168, y}, cor::texto);
-            y += 12;
-        };
-        linhaBarra("Corrupção", e.corrupcao, e.corrupcao >= 60.0f ? cor::ruim : e.corrupcao >= 30.0f ? cor::ouro : cor::bom);
-        linhaBarra("Segurança", e.seguranca, cor::bom);
-        linhaBarra("Prosperidade", e.prosperidade, cor::ouro);
+        f_.desenhar(r, nome, {xE, y}, cor::texto);
+        f_.desenhar(r, caber(f_, sit, 270 - f_.largura(nome) - 12), {xE + f_.largura(nome) + 8, y}, cs);
+        areaDica({xE, y - 2}, {270, 12}, t ? t->dica : v.dica);
+        y += 11;
+        f_.desenhar(r, "corrupção", {xE + 6, y}, cor::apagado);
+        barra(r, {xE + 86, y + 1}, 110, e.corrupcao / 100.0f, e.corrupcao >= 60.0f ? cor::ruim : e.corrupcao >= 30.0f ? cor::ouro : cor::bom);
+        f_.desenhar(r, std::format("{:.0f}", e.corrupcao), {xE + 202, y}, cor::texto);
+        y += 11;
         std::string rende;
-        for (const auto& [rec, n] : producaoRegiao(e, v, t)) rende += (rende.empty() ? "" : ", ") + std::format("+{} {}", n, dados_.nomeRecurso(rec));
-        f_.desenhar(r, "Por noite", {xR + 6, y}, cor::apagado);
-        f_.desenhar(r, rende.empty() ? "nada ainda" : rende, {xV, y}, rende.empty() ? cor::apagado : cor::texto);
-        y += 12;
-        for (const auto& l : quebrarLinhas(f_, t ? t->dica : v.dica, static_cast<int>(s.x) - 44)) f_.desenhar(r, l, {xR + 6, y}, cor::apagado), y += 10;
-        y += 10;
+        for (const auto& [rec, q] : producaoRegiao(e, v, t)) rende += (rende.empty() ? "" : ", ") + std::format("+{} {}", q, minusculo(dados_.nomeRecurso(rec)));
+        f_.desenhar(r, caber(f_, "rende: " + (rende.empty() ? std::string("nada ainda") : rende), 264), {xE + 6, y}, cor::apagado);
+        y += 15;
     }
     if (mostradas == 0)
-        for (const auto& l : quebrarLinhas(f_, "Nenhuma terra explorada ainda. A estrada leste leva à floresta.", static_cast<int>(s.x) - 40))
-            f_.desenhar(r, l, {xR, y}, cor::apagado), y += 11;
-    f_.desenharCentralizado(r, "Vencer criaturas baixa a corrupção. Terra abandonada piora a cada noite.", {320, p.y + s.y - 26}, cor::apagado);
-    f_.desenharCentralizado(r, "R ou Esc fechar", {320, p.y + s.y - 12}, cor::texto);
-    rodapeFechar("R ou Esc fechar", {320, p.y + s.y - 12});
+        for (const auto& l : quebrarLinhas(f_, "Nenhuma terra explorada ainda. A estrada leste leva à floresta.", 264)) f_.desenhar(r, l, {xE, y}, cor::apagado), y += 11;
+    // Direita: as aldeias vizinhas
+    y = p.y + 38;
+    f_.desenhar(r, "Aldeias vizinhas", {xD, y}, cor::ouro);
+    y += 13;
+    if (!w.mundoVivoAtivo()) {
+        for (const auto& l : quebrarLinhas(f_, "Limpe a estrada leste: só então chegam notícias das aldeias.", 264)) f_.desenhar(r, l, {xD, y}, cor::apagado), y += 11;
+    } else {
+        for (const AldeiaDef& a : dados_.mundo.aldeias) {
+            const auto it = w.mundoVivo.aldeias.find(a.id);
+            if (it == w.mundoVivo.aldeias.end()) continue;
+            const EstadoAldeia& e = it->second;
+            std::string sit = e.sumiu ? "abandonada" : e.prosperidade < 30 ? "em perigo" : e.prosperidade >= dados_.mundo.cresceAcima ? "prosperando" : "vivendo";
+            if (!e.sumiu && e.gratidao >= 2) sit += ", grata";
+            const glm::vec4 cs = e.sumiu || e.prosperidade < 30 ? cor::ruim : e.prosperidade >= dados_.mundo.cresceAcima ? cor::bom : cor::texto;
+            f_.desenhar(r, a.nome, {xD, y}, e.sumiu ? cor::apagado : cor::texto);
+            f_.desenhar(r, sit, {xD + f_.largura(a.nome) + 8, y}, cs);
+            areaDica({xD, y - 2}, {270, 12}, a.descricao + (a.faccao.empty() ? "" : " (" + dados_.faccoes.faccao(a.faccao)->nome + ")"));
+            y += 11;
+            if (e.sumiu) {
+                y += 26;
+                continue;
+            }
+            f_.desenhar(r, std::format("povo {}", e.povo), {xD + 6, y}, cor::apagado);
+            barra(r, {xD + 86, y + 1}, 110, e.prosperidade / 100.0f, cs);
+            f_.desenhar(r, std::format("{:.0f}", e.prosperidade), {xD + 202, y}, cor::texto);
+            y += 11;
+            const int faltam = e.proximaCaravana - w.relogio.dia;
+            const std::string car = e.prosperidade < 20 ? "pobre demais para mandar caravana"
+                                    : faltam <= 1    ? "caravana chega amanhã"
+                                                     : std::format("caravana em {} dias", faltam);
+            f_.desenhar(r, caber(f_, car, 264), {xD + 6, y}, cor::apagado);
+            y += 15;
+        }
+    }
+    // Embaixo: os pedidos (E ou clique atende) e as notícias desta manhã
+    y = std::max(y, p.y + 168.0f);
+    r.retangulo({p.x + 12, y}, {s.x - 24, 1}, cor::borda);
+    y += 5;
+    f_.desenhar(r, "Pedidos", {xE, y}, cor::ouro);
+    y += 13;
+    if (w.mundoVivo.pedidos.empty()) f_.desenhar(r, "Ninguém pediu nada.", {xE + 6, y}, cor::apagado), y += 13;
+    for (int k = 0; k < static_cast<int>(w.mundoVivo.pedidos.size()) && k < 5; ++k, y += 14) {
+        const PedidoAberto& pd = w.mundoVivo.pedidos[k];
+        const bool s1 = k == sel;
+        const bool pode = w.podeAtender(k).empty();
+        if (s1) r.retangulo({p.x + 12, y - 2}, {s.x - 24, 13}, {0.45f, 0.36f, 0.22f, 0.4f + 0.05f * std::sin(tempo * 4.0f)});
+        cliques.area({p.x + 12, y - 2}, {s.x - 24, 13}, k);
+        marcaSimNao(r, {xE, y}, pode);
+        f_.desenhar(r, caber(f_, w.textoPedido(pd), 330), {xE + 12, y}, s1 ? cor::ouro : cor::texto);
+        custoEmLinha(r, w.custoPedido(pd), w.inventario, {xE + 352, y});
+        const int dias = pd.prazo - w.relogio.dia;
+        const std::string prazo = dias <= 0 ? "só hoje" : dias == 1 ? "até amanhã" : std::format("{} dias", dias);
+        f_.desenhar(r, prazo, {p.x + s.x - 16 - f_.largura(prazo), y}, dias <= 0 ? cor::ruim : cor::apagado);
+    }
+    y += 4;
+    if (!w.mundoVivo.noticias.empty()) {
+        f_.desenhar(r, "Notícias desta manhã", {xE, y}, cor::ouro);
+        y += 13;
+        for (const auto& t : w.mundoVivo.noticias) {
+            if (y > p.y + s.y - 24) break;
+            f_.desenhar(r, caber(f_, t, static_cast<int>(s.x) - 40), {xE + 6, y}, cor::apagado);
+            y += 11;
+        }
+    }
+    f_.desenharCentralizado(r, "W/S ou mouse escolher   E ou clique atender   R ou Esc fechar", {320, p.y + s.y - 10}, cor::apagado);
+    rodapeFechar("R ou Esc fechar", {320 + f_.largura("W/S ou mouse escolher   E ou clique atender   ") / 2.0f, p.y + s.y - 10});
 }
 
 void Hud::painelEscolha(ke::Renderer2D& r, const World& w, const EscolhaDef& d, int sel, float tempo) {
@@ -1381,12 +1438,6 @@ void Hud::painelMensagens(ke::Renderer2D& r, int rolagem) {
 // ---------- Fase 18: o povo com nome ----------
 
 namespace {
-
-// "Ouro" vira "ouro" (os nomes dos recursos começam com letra sem acento)
-std::string minusculo(std::string t) {
-    if (!t.empty()) t[0] = static_cast<char>(std::tolower(static_cast<unsigned char>(t[0])));
-    return t;
-}
 
 std::string oficioDe(const DadosPovo& d, const Habitante& h) {
     const ProfissaoDef* p = d.profissao(h.profissao);

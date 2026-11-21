@@ -1,0 +1,28 @@
+{
+  "afinidades": {
+    "bram": {
+      "afinidade": 0,
+      "falou_hoje": false
+    },
+    "corvin": {
+      "afinidade": 0,
+      "falou_hoje": false
+    },
+    "edda": {
+      "afinidade": 820,
+      "falou_hoje": false
+    },
+    "maelis": {
+      "afinidade": 500,
+      "falou_hoje": false
+    },
+    "oswin": {
+      "afinidade": 0,
+      "falou_hoje": false
+    },
+    "tilda": {
+      "afinidade": 720,
+      "falou_hoje": false
+    }
+  }
+}

@@ -113,6 +113,14 @@ void JogadorAutomatico::governar() {
         w_.decidir(escolha);
     }
     if (const Custo c = w_.custoReparo(); !c.empty() && w_.inventario.tem(c)) w_.repararPortao();
+    // Mundo vivo: ajuda as aldeias quando sobra o dobro do que pedem (viajantes, não)
+    for (int k = static_cast<int>(w_.mundoVivo.pedidos.size()) - 1; k >= 0; --k) {
+        const PedidoAberto& p = w_.mundoVivo.pedidos[k];
+        if (p.aldeia.empty()) continue;
+        Custo dobro = w_.custoPedido(p);
+        for (auto& [r, q] : dobro) q *= 2;
+        if (w_.inventario.tem(dobro) && w_.atenderPedido(k)) ++ajudas_;
+    }
     // Tratados com os anões e a Ordem quando sobra ouro (o do Culto custa felicidade: o jogador médio evita)
     for (const TratadoDef& t : dados_.faccoes.tratados) {
         const auto ouro = t.custo.find("ouro");
@@ -189,6 +197,7 @@ void JogadorAutomatico::castelo() {
 Amostra JogadorAutomatico::jogarDia() {
     const int dia = w_.relogio.dia;
     w_.relogio.minutos = 7 * 60;
+    if (dia == 5) w_.marcar("missao:limpar_estrada", "Limpar a Estrada", true);  // o jogador comum limpa a estrada leste cedo (abre o mundo vivo)
     if (ritmo_.diaChefe > 0 && dia == ritmo_.diaChefe) {  // a luta em si é testada em outro lugar; aqui só o efeito
         w_.marcos.insert("chefe_cavaleiro_caido");
         w_.reino.magiaLiberta = true;
@@ -236,6 +245,10 @@ Amostra JogadorAutomatico::jogarDia() {
     a.ouroVendas = w_.mercado.vendido;
     a.ouroCompras = w_.mercado.comprado;
     a.precoComida = w_.precoHoje("comida");
+    for (const auto& [id, e] : w_.mundoVivo.aldeias) a.aldeiasVivas += !e.sumiu;
+    a.ajudas = ajudas_;
+    noticiasMax_ = std::max(noticiasMax_, static_cast<int>(std::ranges::count_if(w_.ultimoRelatorio.notas, [](const std::string& n) { return n.starts_with("Notícia: "); })));
+    a.noticiasMax = noticiasMax_;
     for (const auto& [npc, q] : w_.desvios) a.sumido += q;
     historico_.push_back(a);
     return a;

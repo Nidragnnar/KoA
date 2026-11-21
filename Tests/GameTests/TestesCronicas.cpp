@@ -236,7 +236,7 @@ TEST(Cenarios, MontarSavesDeTeste) {
     free(pasta);
     auto gravar = [&](World& w, const std::string& slot) {
         DadosSave d = w.capturar();
-        d.versaoJogo = "1.13.0";
+        d.versaoJogo = "1.14.0";
         d.dataHora = "cenário de teste";
         ASSERT_TRUE(s.salvar(d, slot));
     };
@@ -285,85 +285,64 @@ TEST(Cenarios, MontarSavesDeTeste) {
         w.equip.arma = "espada_linhagem";
         w.equip.armadura = "cota_malha";
     };
-    // Fase 21: reino de meio de jogo com o conselho formado (Bram no Tesouro, Oswin Marechal, os dois leais)
-    auto comConselho = [&](World& w) {
+    // Mundo vivo (1.14): reino de meio de jogo, estrada leste limpa (as aldeias já mandam notícias)
+    auto comAldeias = [&](World& w) {
         reinoAvancado(w);
         equipar(w);
         w.estado.populacao = std::min(26, w.resumo().populacaoMax);
         std::vector<std::string> notas;
         w.ajustarPovo(false, notas);
-        w.marcar("conselho_formado", "O Conselho Real", true);
-        for (const auto& [cargo, npc] : {std::pair{"marechal", "oswin"}, {"tesoureiro", "bram"}}) ASSERT_TRUE(w.nomear(cargo, npc));
-        for (const char* npc : {"oswin", "bram"}) w.lealdade[npc] = 80;
         for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 400);
         w.inventario.definir("comida", 300);
         w.hordaDia = 0;
         w.proximaHorda = w.relogio.dia + 20;
         w.ultimaDecisao = w.relogio.dia;
+        w.relogio.minutos = 9 * 60;
     };
-    auto amizade = [](World& w, const std::string& npc, int valor) {
-        for (auto [e, m, rel] : w.reg.view<const Morador, Relacionamento>().each())
-            if (m.id == npc) rel.afinidade = valor;
-    };
-    // Save_002 (fase 21): O CASAMENTO. Aren (o fundador) está solteiro. Edda (8 corações) e Tilda (7) aceitam casar;
-    // a Ordem Arcana está aliada (+60) e manda Arin Vauren com dote; Maelis ainda não (5 corações). Depois do casamento,
-    // o primeiro filho nasce em 7 dias: escolha o tutor na família (Y)
+    // Save_002 (mundo vivo): OS PEDIDOS. O Vau Cinzento passa fome (3 dias de prazo), Pedra Alta pede ouro contra as
+    // criaturas (2 dias), e mercenários de passagem oferecem limpar a floresta (só hoje). O comboio de Pedra Alta chega
+    // amanhã (o mercado está de pé: pedágio). O Ermo das Velas já foi ajudado uma vez: mais uma e ele manda tributo
     {
         World w = vilarejo();
-        comConselho(w);
-        amizade(w, "edda", 820);
-        amizade(w, "tilda", 720);
-        amizade(w, "maelis", 500);
-        w.mudarRelacao("ordem", 60.0f - w.relacaoCom("ordem"));
-        w.relogio.minutos = 9 * 60;
-        std::printf("[cenário] Save_002: %s solteiro; Edda %s, Ordem %s\n", w.herdeiro().nome.c_str(), w.podeCasar("edda").empty() ? "aceita" : "não",
-                    w.podeCasar("ordem").empty() ? "aceita" : "não");
+        comAldeias(w);
+        auto& m = w.mundoVivo;
+        m.aldeias.at("vau_cinzento").prosperidade = 26.0f;
+        m.aldeias.at("pedra_alta").prosperidade = 45.0f;
+        m.aldeias.at("pedra_alta").proximaCaravana = w.relogio.dia + 1;
+        m.aldeias.at("ermo_velas").gratidao = 1;
+        m.pedidos = {{"fome", "vau_cinzento", w.relogio.dia + 3}, {"criaturas", "pedra_alta", w.relogio.dia + 2},
+                     {"mercenarios_floresta", "", w.relogio.dia}};
+        m.noticias = {"Vau Cinzento está passando fome e pede comida. (3 dias; R: Terras)",
+                      "Mercenários oferecem limpar a floresta por ouro. (só hoje; R: Terras)"};
+        std::printf("[cenário] Save_002: %zu pedidos; mundo vivo %s\n", m.pedidos.size(), w.mundoVivoAtivo() ? "ativo" : "parado");
         w.tirarEventos();
         gravar(w, "Save_002");
         World c = vilarejo();
         c.aplicar(*s.carregar("Save_002"));
-        EXPECT_TRUE(c.podeCasar("edda").empty());
-        EXPECT_FALSE(c.podeCasar("maelis").empty());
+        EXPECT_EQ(c.mundoVivo.pedidos.size(), 3u);
+        EXPECT_TRUE(c.mundoVivoAtivo());
     }
-    // Save_003 (fase 21): A SUCESSÃO. Aren casou com a Edda; Hugo já é adulto (educado pelo Mestre da Moeda), o segundo
-    // filho fica adulto em poucos dias (educado pelo Marechal) e o terceiro acabou de nascer. Aren reina há 115 dias:
-    // daqui a 5 envelhece e, com 168, morre e a coroa passa sozinha ao mais velho. Dá para passar a coroa ao Hugo agora,
-    // ou esperar o segundo (o conselho não gosta de pular o mais velho)
+    // Save_003 (mundo vivo): A TERRA TOMADA. A floresta está tomada (corrupção 92) e sem visita há dias: esta noite ela
+    // começa a avançar sobre as minas e o Vau Cinzento, que já está quase vazio (7 pessoas, prosperidade 18). Sem ajuda,
+    // em uma ou duas noites ele é abandonado e os sobreviventes vêm para Valdren (há casas sobrando). Dá para salvá-lo
+    // (comida pelas Terras) ou ir limpar a floresta
     {
         World w = vilarejo();
-        comConselho(w);
-        amizade(w, "edda", 820);
-        ASSERT_TRUE(w.casar("edda"));
-        std::vector<std::string> notas;
-        auto noites = [&](int n) {
-            for (int i = 0; i < n; ++i) w.dormir(false);
-        };
-        noites(7);
-        const auto f1 = w.linhagem.filhosDe(w.herdeiro().id);
-        ASSERT_EQ(f1.size(), 1u);
-        w.definirTutor(f1[0]->id, "tesoureiro");
-        noites(14);
-        const auto f2 = w.linhagem.filhosDe(w.herdeiro().id);
-        ASSERT_EQ(f2.size(), 2u);
-        w.definirTutor(f2[1]->id, "marechal");
-        noites(14);  // o primeiro já é adulto; o terceiro nasce
-        w.linhagem.inicioReinado = w.relogio.dia - 115;
-        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 400);
-        w.inventario.definir("comida", 300);
-        w.estado.felicidade = 65.0f;
-        w.hordaDia = 0;
-        w.proximaHorda = w.relogio.dia + 20;
-        w.ultimaDecisao = w.relogio.dia;
-        w.relogio.minutos = 9 * 60;
-        const auto f = w.linhagem.filhosDe(w.herdeiro().id);
-        std::printf("[cenário] Save_003: %zu filhos; %s adulto (%s); reina há %d dias\n", f.size(), f[0]->nome.c_str(),
-                    textoTracos(dados().linhagem, f[0]->tracos).c_str(), w.diasDeReinado());
+        comAldeias(w);
+        w.estado.populacaoBase += 12;
+        w.estadoRegioes.at("floresta").corrupcao = 92.0f;
+        w.estadoRegioes.at("floresta").ultimaVisita = w.relogio.dia - 6;
+        auto& vau = w.mundoVivo.aldeias.at("vau_cinzento");
+        vau.povo = 7;
+        vau.prosperidade = 18.0f;
+        w.mundoVivo.pedidos = {{"fome", "vau_cinzento", w.relogio.dia + 1}};
+        std::printf("[cenário] Save_003: floresta %.0f; Vau com %d pessoas; vagas em Valdren: %d\n", w.estadoRegioes.at("floresta").corrupcao, vau.povo,
+                    w.resumo().populacaoMax - w.estado.populacao);
         w.tirarEventos();
         gravar(w, "Save_003");
         World c = vilarejo();
         c.aplicar(*s.carregar("Save_003"));
-        EXPECT_EQ(c.linhagem.filhosDe(c.herdeiro().id).size(), 3u);
-        EXPECT_NE(c.maisVelho(), 0);
+        EXPECT_EQ(c.mundoVivo.aldeias.at("vau_cinzento").povo, 7);
     }
 }
 TEST(SaveV5, SaveV4GanhaCronicasDoQueJaAconteceu) {

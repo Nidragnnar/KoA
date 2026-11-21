@@ -17,6 +17,7 @@
 #include "Game/Kingdom/Faccoes.h"
 #include "Game/Kingdom/Mercado.h"
 #include "Game/Kingdom/Linhagem.h"
+#include "Game/Kingdom/MundoVivo.h"
 #include "Game/Kingdom/Defesa.h"
 #include "Game/Kingdom/Guilda.h"
 #include "Game/Kingdom/Estacoes.h"
@@ -88,6 +89,7 @@ struct GameData {
     DadosFaccoes faccoes;                        // fase 19: povos vizinhos, tratados e reputação
     DadosMercado mercado;                        // fase 20: preços, encomendas do Corvin
     DadosLinhagem linhagem;                      // fase 21: casamento, filhos, traços e sucessão
+    DadosMundo mundo;                            // mundo vivo: aldeias, caravanas, viajantes
     DadosCotidiano cotidiano;                    // fase 15: horta, pesca, animais, cozinha e presentes
 
     const InimigoDef* inimigoPorLetra(char c) const {

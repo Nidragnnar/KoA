@@ -326,6 +326,7 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
     gerarPovoInicial();  // fase 18: os sobreviventes sem nome do mapa ganham nome
     iniciarFaccoes();    // fase 19: os vizinhos começam como nos dados
     iniciarLinhagem();   // fase 21: o fundador da dinastia
+    iniciarMundoVivo();  // 1.14: as aldeias vizinhas como nos dados
     sincronizarAldeoes();
     criarCanteiros();
     marcar("chegada", "", true);  // a primeira página das Crônicas
@@ -1114,6 +1115,7 @@ void World::dormir(bool desmaio) {
     manhaDoMercado(ultimoRelatorio.notas);  // fase 20: preços da manhã e encomendas que chegam
     manhaDasAlas(ultimoRelatorio.notas);    // fase 20: o empréstimo que volta
     noiteDaLinhagem(ultimoRelatorio.notas); // fase 21: nascimentos, maioridade, velhice e sucessão
+    noiteDoMundo(ultimoRelatorio.notas);    // 1.14: aldeias, caravanas, viajantes e a terra tomada (até 2 notícias)
     if (perda > 0) ultimoRelatorio.variacoes.push_back({"ouro (desmaio)", -perda});
     for (auto it = prontas.rbegin(); it != prontas.rend(); ++it) ultimoRelatorio.notas.insert(ultimoRelatorio.notas.begin(), "Obra concluída: " + *it + "!");
     bloqueio_.clear();

@@ -1,0 +1,42 @@
+{
+  "_como_funciona": "Mundo vivo (versão 1.14). Tudo acontece à noite, longe do herdeiro, e só depois do marco 'requer' (a estrada leste limpa). ALDEIAS: a prosperidade anda 20% por noite para alvo = base - (corrupção da região 'perto' acima de 50) × 0,6 (ou 'corrupcao_fixa', se a região não tem vida). Com prosperidade de pelo menos 'cresce_acima' o povo cresce; abaixo de 'mingua_abaixo' ele diminui. Os pedidos de ajuda nascem das condições (fome: prosperidade baixa; criaturas: corrupção alta; bandidos: sorte) e ficam abertos 'prazo' dias: ajudar paga 'custo' e dá 'ajuda' de prosperidade (e gratidão); deixar vencer tira 'abandono' de prosperidade e 30% do povo. Com o povo abaixo de 'some_abaixo' a aldeia desaparece e quem sobra vem para Valdren (se houver casa). Gratidão de pelo menos 2 rende 'tributo' de ouro a cada 7 dias. CARAVANAS: a cada 'a_cada' dias; o risco de ataque é a corrupção da rota × 0,5, menos a segurança do reino / 300 (entre 5% e 60%). Chegando: os preços dos bens caem ('mercado') e o reino recebe 'pedagio' (com o mercado de pé). Atacada: os preços sobem e a aldeia perde prosperidade. TERRA TOMADA: região com corrupção 85 ou mais empurra as vizinhas (avanco.pressao por noite) e as aldeias perto (avanco.aldeia). VIAJANTES: um pedido curto (1 dia) às vezes. NOTÍCIAS: no máximo 'noticias_por_manha' no relatório, as mais importantes primeiro; as outras ficam no painel das Terras (R).",
+  "requer": "missao:limpar_estrada",
+  "noticias_por_manha": 2,
+  "cresce_acima": 55,
+  "mingua_abaixo": 30,
+  "some_abaixo": 6,
+  "abandono": 20,
+  "tributo": 10,
+  "chance_viajante": 0.25,
+  "avanco": { "pressao": 1.5, "aldeia": 3 },
+  "vizinhanca": { "floresta": ["minas"], "minas": ["floresta"] },
+  "aldeias": [
+    { "id": "vau_cinzento", "nome": "Vau Cinzento", "perto": "floresta", "povo": 30, "base": 60,
+      "descricao": "Pescadores e moleiros no vau do rio, a oeste da floresta.",
+      "caravana": { "nome": "as carroças do Vau", "a_cada": 5, "mercado": { "comida": -0.15 }, "pedagio": 5 } },
+    { "id": "pedra_alta", "nome": "Pedra Alta", "perto": "minas", "faccao": "anoes", "povo": 45, "base": 65,
+      "descricao": "Posto dos anões na encosta, onde a pedra das minas é lavrada.",
+      "caravana": { "nome": "o comboio de Pedra Alta", "a_cada": 6, "mercado": { "pedra": -0.2, "madeira": -0.05 }, "pedagio": 8 } },
+    { "id": "ermo_velas", "nome": "Ermo das Velas", "perto": "cripta", "corrupcao_fixa": 60, "faccao": "ordem", "povo": 18, "base": 55,
+      "descricao": "Eremitas que mantêm velas acesas para os mortos da cripta.",
+      "caravana": { "nome": "os peregrinos das Velas", "a_cada": 7, "mercado": { "cristal": -0.1 }, "pedagio": 4 } }
+  ],
+  "ajudas": [
+    { "id": "fome", "texto": "{aldeia} está passando fome e pede comida.", "quando": "prosperidade_abaixo", "valor": 35,
+      "custo": { "comida": 30 }, "ajuda": 20, "prazo": 3 },
+    { "id": "criaturas", "texto": "Criaturas rondam {aldeia}: pedem ouro para pagar uma escolta.", "quando": "corrupcao_acima", "valor": 78,
+      "custo": { "ouro": 40 }, "ajuda": 15, "limpa": 5, "prazo": 3 },
+    { "id": "bandidos", "texto": "Bandidos cercaram {aldeia}: pedem ouro para pagar o resgate dos carroceiros.", "quando": "sorte", "valor": 4,
+      "custo": { "ouro": 30 }, "ajuda": 10, "prazo": 2 }
+  ],
+  "viajantes": [
+    { "id": "faminto", "texto": "Um viajante faminto pede comida para seguir viagem.", "custo": { "comida": 10 }, "generosidade": 2, "felicidade": 0 },
+    { "id": "bardo", "texto": "Um bardo pede ouro para tocar na praça esta noite.", "custo": { "ouro": 15 }, "felicidade": 4 },
+    { "id": "desertor", "texto": "Um soldado desertor pede comida e promete defender o portão na próxima horda.", "custo": { "comida": 15 }, "soldados": 1 },
+    { "id": "mercenarios_floresta", "texto": "Mercenários oferecem limpar a floresta por ouro.", "requer": "visitou:floresta", "custo": { "ouro": 50 },
+      "corrupcao": { "floresta": -12 } },
+    { "id": "mercenarios_minas", "texto": "Mercenários anões oferecem limpar as minas por ouro.", "requer": "minas_abertas", "custo": { "ouro": 60 },
+      "corrupcao": { "minas": -12 } },
+    { "id": "curandeira", "texto": "Uma curandeira de passagem oferece ervas para o povo.", "custo": { "ouro": 25 }, "felicidade": 3, "generosidade": 1 }
+  ]
+}

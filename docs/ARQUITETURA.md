@@ -207,6 +207,14 @@ O plano da 2.0 está em `docs/VISAO_2.0.md`.
 - **Save v16**: arquivo novo `family.json`; páginas das Crônicas ganham `reinado`. Saves v1 a v15 viram a primeira geração (o fundador, Aren, Valente).
 - **Testes**: 231 (7 novos: dados, herança, casamento, filhos e tutor, sucessão sem perder o reino, morte natural e save v16) e o roteiro com a etapa 58 (casar pelo painel, nascimento, maioridade com o tutor, sucessão com confirmação e as Crônicas por reinado).
 
+## Mundo vivo (versão 1.14)
+
+- **Regras puras**: `Game/Kingdom/MundoVivo.h` (`AldeiaDef`, `AjudaDef`, `ViajanteDef`, `DadosMundo`; `EstadoAldeia`, `PedidoAberto` e `EstadoMundo` vão para o save; `noiteDaAldeia`, `ajudaNecessaria`, `riscoCaravana`, `ordenarNoticias`). `sorteMundo` sorteia pela semente da partida, o dia e o assunto: a mesma partida tem sempre a mesma história.
+- **No mundo** (`Game/World/WorldMundo.cpp`): `World::mundoVivo`, `noiteDoMundo` (depois da virada do dia, e só com a estrada leste limpa): a terra tomada avança, os pedidos vencem, as aldeias vivem (ou são abandonadas), pagam tributo, pedem ajuda, as caravanas passam (mexendo na pressão do mercado) e às vezes chega um viajante. As notícias da noite são ordenadas por importância; o relatório recebe só as `noticias_por_manha` primeiras. `atenderPedido` paga e aplica (prosperidade, gratidão, facção, fama, corrupção, soldados).
+- **Interface**: o painel das Terras (`Hud::painelRegioes`, agora com seleção) mostra regiões, aldeias (a dica de cada uma vem com o mouse no nome), pedidos e notícias; `WorldScene::entradaRegioes` atende com E ou clique.
+- **Save v17**: arquivo novo `villages.json` (aldeias, pedidos, notícias). Saves v1 a v16 começam com as aldeias como nos dados.
+- **Testes**: 240 (9 novos: dados, evolução pela semente e pela corrupção, avanço da terra tomada, limite de notícias, ajuda e abandono, aldeia abandonada, caravanas, viajantes e save v17) e o roteiro com a etapa 59 (a notícia da fome na manhã e a ajuda pelas Terras).
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

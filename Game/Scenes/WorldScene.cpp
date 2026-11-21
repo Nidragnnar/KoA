@@ -1433,11 +1433,7 @@ void WorldScene::atualizar(double dtD) {
     else if (aberto(Painel::Ficha)) entradaFicha();
     else if (aberto(Painel::Povo)) entradaPovo();
     else if (aberto(Painel::Vizinhos)) entradaVizinhos();
-    else if (aberto(Painel::Regioes)) {
-        ke::Input& in = ctx_.app.input();
-        if (in.pressionouAcao("terras") || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques))
-            fechar(Painel::Regioes);
-    } else if (aberto(Painel::Mercado)) entradaMercado();
+    else if (aberto(Painel::Regioes)) entradaRegioes(); else if (aberto(Painel::Mercado)) entradaMercado();
     else if (aberto(Painel::Familia)) entradaFamilia();
     else if (aberto(Painel::Construcao)) entradaPainel();
     else if (aberto(Painel::Forja)) entradaForja();
@@ -1588,7 +1584,7 @@ void WorldScene::renderizar(float) {
     if (aberto(Painel::MenuObras)) hud_.menuObras(r, mundo_, opcoesObras(), selObra_);
     if (!colocando_.empty()) hud_.dicaColocacao(r, ctx_.dados.construcoes.at(colocando_).nivel(1)->nome, obraValida, motivoObra);
     if (aberto(Painel::Reino)) hud_.painelReino(r, mundo_);
-    if (aberto(Painel::Regioes)) hud_.painelRegioes(r, mundo_);
+    if (aberto(Painel::Regioes)) hud_.painelRegioes(r, mundo_, selRegioes_, tempo_);
     if (aberto(Painel::Conselho)) hud_.painelConselho(r, mundo_, selConselho_, propostoConselho(), tempo_);
     if (aberto(Painel::Guilda)) hud_.painelGuilda(r, mundo_, abaGuilda_, selGuilda_, passoExpedicao_, destinoSel_, grupoSel_, tempo_);
     if (aberto(Painel::Cozinha)) hud_.painelCozinha(r, mundo_, selCozinha_, tempo_);
@@ -1706,6 +1702,7 @@ void WorldScene::abrirAba(int k) {
     switch (p) {
     case Painel::Vizinhos: selVizinhos_ = 0; break;
     case Painel::Familia: selFamilia_ = confirmarSucessao_ = 0; break;
+    case Painel::Regioes: selRegioes_ = 0; break;
     case Painel::Povo: selPovo_ = rolagemPovo_ = 0; break;
     case Painel::Mensagens: rolagemMensagens_ = 0; break;
     case Painel::Cronicas: rolagem_ = std::max(0, static_cast<int>(mundo_.cronicas.size()) - Hud::paginasVisiveis()); break;
@@ -1779,5 +1776,25 @@ void WorldScene::entradaFamilia() {
             salvar();
         }
     }
+}
+
+// Mundo vivo: os pedidos das aldeias e dos viajantes (E ou clique atende); R ou Esc fecha
+void WorldScene::entradaRegioes() {
+    ke::Input& in = ctx_.app.input();
+    if (in.pressionouAcao("terras") || in.pressionou(SDL_SCANCODE_ESCAPE) || cliqueFecha(in, hud_.cliques)) {
+        fechar(Painel::Regioes);
+        return;
+    }
+    const int n = std::min(5, static_cast<int>(mundo_.mundoVivo.pedidos.size()));
+    if (n == 0) {
+        if (in.pressionou(SDL_SCANCODE_E)) fechar(Painel::Regioes);  // sem pedidos, E fecha como antes
+        return;
+    }
+    selRegioes_ = std::clamp(selRegioes_, 0, n - 1);
+    if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selRegioes_ = (selRegioes_ + n - 1) % n;
+    if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selRegioes_ = (selRegioes_ + 1) % n;
+    const bool clique = listaComMouse(in, hud_.cliques, selRegioes_, n);
+    if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique)
+        mundo_.atenderPedido(selRegioes_);
 }
 }

@@ -98,7 +98,8 @@ private:
     int abaAberta() const;  // -1 = nenhuma aba do Livro por cima
     void abrirAba(int k);
     bool entradaLivro();
-    void entradaFamilia();  // fase 21    // true = a faixa de abas tratou a entrada deste passo
+    void entradaFamilia();  // fase 21
+    void entradaRegioes();  // mundo vivo: os pedidos nas Terras    // true = a faixa de abas tratou a entrada deste passo
     void desenharClima(ke::Renderer2D& r);  // fase 18: chuva, neve e raios por cima do mundo
     void verificarGravacao(bool esperar);
     void darPresenteNaConversa();
@@ -152,6 +153,7 @@ private:
     bool mercadoCorvin_ = false;  // fase 20: o painel do mercado aberto na banca do Corvin (só vende e encomenda)
     int abaMercado_ = 0, selMercado_ = 0, rolagemMercado_ = 0;
     int abaLivro_ = 0;  // a última aba do Livro aberta
+    int selRegioes_ = 0;  // mundo vivo: o pedido escolhido nas Terras
     int selFamilia_ = 0, confirmarSucessao_ = 0;  // fase 21: a linha escolhida; o filho cuja sucessão espera confirmação
     std::string painel_;  // id da construção com o painel aberto ("" = fechado)
     int selPainel_ = 0;

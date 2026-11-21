@@ -1,0 +1,18 @@
+{
+  "comprado": 0,
+  "encomendas": [],
+  "historico": {
+    "comida": [
+      1.3181740045547485
+    ],
+    "madeira": [
+      1.69977605342865
+    ],
+    "pedra": [
+      2.601248025894165
+    ]
+  },
+  "negociados_hoje": 0,
+  "pressao": {},
+  "vendido": 0
+}
