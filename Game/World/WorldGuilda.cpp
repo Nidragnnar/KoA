@@ -65,7 +65,8 @@ int World::margemSemSorte(const DestinoDef& d, const std::vector<std::string>& g
     int poder = 0;
     for (const auto& id : grupo)
         if (const AventureiroDef* a = dados().guilda.aventureiro(id)) poder += poderAventureiro(*a, nivelAventureiro(id), d);
-    if (!grupo.empty()) poder += efeitosAlas().expedicao + efeitosTratados().expedicao + efeitosHerdeiro().expedicao;  // fase 21: o Sábio  // fases 16 e 19: Biblioteca Real e Pacto do Saber
+    if (!grupo.empty()) poder += efeitosAlas().expedicao + efeitosTratados().expedicao + efeitosHerdeiro().expedicao +  // fase 21: o Sábio
+                              static_cast<int>(forcaNoPosto("escolta") / 5.0f);  // 1.15: a escolta da Guarda Real  // fases 16 e 19: Biblioteca Real e Pacto do Saber
     return poder - d.perigo * 2;
 }
 
@@ -177,6 +178,9 @@ void World::voltaDaExpedicao(std::vector<std::string>& notas) {
     std::string nomes;
     for (const auto& id : grupo) nomes += (nomes.empty() ? "" : ", ") + dg.aventureiro(id)->nome;
     notas.push_back(std::format("A expedição a {} voltou: foi {}. ({})", d->nome, nomeDesfecho(r), nomes));
+    // 1.17: da Biblioteca Afundada, quem volta bem traz uma memória da Queda
+    if (d->tipo == "saber" && d->id == "biblioteca" && (r == Desfecho::Triunfo || r == Desfecho::Sucesso) && recuperarMemoria())
+        notas.push_back("Entre os livros salvos da água, uma memória da Queda (C para ler).");
     // O que trouxeram
     std::string ganhos;
     for (const auto& [rec, faixa] : d->ganhos) {

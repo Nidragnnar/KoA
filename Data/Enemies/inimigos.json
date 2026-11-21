@@ -1,5 +1,5 @@
 {
-  "_campos": "vida, dano (por toque), defesa, velocidade (px/s), visao (px até perseguir), ouro [mín, máx]. letra = caractere no mapa. escolha = o chefe se rende com 30% da vida e o herdeiro decide o destino dele (Data/Lore/escolhas.json).",
+  "_campos": "vida, dano (por toque), defesa, velocidade (px/s), visao (px até perseguir), ouro [mín, máx]. letra = caractere no mapa. escolha = o chefe se rende com 30% da vida e o herdeiro decide o destino dele (Data/Lore/escolhas.json). Combate com escolhas (1.16): comportamento distancia (fica longe e atira: tiro = dano, velocidade, recarga, alcance) ou bando (quando um vê o herói, chama os do mesmo tipo por perto; juntos, correm mais); aparencia/tinta/escala = desenhado com o sprite de outra criatura, tingido e no tamanho dado; fase2 = fração da vida em que o chefe muda (efeito investida: arranca mais vezes e mais rápido; brasa: deixa o chão em brasa onde o herói pisa).",
   "inimigos": [
     { "id": "sombra", "nome": "Sombra", "letra": "S", "vida": 6, "dano": 8, "defesa": 0, "velocidade": 26, "visao": 90,
       "ouro": [1, 3], "tamanho": [16, 16] },
@@ -8,10 +8,32 @@
     { "id": "esqueleto", "nome": "Esqueleto", "letra": "E", "vida": 18, "dano": 14, "defesa": 2, "velocidade": 32, "visao": 100,
       "ouro": [4, 9], "tamanho": [16, 24] },
     { "id": "cavaleiro_caido", "nome": "O Cavaleiro Caído", "letra": "X", "vida": 140, "dano": 22, "defesa": 4, "velocidade": 30,
-      "visao": 150, "ouro": [150, 150], "tamanho": [32, 40], "chefe": true },
+      "visao": 150, "ouro": [150, 150], "tamanho": [32, 40], "chefe": true, "fase2": 0.5, "efeito_fase2": "investida" },
     { "id": "aranha", "nome": "Aranha das Minas", "letra": "M", "vida": 9, "dano": 10, "defesa": 1, "velocidade": 58, "visao": 110,
       "ouro": [2, 6], "tamanho": [18, 14] },
     { "id": "golem_cinzas", "nome": "O Golem de Cinzas", "letra": "Q", "vida": 180, "dano": 24, "defesa": 5, "velocidade": 24,
-      "visao": 140, "ouro": [0, 0], "tamanho": [32, 40], "chefe": true, "escolha": "golem_cinzas" }
+      "visao": 140, "ouro": [0, 0], "tamanho": [32, 40], "chefe": true, "escolha": "golem_cinzas", "fase2": 0.6, "efeito_fase2": "brasa" },
+    { "id": "sacerdotisa_cinzas", "nome": "A Sacerdotisa das Cinzas", "letra": "I", "vida": 160, "dano": 20, "defesa": 4, "velocidade": 34,
+      "visao": 150, "ouro": [80, 80], "tamanho": [32, 36], "chefe": true, "escolha": "sacerdotisa", "comportamento": "distancia",
+      "aparencia": "sombra", "tinta": [0.85, 0.45, 0.95], "escala": 2.2, "tiro": { "dano": 16, "velocidade": 115, "recarga": 1.6, "alcance": 190 },
+      "fase2": 0.6, "efeito_fase2": "brasa" },
+    { "id": "varek", "nome": "Varek, o Herdeiro Esquecido", "letra": "q", "vida": 240, "dano": 28, "defesa": 6, "velocidade": 34,
+      "visao": 170, "ouro": [200, 200], "tamanho": [32, 40], "chefe": true, "escolha": "chama_final",
+      "aparencia": "cavaleiro_caido", "tinta": [1.0, 0.6, 0.35], "fase2": 0.6, "efeito_fase2": "investida" },
+    { "id": "arqueiro_espectral", "nome": "Arqueiro Espectral", "letra": "V", "vida": 8, "dano": 9, "defesa": 0, "velocidade": 30, "visao": 130,
+      "ouro": [3, 6], "tamanho": [16, 16], "comportamento": "distancia", "aparencia": "sombra", "tinta": [0.7, 0.55, 1.0],
+      "tiro": { "dano": 9, "velocidade": 110, "recarga": 2.4, "alcance": 170 } },
+    { "id": "matilha", "nome": "Lobo da Matilha Cinzenta", "letra": "N", "vida": 8, "dano": 8, "defesa": 0, "velocidade": 50, "visao": 110,
+      "ouro": [1, 4], "tamanho": [20, 16], "comportamento": "bando", "aparencia": "lobo", "tinta": [0.75, 0.75, 0.8], "escala": 0.85 },
+    { "id": "conjurador_ossos", "nome": "Conjurador de Ossos", "letra": "O", "vida": 14, "dano": 12, "defesa": 1, "velocidade": 26, "visao": 140,
+      "ouro": [5, 10], "tamanho": [16, 24], "comportamento": "distancia", "aparencia": "esqueleto", "tinta": [0.55, 0.8, 1.0],
+      "tiro": { "dano": 13, "velocidade": 95, "recarga": 2.8, "alcance": 180 } },
+    { "id": "ossada", "nome": "Ossada Rastejante", "letra": "J", "vida": 9, "dano": 9, "defesa": 1, "velocidade": 40, "visao": 100,
+      "ouro": [1, 4], "tamanho": [16, 16], "comportamento": "bando", "aparencia": "esqueleto", "tinta": [0.9, 0.85, 0.7], "escala": 0.7 },
+    { "id": "cuspidora", "nome": "Cuspidora de Cristal", "letra": "Y", "vida": 12, "dano": 11, "defesa": 2, "velocidade": 34, "visao": 135,
+      "ouro": [4, 8], "tamanho": [18, 14], "comportamento": "distancia", "aparencia": "aranha", "tinta": [0.5, 0.95, 1.0], "escala": 1.15,
+      "tiro": { "dano": 11, "velocidade": 120, "recarga": 2.2, "alcance": 165 } },
+    { "id": "enxame", "nome": "Aranha do Enxame", "letra": "H", "vida": 6, "dano": 7, "defesa": 0, "velocidade": 62, "visao": 105,
+      "ouro": [1, 3], "tamanho": [18, 14], "comportamento": "bando", "aparencia": "aranha", "tinta": [0.85, 0.6, 0.5], "escala": 0.7 }
   ]
 }

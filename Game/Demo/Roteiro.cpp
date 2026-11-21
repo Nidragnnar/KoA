@@ -1685,15 +1685,18 @@ void Roteiro::noMundo(WorldScene& cena) {
                 w.marcar("missao:limpar_estrada", "", true);
                 w.mundoVivo.aldeias.at("vau_cinzento").prosperidade = 22.0f;
                 w.mundoVivo.aldeias.at("vau_cinzento").sumiu = false;
+                w.mundoVivo.aldeias.at("vau_cinzento").povo = 30;  // as etapas anteriores deixaram as terras sem cuidado: o Vau já tinha se esvaziado
                 w.mundoVivo.pedidos.clear();
                 int noites = 0;
                 while (std::ranges::none_of(w.mundoVivo.pedidos, [](const PedidoAberto& p) { return p.aldeia == "vau_cinzento"; }) && noites < 10) {
                     w.mundoVivo.aldeias.at("vau_cinzento").prosperidade = 22.0f;
+                    w.mundoVivo.aldeias.at("vau_cinzento").povo = 30;
                     w.dormir(false);
                     ++noites;
                 }
                 const auto n = std::ranges::count_if(w.ultimoRelatorio.notas, [](const std::string& s) { return s.starts_with("Notícia: "); });
                 verificar(n >= 1 && n <= 2, std::format("{} notícia(s) no relatório da manhã (de {} da noite)", n, w.mundoVivo.noticias.size()));
+                w.inventario.definir("comida", 300);  // as noites de espera comeram a comida
                 // O pedido do Vau na primeira linha do painel
                 std::ranges::stable_partition(w.mundoVivo.pedidos, [](const PedidoAberto& p) { return p.aldeia == "vau_cinzento"; });
                 w.relogio.minutos = 10 * 60;
@@ -1716,7 +1719,139 @@ void Roteiro::noMundo(WorldScene& cena) {
             }
             return;
         }
-        case 60:            w.reino.eraForcada = 0;
+        // ---------- Guarda Real (1.15) ----------
+        case 60: {  // U abre a Guarda: forma lanceiros, manda guardar a floresta; de manhã o soldo foi cobrado
+            if (cena.decisaoAberta() && quadro_ % 5 == 0) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 1) {
+                for (const char* r : {"madeira", "pedra", "ouro", "comida"}) w.inventario.definir(r, 900);
+                if (!w.guardaDisponivel() && !w.erguerAla("quartel")) w.alas.push_back("quartel");  // atalho do roteiro: o castelo já tem as alas da fase 16
+                w.esquadras.clear();
+                w.visitadas.insert("floresta");
+                in.simularMouse({-1, -1});
+            }
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_U);
+            if (quadro_ == 14) {
+                verificar(cena.aberto(Painel::Guarda) && w.guardaDisponivel(), "U abre a Guarda Real (o Quartel está erguido)");
+                capturar("105_guarda");
+            }
+            if (quadro_ == 16) in.simularToque(SDL_SCANCODE_E);  // a primeira linha: formar lanceiros
+            if (quadro_ == 22) verificar(w.esquadras.size() == 1 && w.esquadras[0].tipo == "lanceiros", "E forma uma esquadra de lanceiros");
+            if (quadro_ == 24 || quadro_ == 28) in.simularToque(SDL_SCANCODE_E);  // posto: reserva → escolta → floresta
+            if (quadro_ == 36) {
+                verificar(!w.esquadras.empty() && w.esquadras[0].posto == "regiao:floresta",
+                          std::format("a esquadra foi guardar a floresta ({})", w.esquadras.empty() ? "" : w.nomePosto(w.esquadras[0].posto)));
+                capturar("106_guarda_esquadra");
+            }
+            if (quadro_ == 38) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 44) {
+                const float antes = w.estadoRegioes.at("floresta").corrupcao;
+                w.dormir(false);
+                w.relogio.minutos = 10 * 60;
+                const bool soldo = std::ranges::any_of(w.ultimoRelatorio.variacoes, [](const auto& v) { return v.first == "ouro|soldo da guarda"; });
+                verificar(soldo && w.estadoRegioes.at("floresta").corrupcao < antes + 2.0f,
+                          std::format("de manhã, soldo cobrado e a floresta guardada ({:.0f} → {:.0f})", antes, w.estadoRegioes.at("floresta").corrupcao));
+            }
+            if (quadro_ == 50) in.simularToque(SDL_SCANCODE_E);  // fecha o relatório
+            if (quadro_ == 58) proxima();
+            return;
+        }
+        // ---------- Combate com escolhas (1.16) ----------
+        case 61: {  // na floresta: o arqueiro atira de longe, Shift esquiva, J segurado carrega o golpe
+            if (quadro_ == 1) {
+                w.entrarRegiao("floresta", {10, 10}, Direcao::Baixo);
+                w.jogador.vida = w.jogador.vidaMax;
+                for (auto [e, p, i] : w.reg.view<Posicao, Inimigo>().each())
+                    if (i.tipo == "arqueiro_espectral") {
+                        w.jogador.pos = p.v + glm::vec2(100, 0);
+                        break;
+                    }
+                w.jogador.dir = Direcao::Esquerda;
+                in.simularMouse({-1, -1});
+            }
+            if (quadro_ == 150) {
+                verificar(!w.reg.view<Projetil>().empty() || w.jogador.vida < w.jogador.vidaMax, "o Arqueiro Espectral atira de longe");
+                capturar("107_combate_distancia");
+                in.simularToque(SDL_SCANCODE_LSHIFT);
+            }
+            if (quadro_ == 152) verificar(w.jogador.esquiva > 0.0f, "Shift esquiva");
+            if (quadro_ == 200) in.simularSegurar(SDL_SCANCODE_J, true);
+            if (quadro_ == 245) {
+                verificar(w.jogador.carga >= Jogador::CARGA_CHEIA, "segurar o J carrega o golpe");
+                capturar("108_golpe_carregando");
+            }
+            if (quadro_ == 246) in.simularSegurar(SDL_SCANCODE_J, false);
+            if (quadro_ == 247) verificar(w.jogador.carregado && w.jogador.acao > 0.0f, "soltar o J dá o golpe carregado");
+            if (quadro_ == 260) {
+                w.entrarRegiao("vilarejo", {31, 21}, Direcao::Baixo);
+                w.jogador.vida = w.jogador.vidaMax;
+                proxima();
+            }
+            return;
+        }
+        // ---------- Segundo e terceiro atos (1.17) ----------
+        case 62: {  // com o primeiro ato, a floresta leva ao Pântano das Cinzas; com o segundo, o pântano leva à Torre do Selo
+            auto atravessar = [&](const std::string& destino) {
+                for (const auto& s : w.infoAtual().saidas)
+                    if (s.destino == destino) w.jogador.pos = {s.tile.x * 16 + 8.0f, s.tile.y * 16 + 12.0f};
+            };
+            if (quadro_ == 1) {
+                for (const PistaDef& p : ctx_.dados.lore.pistas)
+                    if (p.ato == 1) w.marcar("pista:" + p.id, p.titulo, true);
+                w.entrarRegiao("floresta", {10, 10}, Direcao::Baixo);
+                w.jogador.vida = w.jogador.vidaMax;
+                w.relogio.minutos = 11 * 60;
+                atravessar("pantano");
+            }
+            if (quadro_ == 60) {
+                verificar(w.regiaoAtual == "pantano", "com o primeiro ato, a floresta leva ao Pântano das Cinzas");
+                w.jogador.pos = {20 * 16.0f, 12 * 16.0f};
+                w.jogador.invulneravel = 99.0f;
+            }
+            if (quadro_ == 100) capturar("109_pantano");
+            if (quadro_ == 102) {
+                for (const PistaDef& p : ctx_.dados.lore.pistas)
+                    if (p.ato == 2) w.marcar("pista:" + p.id, p.titulo, true);
+                w.escolher("sacerdotisa", "interrogar");
+                verificar(w.marcos.contains("misterio:segundo_ato"), "os fragmentos e a escolha diante da Sacerdotisa fecham o segundo ato");
+                atravessar("torre");
+            }
+            if (quadro_ == 160) {
+                verificar(w.regiaoAtual == "torre", "com o segundo ato, o pântano leva à Torre do Selo");
+                w.jogador.pos = {14 * 16.0f + 8, 12 * 16.0f};
+            }
+            if (quadro_ == 200) capturar("110_torre_selo");
+            if (quadro_ == 202) {
+                w.jogador.invulneravel = 0.0f;
+                w.entrarRegiao("vilarejo", {31, 21}, Direcao::Baixo);
+                proxima();
+            }
+            return;
+        }
+        // ---------- A Quinta Era, Coroa Eterna (1.18) ----------
+        case 63: {  // o final da Queda (aprisionar) com a Alta Fantasia: na noite seguinte, a Coroa Eterna e o epílogo
+            if (cena.decisaoAberta() && quadro_ % 5 == 0) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 1) {
+                for (int e = 1; e <= 3; ++e) w.marcar("era:" + std::to_string(e), "", true);
+                w.reino.eraConquistada = 3;
+                w.reino.eraForcada = 3;
+                w.escolher("chama_final", "aprisionar");
+                w.dormir(false);
+                w.relogio.minutos = 21 * 60;  // de noite, o cristal vivo brilha
+                w.jogador.pos = {31.0f * 16, 20.0f * 16};
+                verificar(w.coroaEterna() && w.marcos.contains("coroa:cristal"), "o final da Queda abre a Quinta Era, Coroa Eterna");
+            }
+            if (quadro_ == 12) {
+                verificar(cena.aberto(Painel::Leitura), "o epílogo abre na tela");
+                capturar("111_coroa_epilogo");
+            }
+            if (quadro_ == 14) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 22) in.simularToque(SDL_SCANCODE_E);  // o relatório da manhã, se estiver por baixo
+            if (quadro_ == 90) capturar("112_coroa_vilarejo");
+            if (quadro_ == 92) proxima();
+            return;
+        }
+        case 64:
+            w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();
             return;

@@ -65,6 +65,8 @@ struct Desenhavel {
     bool espelhar = false;
     float piscar = 0.0f;
     std::function<void()> desenho;  // fase 16: peças compostas (estandartes com o brasão), no lugar do sprite
+    glm::vec4 cor{1.0f};  // 1.16: criaturas tingidas
+    float escala = 1.0f;
 };
 
 // Fase 16: bandeiras penduradas nas muralhas do castelo (canto do pano no sprite, a partir do canto de cima)
@@ -107,7 +109,7 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     // (e os da festa, só durante o festival)
     auto escondido = [&](entt::entity e, glm::vec2 p) {
         const auto* en = w.reg.try_get<Enfeite>(e);
-        return en && (w.eraEm(p) < en->eraMin || (en->festival && !w.festivalAgora()));
+        return en && (w.eraEm(p) < en->eraMin || (en->festival && !w.festivalAgora()) || (!en->marco.empty() && !w.marcos.contains(en->marco)));
     };
 
     // Fase 15: a terra dos canteiros é chão (fica por baixo de quem pisa nela)
@@ -210,11 +212,18 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
     }
     for (auto [e, p, i] : w.reg.view<const Posicao, const Inimigo>().each()) {
         if (!visivel(p.v)) continue;
-        const ke::SpriteRegion& s = rec_.regiao(std::format("inimigo_{}_{}", i.tipo, static_cast<int>(i.tempoAnim * 6.0f + p.v.x) % 2));
-        const float largura = static_cast<float>(s.tamanho.x);
+        // 1.16: criatura nova pode usar o desenho de outra, tingido e noutro tamanho; queimando, fica alaranjada; na fase 2, avermelhada
+        const InimigoDef* def = w.defInimigo(i.tipo);
+        const std::string aparencia = def && !def->aparencia.empty() ? def->aparencia : i.tipo;
+        const ke::SpriteRegion& s = rec_.regiao(std::format("inimigo_{}_{}", aparencia, static_cast<int>(i.tempoAnim * 6.0f + p.v.x) % 2));
+        const float esc = def ? def->escala : 1.0f;
+        glm::vec4 tinta = def ? glm::vec4(def->tinta, 1.0f) : glm::vec4(1.0f);
+        if (i.queimando > 0.0f) tinta *= glm::vec4(1.0f, 0.75f, 0.55f, 1.0f);
+        if (i.fase == 2) tinta *= glm::vec4(1.0f, 0.7f + 0.15f * std::sin(tempo * 8.0f), 0.65f, 1.0f);
+        const glm::vec2 tam = glm::vec2(s.tamanho) * esc;
         r.sprite(sombra, {std::floor(p.v.x) - 8, std::floor(p.v.y) - 3});
-        lista.push_back({p.v.y, &s, glm::floor(p.v - glm::vec2(largura / 2, s.tamanho.y - 2.0f)), i.dir == Direcao::Esquerda, i.piscar});
-        if (i.vida < i.vidaMax) barras.push_back({p.v - glm::vec2(0, s.tamanho.y + 3.0f), static_cast<float>(i.vida) / i.vidaMax});
+        lista.push_back({p.v.y, &s, glm::floor(p.v - glm::vec2(tam.x / 2, tam.y - 2.0f)), i.dir == Direcao::Esquerda, i.piscar, {}, tinta, esc});
+        if (i.vida < i.vidaMax) barras.push_back({p.v - glm::vec2(0, tam.y + 3.0f), static_cast<float>(i.vida) / i.vidaMax});
     }
     {
         const Jogador& j = w.jogador;
@@ -226,18 +235,36 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
         const ke::SpriteRegion& s = rec_.regiao(nome);
         // Invulnerável depois de um golpe: pisca
         const bool some = j.invulneravel > 0.0f && static_cast<int>(tempo * 20.0f) % 2 == 0;
-        if (!some) lista.push_back({j.pos.y, &s, glm::floor(j.pos - glm::vec2(8, 22)), j.dir == Direcao::Esquerda});
+        // 1.16: na esquiva, o herói fica translúcido e azulado; carregando o golpe, brilha cada vez mais
+        glm::vec4 corHeroi{1.0f};
+        if (j.esquiva > 0.0f) corHeroi = {0.7f, 0.85f, 1.0f, 0.55f};
+        if (!some) lista.push_back({j.pos.y, &s, glm::floor(j.pos - glm::vec2(8, 22)), j.dir == Direcao::Esquerda, 0.0f, {}, corHeroi});
+        if (j.carga > 0.15f) {
+            const float c = std::min(1.0f, j.carga / Jogador::CARGA_CHEIA);
+            lista.push_back({j.pos.y + 0.1f, &s, glm::floor(j.pos - glm::vec2(8, 22)), j.dir == Direcao::Esquerda, c >= 1.0f ? 0.05f : 0.0f, {},
+                             {1.0f, 0.85f, 0.4f, 0.25f + 0.35f * c}});
+        }
     }
+    // 1.16: o chão em brasa do Golem (por baixo de tudo, pulsando)
+    r.definirMistura(ke::Mistura::Aditiva);
+    for (auto [e, p, b] : w.reg.view<const Posicao, const Brasa>().each()) {
+        const float a = std::min(1.0f, b.vida) * (0.35f + 0.1f * std::sin(tempo * 9.0f + p.v.x));
+        for (int k = 0; k < 3; ++k) {
+            const float raio = b.raio * (1.0f - k * 0.3f);
+            r.retangulo(glm::floor(p.v - glm::vec2(raio, raio * 0.5f)), {raio * 2, raio}, {1.0f, 0.35f + 0.15f * k, 0.05f, a * 0.5f});
+        }
+    }
+    r.definirMistura(ke::Mistura::Normal);
     std::ranges::stable_sort(lista, {}, &Desenhavel::y);
     for (const auto& d : lista) {
         if (d.desenho) {
             d.desenho();
             continue;
         }
-        r.sprite(*d.sprite, d.pos, glm::vec4(1.0f), d.espelhar);
+        r.sprite(*d.sprite, d.pos, d.cor, d.espelhar, d.escala);
         if (d.piscar > 0.0f) {
             r.definirMistura(ke::Mistura::Aditiva);
-            r.sprite(*d.sprite, d.pos, {1, 1, 1, 0.7f}, d.espelhar);
+            r.sprite(*d.sprite, d.pos, {1, 1, 1, 0.7f}, d.espelhar, d.escala);
             r.definirMistura(ke::Mistura::Normal);
         }
     }
@@ -245,6 +272,15 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
         r.retangulo(glm::floor(p - glm::vec2(8, 0)), {16, 3}, {0.1f, 0.05f, 0.05f, 0.9f});
         r.retangulo(glm::floor(p - glm::vec2(7, -1)), {14 * fr, 1}, {0.85f, 0.2f, 0.2f, 1});
     }
+    // 1.16: os tiros (um risco brilhante na cor de quem atirou, com um rastro)
+    r.definirMistura(ke::Mistura::Aditiva);
+    for (auto [e, p, pj] : w.reg.view<const Posicao, const Projetil>().each()) {
+        const InimigoDef* def = w.defInimigo(pj.tipo);
+        const glm::vec3 c = def ? def->tinta : glm::vec3(1.0f);
+        const glm::vec2 rastro = glm::length(pj.vel) > 0.1f ? glm::normalize(pj.vel) : glm::vec2(1, 0);
+        for (int k = 0; k < 4; ++k) r.retangulo(glm::floor(p.v - rastro * (k * 2.5f)) - 1.0f, {3, 3}, {c, 0.9f - k * 0.2f});
+    }
+    r.definirMistura(ke::Mistura::Normal);
 
     // Fase 15: linha de pesca da ponta da vara até a boia (que afunda quando o peixe morde)
     if (w.pescando()) {
@@ -342,7 +378,9 @@ void WorldRenderer::desenharLuzes(ke::Renderer2D& r, const World& w, const ke::C
     for (auto [e, p, l] : w.reg.view<const Posicao, const Luz>().each()) {
         if (p.v.x < canto.x - 200 || p.v.x > canto.x + cam.vista.x + 200 || p.v.y < canto.y - 200 || p.v.y > canto.y + cam.vista.y + 200)
             continue;
-        if (const auto* en = w.reg.try_get<Enfeite>(e); en && (w.eraEm(p.v) < en->eraMin || (en->festival && !w.festivalAgora()))) continue;
+        if (const auto* en = w.reg.try_get<Enfeite>(e);
+            en && (w.eraEm(p.v) < en->eraMin || (en->festival && !w.festivalAgora()) || (!en->marco.empty() && !w.marcos.contains(en->marco))))
+            continue;
         if (const auto* c = w.reg.try_get<Coletavel>(e); c && c->esgotado) continue;
         const float cint = 0.9f + 0.1f * std::sin(tempo * 8.0f + p.v.x) * std::sin(tempo * 4.7f + p.v.y);
         const float raio = l.raio * 1.8f * cint;

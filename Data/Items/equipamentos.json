@@ -1,5 +1,5 @@
 {
-  "_campos": "tipo arma (dano) ou armadura (defesa). forja = nível mínimo da forja para fabricar (0 = não se fabrica). custo para fabricar.",
+  "_campos": "tipo arma (dano) ou armadura (defesa). forja = nível mínimo da forja para fabricar (0 = não se fabrica). custo para fabricar. efeito (1.16): queima (o inimigo cortado queima 2 de vida a cada meio segundo por 3 segundos) ou atravessa (ignora a defesa e o golpe alcança 40% mais longe).",
   "equipamentos": [
     { "id": "espada_enferrujada", "nome": "Espada Enferrujada", "tipo": "arma", "dano": 3, "forja": 0,
       "descricao": "Herança do exílio. Corta mais pela teimosia do que pelo fio." },
@@ -18,10 +18,10 @@
     { "id": "armadura_cavaleiro", "nome": "Armadura do Cavaleiro", "tipo": "armadura", "defesa": 8, "forja": 3,
       "custo": { "ouro": 250, "pedra": 80 }, "descricao": "Placas polidas, digna da Academia." },
     { "id": "espada_cristal", "nome": "Lâmina de Cristal", "tipo": "arma", "dano": 15, "forja": 3, "custo": { "ouro": 150, "cristal": 8 },
-      "descricao": "Cristal das minas temperado no fogo de Bram. Brilha no escuro." },
+      "descricao": "Cristal das minas temperado no fogo de Bram. Brilha no escuro. Atravessa armaduras e alcança mais longe.", "efeito": "atravessa" },
     { "id": "couraca_cristal", "nome": "Couraça de Cristal", "tipo": "armadura", "defesa": 10, "forja": 3,
       "custo": { "ouro": 200, "pedra": 40, "cristal": 10 }, "descricao": "Leve como couro, dura como rocha." },
     { "id": "lamina_chama", "nome": "Lâmina da Chama", "tipo": "arma", "dano": 18, "forja": 0,
-      "descricao": "Presente do pacto. Quente ao toque. Às vezes, sussurra." }
+      "descricao": "Presente do pacto. Quente ao toque. Às vezes, sussurra. Quem ela corta, queima.", "efeito": "queima" }
   ]
 }

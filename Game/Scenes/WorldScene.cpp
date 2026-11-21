@@ -58,6 +58,7 @@ WorldScene::WorldScene(Contexto& ctx, std::optional<DadosSave> save)
 
 ke::ColorGrade WorldScene::grade() const {
     ke::ColorGrade g = gradeDaEra(mundo_.reino.eraVisual);
+    if (const FinalCoroa* c = mundo_.coroaAtual(); c && mundo_.noVilarejo()) g = {c->saturacao, c->contraste, c->brilho, c->tinta, c->vinheta};  // 1.18
     // Cada estação puxa a cor um pouco para o seu lado
     static const glm::vec3 tintas[4] = {{1.00f, 1.00f, 1.00f}, {1.03f, 1.01f, 0.95f}, {1.06f, 0.97f, 0.88f}, {0.92f, 0.97f, 1.06f}};
     g.tinta *= tintas[static_cast<int>(mundo_.relogio.estacao())];
@@ -113,6 +114,7 @@ std::vector<std::string> WorldScene::opcoesPainel() const {
             else if (a == "cozinhar") o.push_back("Cozinhar");
             else if (a == "forjar") o.push_back("Forjar equipamento");
             else if (a == "guilda") o.push_back("Abrir a guilda");
+            else if (a == "guarda" && mundo_.guardaDisponivel()) o.push_back(std::format("Guarda Real ({} esquadras)", mundo_.esquadras.size()));
             else if (a == "alas") o.push_back(std::format("Alas do castelo ({} de {})", mundo_.alas.size(), mundo_.vagasAlas()));
             else if (a == "brasao") o.push_back("Brasão da linhagem");
             else if (a == "reparar") {
@@ -225,6 +227,9 @@ void WorldScene::entradaJogo() {
         }
     }
     e.comer = in.pressionouAcao("comer");
+    // 1.16: esquiva (Shift ou botão direito) e o ataque segurado (golpe carregado ao soltar)
+    e.esquivar = in.pressionouAcao("esquivar") || in.clicou(ke::BotaoMouse::Direito);
+    e.atacarSegurando = in.segurandoAcao("atacar") || (in.segurandoMouse(ke::BotaoMouse::Esquerdo) && !mundo_.pescando());
     if (in.pressionou(SDL_SCANCODE_ESCAPE)) {
         abrir(Painel::Pausa);
         selPausa_ = 0;
@@ -241,6 +246,11 @@ void WorldScene::entradaJogo() {
             abrirAba(k);
             return;
         }
+    if (in.pressionouAcao("guarda")) {  // 1.15
+        abrir(Painel::Guarda);
+        selGuarda_ = confirmarDispensa_ = 0;
+        return;
+    }
     if (in.pressionouAcao("obras")) {
         if (!mundo_.noVilarejo()) hud_.aviso("Só dá para construir no vilarejo.", cor::ruim);
         else abrir(Painel::MenuObras);
@@ -507,6 +517,10 @@ void WorldScene::entradaPainel() {
             fechar(Painel::Construcao);
             abrir(Painel::Forja);
             selForja_ = 0;
+        } else if (o.starts_with("Guarda Real")) {
+            fechar(Painel::Construcao);
+            abrir(Painel::Guarda);
+            selGuarda_ = confirmarDispensa_ = 0;
         } else if (o.starts_with("Alas do castelo")) {
             fechar(Painel::Construcao);
             abrir(Painel::Alas);
@@ -856,6 +870,9 @@ void WorldScene::tratarEventos() {
         switch (e.tipo) {
         case EventoJogo::Tipo::Golpe:
         case EventoJogo::Tipo::Ataque: som.tocar(ke::Som::Golpe); break;
+        case EventoJogo::Tipo::GolpeCarregado: som.tocar(ke::Som::Golpe), som.tocar(ke::Som::Acerto); break;  // 1.16
+        case EventoJogo::Tipo::Esquivou: som.tocar(ke::Som::Menu); break;
+        case EventoJogo::Tipo::Tiro: som.tocar(ke::Som::Magia); break;
         case EventoJogo::Tipo::AcertouInimigo: som.tocar(ke::Som::Acerto); break;
         case EventoJogo::Tipo::Ganhou:
         case EventoJogo::Tipo::InimigoDerrotado: som.tocar(e.recurso == "ouro" ? ke::Som::Moeda : ke::Som::Coleta); break;
@@ -931,6 +948,19 @@ void WorldScene::tratarEventos() {
             abrir(Painel::Relatorio);  // relatório da manhã
             salvar();           // salvamento automático a cada manhã
             break;
+        // 1.16: combate com escolhas
+        case EventoJogo::Tipo::Esquivou:
+            if (e.alvo == "desviou") textoFlutuante(e.pos - glm::vec2(0, 26), "Esquivou!", {0.7f, 0.95f, 1.0f, 1});
+            else poeira(e.pos, {6, 3}, 6, {0.5f, 0.45f, 0.4f, 0.7f});
+            break;
+        case EventoJogo::Tipo::Queimou: textoFlutuante(e.pos, std::to_string(e.quantidade), {1.0f, 0.55f, 0.2f, 1}); break;
+        case EventoJogo::Tipo::FaseChefe:
+            hud_.aviso(e.texto, cor::ruim);
+            cam_.tremor = std::max(cam_.tremor, 4.0f);
+            break;
+        case EventoJogo::Tipo::GolpeCarregado:
+            cam_.tremor = std::max(cam_.tremor, 2.5f);
+            [[fallthrough]];
         case EventoJogo::Tipo::Ataque: {
             // Rastro do golpe: um leque de faíscas claras na frente do herói
             std::uniform_real_distribution<float> u(-1.0f, 1.0f);
@@ -1384,7 +1414,7 @@ void WorldScene::atualizar(double dtD) {
     tituloEra_ = std::max(0.0f, tituloEra_ - dt);
     if (tituloEra_ <= 0.0f) tituloNovo_ = std::max(0.0f, tituloNovo_ - dt);  // o título espera a era terminar de ser anunciada
     // Música: a era do reino no vilarejo; trilha de perigo na floresta e na cripta
-    ctx_.app.audio().definir(mundo_.noVilarejo() ? mundo_.reino.eraVisual : static_cast<float>(mundo_.eraEm(mundo_.jogador.pos)),
+    ctx_.app.audio().definir(mundo_.noVilarejo() ? (mundo_.coroaEterna() ? 4.0f : mundo_.reino.eraVisual) : static_cast<float>(mundo_.eraEm(mundo_.jogador.pos)),
                              mundo_.relogio.escuridao(), mundo_.regiaoHostil() || mundo_.emBatalha() ? 1.0f : 0.0f);
     // Fase 20: os sons de fundo de cada região (a floresta purificada canta)
     const std::string& reg = mundo_.regiaoAtual;
@@ -1435,6 +1465,7 @@ void WorldScene::atualizar(double dtD) {
     else if (aberto(Painel::Vizinhos)) entradaVizinhos();
     else if (aberto(Painel::Regioes)) entradaRegioes(); else if (aberto(Painel::Mercado)) entradaMercado();
     else if (aberto(Painel::Familia)) entradaFamilia();
+    else if (aberto(Painel::Guarda)) entradaGuarda();
     else if (aberto(Painel::Construcao)) entradaPainel();
     else if (aberto(Painel::Forja)) entradaForja();
     else if (aberto(Painel::Loja)) entradaLoja();
@@ -1573,12 +1604,20 @@ void WorldScene::renderizar(float) {
     }
     if (aberto(Painel::Forja)) hud_.lojaForja(r, mundo_, opcoesForja(), selForja_);
     if (aberto(Painel::Loja)) hud_.lojaMercador(r, mundo_, ctx_.dados.npcs.at(loja_), selLoja_);
+    if (aberto(Painel::Guarda)) hud_.painelGuarda(r, mundo_, selGuarda_, confirmarDispensa_, tempo_);
     if (aberto(Painel::Familia)) hud_.painelFamilia(r, mundo_, selFamilia_, confirmarSucessao_, tempo_);
     if (aberto(Painel::Mercado)) hud_.painelMercado(r, mundo_, mercadoCorvin_, abaMercado_, selMercado_, rolagemMercado_, tempo_);
     if (aberto(Painel::Diario)) hud_.diario(r, mundo_);
     if (aberto(Painel::Cronicas)) hud_.cronicas(r, mundo_, abaCronicas_, rolagem_, selFragmento_);
     if (aberto(Painel::Leitura))
         if (const PistaDef* p = ctx_.dados.lore.pista(leitura_)) hud_.leitura(r, *p);
+        else if (const FinalCoroa* c = mundo_.coroaAtual(); c && leitura_ == "epilogo") {  // 1.18: o epílogo da Quinta Era
+            PistaDef ep;
+            ep.id = "epilogo";
+            ep.titulo = c->nome;
+            ep.texto = c->epilogo;
+            hud_.leitura(r, ep);
+        }
     if (aberto(Painel::Construcao)) hud_.painelConstrucao(r, mundo_, painel_, opcoesPainel(), selPainel_, tempo_);
     if (conversa_) hud_.caixaDialogo(r, *conversa_, linhaFala_, static_cast<int>(letras_), tempo_);
     if (aberto(Painel::MenuObras)) hud_.menuObras(r, mundo_, opcoesObras(), selObra_);
@@ -1796,5 +1835,40 @@ void WorldScene::entradaRegioes() {
     const bool clique = listaComMouse(in, hud_.cliques, selRegioes_, n);
     if (in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique)
         mundo_.atenderPedido(selRegioes_);
+}
+
+// 1.15: a Guarda Real. E troca o posto, treina, reforça, dispensa (com confirmação) ou forma uma esquadra
+void WorldScene::entradaGuarda() {
+    ke::Input& in = ctx_.app.input();
+    if (in.pressionouAcao("guarda") || in.pressionou(SDL_SCANCODE_ESCAPE) || cliqueFecha(in, hud_.cliques)) {
+        fechar(Painel::Guarda);
+        return;
+    }
+    const auto acoes = hud_.acoesGuarda(mundo_);
+    const int n = static_cast<int>(acoes.size());
+    if (n == 0) return;
+    selGuarda_ = std::clamp(selGuarda_, 0, n - 1);
+    const int antes = selGuarda_;
+    if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selGuarda_ = (selGuarda_ + n - 1) % n;
+    if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selGuarda_ = (selGuarda_ + 1) % n;
+    const bool clique = listaComMouse(in, hud_.cliques, selGuarda_, n);
+    if (selGuarda_ != antes) confirmarDispensa_ = 0;
+    if (!(in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique)) return;
+    const std::string& a = acoes[selGuarda_];
+    const std::string id = a.substr(2);
+    if (a.starts_with("f:")) {
+        mundo_.formarEsquadra(id);
+        return;
+    }
+    const int esq = std::stoi(id);
+    if (a.starts_with("p:")) mundo_.proximoPosto(esq);
+    else if (a.starts_with("t:")) mundo_.treinarEsquadra(esq);
+    else if (a.starts_with("r:")) mundo_.reforcarEsquadra(esq);
+    else if (confirmarDispensa_ != esq) confirmarDispensa_ = esq;  // dispensar não volta atrás: pede o segundo E
+    else {
+        confirmarDispensa_ = 0;
+        mundo_.dispensarEsquadra(esq);
+        selGuarda_ = 0;
+    }
 }
 }

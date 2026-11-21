@@ -1,0 +1,15 @@
+{
+  "arma": "espada_linhagem",
+  "armadura": "cota_malha",
+  "direcao": 0,
+  "equipamentos": [
+    "cota_malha",
+    "espada_enferrujada",
+    "espada_linhagem",
+    "roupa_exilio"
+  ],
+  "regiao": "vilarejo",
+  "vida": 125,
+  "x": 352.0,
+  "y": 268.0
+}

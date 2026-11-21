@@ -34,7 +34,10 @@ CONTROLES
   W/S + E ............ escolher opções nos menus e no painel da casa
   B .................. obras: escolher e posicionar uma construção
   K .................. painel do reino (população, felicidade, impostos)
-  J .................. atacar com a espada
+  J .................. atacar com a espada (segure e solte: golpe carregado,
+                       dano em dobro)
+  Shift .............. esquivar (também o botão direito do mouse): no começo
+                       da esquiva nada te acerta
   H .................. comer (3 de comida = +25 de vida)
   L .................. diário (missões, equipamento, criaturas derrotadas)
   C .................. Crônicas do Reino e fragmentos da Queda
@@ -45,6 +48,8 @@ CONTROLES
   V .................. mercado (comprar e vender; precisa construir o mercado)
   R .................. terras do reino: regiões, aldeias vizinhas, pedidos de ajuda
                        (E atende) e as notícias da manhã
+  U .................. a Guarda Real (precisa do Quartel Real no castelo):
+                       formar esquadras e escolher onde cada uma fica
   Y .................. a família: casar, escolher o tutor dos filhos e passar a
                        coroa (passar a coroa pede E duas vezes: não tem volta)
   Mouse parado em cima dos números mostra uma dica.

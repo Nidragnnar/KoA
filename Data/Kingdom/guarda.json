@@ -1,0 +1,24 @@
+{
+  "_como_funciona": "Guarda Real (versão 1.15). Precisa do Quartel Real (ala do castelo); no máximo 'esquadras_max' esquadras. Cada esquadra tem um tipo, até 'soldados_max' soldados e um nível de treino (0 a 3). Força = soldados × força do tipo × (1 + 0,25 por nível) × forja (+20% no nível 2, +40% no 3) × Marechal (+15% leal, -15% desleal) × herói presente (+50%, se o herdeiro esteve na região hoje). Soldo por noite (por soldado); sem dinheiro para pagar, um soldado de cada esquadra deserta. POSTOS: reserva (no portão: soma força/6 soldados à defesa da horda), guardar uma região (a corrupção cai força × 'limpeza' por noite e a segurança sobe; com corrupção alta, às vezes há luta: ameaça = corrupção × 'ameaca', com chance 'chance_luta' × corrupção/100 por noite; vencer limpa mais, perder custa soldados), escolta (as caravanas correm 'escolta_caravana' do risco e as expedições ganham força/5), proteger uma aldeia (prosperidade +'protecao_prosperidade' por noite e nada de pedidos por criaturas ou bandidos).",
+  "requer_ala": "quartel",
+  "esquadras_max": 3,
+  "soldados_max": 8,
+  "nivel_max": 3,
+  "reforco": { "ouro": 10 },
+  "treino": { "ouro": 50 },
+  "limpeza": 0.08,
+  "seguranca": 0.5,
+  "ameaca": 0.25,
+  "chance_luta": 0.6,
+  "escolta_caravana": 0.4,
+  "protecao_prosperidade": 1.5,
+  "nomes": ["Primeira Lança", "Guarda do Portão", "Flechas da Coroa", "Cavaleiros de Cinza", "Escudo de Valdren", "Os Juramentados"],
+  "tipos": [
+    { "id": "lanceiros", "nome": "Lanceiros", "descricao": "Firmes no portão e na trilha.", "forca": 2.2,
+      "custo": { "ouro": 80, "comida": 30 }, "soldo": { "ouro": 0.4, "comida": 0.3 } },
+    { "id": "arqueiros", "nome": "Arqueiros", "descricao": "Acertam de longe: melhores guardando as terras.", "forca": 2.0, "regiao": 1.3,
+      "custo": { "ouro": 100, "madeira": 30 }, "soldo": { "ouro": 0.5, "comida": 0.3 } },
+    { "id": "cavaleiros", "nome": "Cavaleiros", "descricao": "Rápidos e fortes: os melhores para escoltar.", "forca": 3.0, "escolta": 1.5,
+      "custo": { "ouro": 150, "comida": 40 }, "soldo": { "ouro": 0.8, "comida": 0.5 }, "requer_forja": 2 }
+  ]
+}

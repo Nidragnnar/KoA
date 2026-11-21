@@ -89,15 +89,24 @@ void World::renascerInimigos() {
     }
 }
 
-void World::golpearComEspada() {
+std::string World::efeitoArma() const {
+    const auto it = dados().equipamentos.find(equip.arma);
+    return it == dados().equipamentos.end() ? "" : it->second.efeito;
+}
+
+void World::golpearComEspada(bool carregado) {
     jogador.acao = Jogador::DURACAO_ATAQUE;
     jogador.atacando = true;
+    jogador.carregado = carregado;
     ++jogador.golpeId;
+    // 1.16: o golpe carregado e a Lâmina de Cristal alcançam mais longe
+    const std::string efeito = efeitoArma();
+    const float alcance = (carregado ? 1.5f : 1.0f) * (efeito == "atravessa" ? 1.4f : 1.0f);
     const glm::vec2 frente = vetor(jogador.dir);
-    const glm::vec2 centro = jogador.pos + glm::vec2(0, -7) + frente * 13.0f;
-    const glm::vec2 meia = (jogador.dir == Direcao::Esquerda || jogador.dir == Direcao::Direita) ? glm::vec2(11, 10) : glm::vec2(12, 9);
+    const glm::vec2 centro = jogador.pos + glm::vec2(0, -7) + frente * (13.0f * (alcance > 1.0f ? 1.25f : 1.0f));
+    const glm::vec2 meia = ((jogador.dir == Direcao::Esquerda || jogador.dir == Direcao::Direita) ? glm::vec2(11, 10) : glm::vec2(12, 9)) * alcance;
     const ke::AABB area{centro - meia, centro + meia};
-    eventos_.push_back({EventoJogo::Tipo::Ataque, centro});
+    eventos_.push_back({carregado ? EventoJogo::Tipo::GolpeCarregado : EventoJogo::Tipo::Ataque, centro});
     std::vector<entt::entity> mortos;
     for (auto [e, p, i] : reg.view<Posicao, Inimigo>().each()) {
         if (i.ultimoGolpe == jogador.golpeId || i.vida <= 0 || i.rendido) continue;
@@ -106,10 +115,11 @@ void World::golpearComEspada() {
         const glm::vec2 ci = p.v - glm::vec2(0, d.tamanho.y * 0.4f);
         if (!area.intersecta({ci - meiaIni, ci + meiaIni})) continue;
         i.ultimoGolpe = jogador.golpeId;
-        const int dano = danoContra(danoArma(), d.defesa);
+        const int dano = danoContra(danoArma() * (carregado ? 2 : 1), efeito == "atravessa" ? 0 : d.defesa);
         i.vida -= dano;
         i.piscar = 0.12f;
-        i.empurrao = frente * (d.chefe ? 60.0f : 160.0f);
+        i.empurrao = frente * (d.chefe ? 60.0f : 160.0f) * (carregado ? 1.6f : 1.0f);
+        if (efeito == "queima") i.queimando = 3.0f, i.tickQueima = 0.5f;  // a Lâmina da Chama
         i.perseguindo = true;
         eventos_.push_back({EventoJogo::Tipo::AcertouInimigo, ci, i.tipo, "", dano});
         // Fase 11: chefe com escolha se rende com 30% da vida e espera a decisão do herdeiro
@@ -148,7 +158,12 @@ void World::derrotarInimigo(entt::entity e) {
 }
 
 void World::ferirHeroi(int dano, glm::vec2 de) {
-    if (jogador.invulneravel > 0.0f || jogador.vida <= 0) return;
+    if (jogador.vida <= 0) return;
+    if (jogador.esquivando()) {  // 1.16: a esquiva certa anula o golpe
+        eventos_.push_back({EventoJogo::Tipo::Esquivou, jogador.pos, "desviou"});
+        return;
+    }
+    if (jogador.invulneravel > 0.0f) return;
     const int final = danoContra(dano, defesaArmadura());
     jogador.vida = std::max(0, jogador.vida - final);
     jogador.invulneravel = 0.9f;
@@ -173,11 +188,34 @@ void World::atualizarInimigos(float dt, const std::vector<ke::AABB>& obst) {
             if (portaoDePe()) barreiras.push_back(g);
         }
     const glm::vec2 praca = glm::vec2(dados().defesa.praca) * static_cast<float>(LADO) + glm::vec2(8, 12);
-    std::vector<entt::entity> saqueadores, soldadosCaidos;
+    std::vector<entt::entity> saqueadores, soldadosCaidos, queimados;
+    // 1.16: o que nasce durante o laço só é criado depois dele (criar entidades no meio do laço atrapalha a visão)
+    std::vector<std::pair<glm::vec2, Projetil>> tiros;
+    std::vector<glm::vec2> brasas;
+    std::vector<std::pair<std::string, glm::vec2>> chamados;  // bando: quem viu o herói chama os iguais por perto
     for (auto [e, p, i] : reg.view<Posicao, Inimigo>().each()) {
         const InimigoDef& d = dados().inimigos.at(i.tipo);
         i.piscar = std::max(0.0f, i.piscar - dt);
         i.recarga = std::max(0.0f, i.recarga - dt);
+        // 1.16: queimando (Lâmina da Chama); o chefe que se rende não morre queimado antes da escolha
+        if (i.queimando > 0.0f && !i.rendido) {
+            i.queimando -= dt;
+            i.tickQueima -= dt;
+            if (!d.escolha.empty() && i.vida <= i.vidaMax * 3 / 10 + 2) i.queimando = 0.0f;
+            else if (i.tickQueima <= 0.0f && i.vida > 0) {
+                i.tickQueima = 0.5f;
+                i.vida -= 2;
+                i.piscar = 0.08f;
+                eventos_.push_back({EventoJogo::Tipo::Queimou, p.v - glm::vec2(0, d.tamanho.y * 0.5f), i.tipo, "", 2});
+                if (i.vida <= 0) queimados.push_back(e);
+            }
+        }
+        // 1.16: o chefe muda de padrão quando perde vida o bastante
+        if (d.fase2 > 0.0f && i.fase == 1 && i.vida > 0 && i.vida <= i.vidaMax * d.fase2) {
+            i.fase = 2;
+            eventos_.push_back({EventoJogo::Tipo::FaseChefe, p.v, i.tipo, "", 0,
+                                d.efeitoFase2 == "brasa" ? d.nome + " racha: o chão em volta vira brasa!" : d.nome + " enfurece e investe sem parar!"});
+        }
         if (i.rendido) {  // de joelhos: não anda nem fere
             i.andando = false;
             continue;
@@ -242,17 +280,45 @@ void World::atualizarInimigos(float dt, const std::vector<ke::AABB>& obst) {
         const glm::vec2 paraHeroi = jogador.pos - p.v;
         const float dist = glm::length(paraHeroi);
         const bool longeDeCasa = glm::distance(p.v, i.origem) > 220.0f;
-        if (!i.perseguindo && dist < d.visao && jogador.vida > 0) i.perseguindo = true;
+        if (!i.perseguindo && dist < d.visao && jogador.vida > 0) {
+            i.perseguindo = true;
+            if (d.comportamento == "bando") chamados.push_back({i.tipo, p.v});
+        }
         if (i.perseguindo && (dist > d.visao * 2.2f || longeDeCasa || jogador.vida <= 0)) i.perseguindo = false;
 
         glm::vec2 alvo = i.destino;
         float vel = d.velocidade * tempoAqui().velocidade;  // fase 18: na neve as criaturas também se arrastam
         if (i.perseguindo) {
             alvo = jogador.pos;
-            if (d.chefe) {  // de tempos em tempos, o chefe arranca em direção ao herói
+            if (d.chefe) {  // de tempos em tempos, o chefe arranca em direção ao herói (1.16: na fase 2 do Cavaleiro, mais vezes e mais rápido)
+                const bool furia = i.fase == 2 && d.efeitoFase2 == "investida";
                 i.recargaInvestida -= dt;
-                if (i.recargaInvestida <= 0.0f && dist < 110.0f) i.investida = 0.55f, i.recargaInvestida = 3.2f;
-                if (i.investida > 0.0f) i.investida -= dt, vel *= 3.4f;
+                if (i.recargaInvestida <= 0.0f && dist < 110.0f) i.investida = 0.55f, i.recargaInvestida = furia ? 1.6f : 3.2f;
+                if (i.investida > 0.0f) i.investida -= dt, vel *= furia ? 4.2f : 3.4f;
+                // 1.16: na fase 2 do Golem, o chão onde o herói pisa vira brasa
+                if (i.fase == 2 && d.efeitoFase2 == "brasa" && (i.recargaBrasa -= dt) <= 0.0f) {
+                    brasas.push_back(jogador.pos);
+                    i.recargaBrasa = 2.5f;
+                }
+            }
+            if (d.comportamento == "distancia") {
+                // Fica longe: recua se o herói chega perto, para no meio do caminho e atira quando dá
+                if (dist < 60.0f) alvo = p.v - paraHeroi;
+                else if (dist < 100.0f) vel = 0.0f;
+                i.recargaTiro -= dt;
+                if (dist <= d.tiro.alcance && i.recargaTiro <= 0.0f && dist > 1.0f) {
+                    const glm::vec2 boca = p.v - glm::vec2(0, d.tamanho.y * 0.5f);
+                    const glm::vec2 mira = glm::normalize(jogador.pos - glm::vec2(0, 7) - boca);
+                    tiros.push_back({boca, {mira * d.tiro.velocidade, static_cast<int>(std::round(d.tiro.dano * forcaInimigos())), d.tiro.alcance / d.tiro.velocidade, i.tipo}});
+                    i.recargaTiro = d.tiro.recarga;
+                }
+                if (std::abs(paraHeroi.x) > std::abs(paraHeroi.y)) i.dir = paraHeroi.x < 0 ? Direcao::Esquerda : Direcao::Direita;
+            }
+            if (d.comportamento == "bando") {  // juntos, correm mais
+                int perto = 0;
+                for (auto [o, po, io] : reg.view<const Posicao, const Inimigo>().each())
+                    if (o != e && io.tipo == i.tipo && glm::distance(po.v, p.v) < 40.0f) ++perto;
+                if (perto >= 2) vel *= 1.25f;
             }
         } else {
             if (glm::distance(p.v, i.destino) < 3.0f) {
@@ -284,6 +350,24 @@ void World::atualizarInimigos(float dt, const std::vector<ke::AABB>& obst) {
             i.recarga = 1.0f;
         }
     }
+    // 1.16: o bando acorda junto; tiros e brasas nascem agora; os queimados caem
+    for (const auto& [tipo, pos] : chamados)
+        for (auto [o, po, io] : reg.view<const Posicao, Inimigo>().each())
+            if (io.tipo == tipo && !io.rendido && glm::distance(po.v, pos) < 100.0f) io.perseguindo = true;
+    for (const auto& [pos, pj] : tiros) {
+        const auto t = reg.create();
+        reg.emplace<Posicao>(t, pos);
+        reg.emplace<Projetil>(t, pj);
+        eventos_.push_back({EventoJogo::Tipo::Tiro, pos, pj.tipo});
+    }
+    for (const glm::vec2& pos : brasas) {
+        const auto b = reg.create();
+        reg.emplace<Posicao>(b, pos);
+        reg.emplace<Brasa>(b);
+    }
+    for (const entt::entity q : queimados)
+        if (reg.valid(q)) derrotarInimigo(q);
+    if (!queimados.empty()) atualizarMissoes();
     // Fase 13: quem chegou à praça leva o saque e some; soldado ferido sai da batalha
     for (const entt::entity e : saqueadores) {
         saquear(reg.get<Posicao>(e).v);
@@ -302,4 +386,36 @@ void World::reviver() {
     ultimoRelatorio.notas.insert(ultimoRelatorio.notas.begin(), "Você caiu em combate. Oswin o trouxe de volta para casa.");
 }
 
+// 1.16: os tiros voam até acertar o herói (que pode esquivar), bater em algo sólido ou acabar o alcance
+void World::atualizarProjeteis(float dt) {
+    std::vector<entt::entity> fim;
+    for (auto [e, p, pj] : reg.view<Posicao, Projetil>().each()) {
+        p.v += pj.vel * dt;
+        pj.vida -= dt;
+        const glm::ivec2 t = glm::ivec2(glm::floor(p.v / static_cast<float>(LADO)));
+        const bool solido = t.x < 0 || t.y < 0 || t.x >= mapa.largura() || t.y >= mapa.altura() || mapa.em(t.x, t.y).solido;
+        if (glm::distance(p.v, jogador.pos - glm::vec2(0, 7)) < 8.0f && jogador.vida > 0) {
+            ferirHeroi(pj.dano, p.v - pj.vel * 0.05f);
+            fim.push_back(e);
+        } else if (pj.vida <= 0.0f || solido) {
+            fim.push_back(e);
+        }
+    }
+    for (const entt::entity e : fim) reg.destroy(e);
+}
+
+// 1.16: o chão em brasa queima quem fica em cima (a esquiva protege)
+void World::atualizarBrasas(float dt) {
+    std::vector<entt::entity> fim;
+    for (auto [e, p, b] : reg.view<const Posicao, Brasa>().each()) {
+        b.vida -= dt;
+        b.tick -= dt;
+        if (b.tick <= 0.0f && glm::distance(p.v, jogador.pos) < b.raio) {
+            b.tick = 0.6f;
+            ferirHeroi(5, p.v);
+        }
+        if (b.vida <= 0.0f) fim.push_back(e);
+    }
+    for (const entt::entity e : fim) reg.destroy(e);
+}
 }

@@ -77,6 +77,8 @@ bool lerLore(const nlohmann::json& jc, const nlohmann::json& jt, const nlohmann:
             if (p.contains("tile")) d.tile = {p["tile"][0].get<int>(), p["tile"][1].get<int>()};
             d.requer = p.value("requer", "");
             d.texto = p.at("texto").get<std::vector<std::string>>();
+            d.ato = std::max(1, p.value("ato", 1));
+            d.fonte = p.value("fonte", "");
             if (d.texto.empty()) throw std::runtime_error("pista sem texto: " + d.id);
             saida.pistas.push_back(std::move(d));
         }

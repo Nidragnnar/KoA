@@ -21,7 +21,11 @@
       "requer": { "marcos": ["fama:generoso"], "populacao_min": 30 } },
     { "id": "herdeiro_dinastia", "nome": "Herdeiro da Dinastia", "descricao": "A coroa passou de pai para filho: Valdren já tem uma dinastia.",
       "requer": { "marcos": ["sucessao:2"] } },
+    { "id": "fim_da_queda", "nome": "Aquele que Encerrou a Queda", "descricao": "Foi à Torre do Selo e decidiu o destino da Chama.",
+      "requer": { "marcos": ["misterio:terceiro_ato"] } },
     { "id": "rei_estandartes", "nome": "Rei dos Sete Estandartes", "descricao": "Sete tipos de obra de pé num reino renascido.",
-      "requer": { "tipos_min": 7, "era_min": 2 } }
+      "requer": { "tipos_min": 7, "era_min": 2 } },
+    { "id": "coroa_eterna", "nome": "Soberano da Coroa Eterna", "descricao": "Levou Valdren das cinzas à Quinta Era.",
+      "requer": { "marcos": ["era:coroa_eterna"] } }
   ]
 }

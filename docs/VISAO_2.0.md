@@ -156,8 +156,38 @@ Escolhido pelo Nidragnnar entre os itens de depois do plano (P3.5 da auditoria).
 - **Notícias**: no máximo duas no relatório da manhã, as mais importantes primeiro (aldeia abandonada, pedido de ajuda, pedido ignorado, avanço, caravana atacada...); todas ficam no painel das Terras, que agora mostra as regiões, as aldeias, os pedidos (E ou clique atende, com ✓/✗) e as notícias.
 - **Balanceamento**: o jogador automático limpa a estrada no dia 5 e ajuda as aldeias quando sobra o dobro do pedido: cerca de 16 ajudas em 120 dias, as três aldeias de pé no fim, nunca mais de 2 notícias por manhã. Sem alarmes nos 4 ritmos.
 - Fica para depois: escoltar caravanas e guardar regiões com a Guarda Real, aldeias novas surgindo, caravanas visíveis na estrada.
+### Guarda Real (feita, versão 1.15)
+P3.4 da auditoria, militar sem microgestão: no máximo 3 esquadras e nada de mapa de batalha (`Data/Kingdom/guarda.json`).
+- **Esquadras** formadas no Quartel Real (ala do castelo; tecla U ou "Guarda Real" no castelo): lanceiros (80 de ouro, 30 de comida), arqueiros (melhores guardando as terras) e cavaleiros (melhores escoltando; pedem a forja no nível 2). Até 8 soldados cada; treino até o nível 3 (+25% de força por nível); reforço repõe os soldados.
+- **Força** = soldados × força do tipo × treino × forja (+20%/+40%) × Marechal (+15% leal, -15% desleal) × herdeiro presente (+50%, se lutou na região no dia).
+- **Postos**: reserva (soma soldados no portão contra a horda), guardar uma região (a corrupção cai, a segurança sobe e ela não conta como abandonada; com a terra escura há luta às vezes: força contra corrupção × 0,25, com vitória limpando mais e derrota custando soldados), escolta (as caravanas correm 40% do risco e as expedições ganham força) e proteger uma aldeia (prosperidade por noite e nada de pedidos por criaturas ou bandidos).
+- **Soldo** por noite (ouro e comida por soldado); sem ele, um soldado de cada esquadra deserta; esquadra vazia se desfaz. As lutas e as deserções entram nas notícias da manhã (no máximo duas).
+- **Balanceamento**: o jogador automático passou a erguer o Quartel primeiro e forma uma esquadra de lanceiros na floresta: cerca de 300 de ouro de soldo em 120 dias (o ouro do fim de jogo ganhou destino). Sem alarmes.
+- Fica para depois: defender um aliado em guerra entre facções, lutas com o herói presente em tempo real.
+### Combate com escolhas (feito, versão 1.16)
+P2.5 da auditoria. Lutas que pedem leitura do inimigo; a arte das criaturas novas reaproveita sprites existentes, tingidos (a arte própria fica para o NidraIA).
+- **Esquiva** (Shift ou botão direito, trocável): um impulso de 0,3 s para onde o herói anda; nos primeiros 0,25 s nada o acerta ("Esquivou!"). Recarga de 0,9 s.
+- **Golpe carregado**: segurando o ataque depois do golpe, a espada brilha; com 0,6 s, soltar dá um golpe com dano em dobro, 50% mais alcance e empurrão maior.
+- **Efeitos das armas**: a Lâmina da Chama queima (2 de vida a cada meio segundo por 3 s); a Lâmina de Cristal ignora a defesa e alcança 40% mais longe.
+- **Criaturas novas** (duas por região): à distância (Arqueiro Espectral na floresta, Conjurador de Ossos na cripta, Cuspidora de Cristal nas minas: ficam longe, recuam se o herói chega perto e atiram projéteis que dá para esquivar) e em bando (Matilha Cinzenta, Ossadas Rastejantes, Enxame: quando uma vê o herói, chama as iguais por perto; juntas, correm mais).
+- **Chefes com fases**: o Cavaleiro Caído enfurece com metade da vida (investe a cada 1,6 s, mais rápido); o Golem de Cinzas racha com 60% (o chão onde o herói pisa vira brasa e queima quem fica em cima). Na fase 2 eles ficam avermelhados e a tela treme no aviso.
+- Fica para depois: arte própria das criaturas novas e dos efeitos, armas com outros efeitos, inimigos que se escondem.
+### Segundo e terceiro atos e regiões novas (feito, versão 1.17)
+P4.1 e P4.2 da auditoria, juntos: os atos acontecem nos mapas novos.
+- **Segundo ato, "quem levou a Chama"**: fechado o primeiro ato, a floresta (canto de baixo à esquerda) leva ao **Pântano das Cinzas** (mapa novo, com corrupção, criaturas das três famílias e a Sacerdotisa das Cinzas, chefe que atira e, na fase 2, deixa o chão em brasa). Quatro fragmentos novos: dois no pântano, a genealogia queimada na cripta e uma memória que os escribas da Biblioteca Real decifram (ou que uma expedição bem-sucedida à Biblioteca Afundada traz). Eles revelam Varek, o irmão mais novo do rei Aldric, banido por pactuar com o Culto, que saiu da Torre com a Chama no ano da Queda, e a origem das criaturas (a cinza da Chama ferida lembra a forma de quem morreu). A Sacerdotisa se rende: interrogar, entregar à Ordem ou libertar (cada facção reage). Os quatro fragmentos e essa escolha fecham o segundo ato.
+- **Terceiro ato**: o pântano leva à **Torre do Selo** (mapa novo), onde Varek (chefe com fase 2 de investidas) se rende diante da Chama. A escolha final: aprisionar (a Ordem gosta; cristal), unir-se à Chama (poder, ouro e a Lâmina da Chama; o Culto gosta, a Ordem odeia, a fama vai para o lado arcano) ou destruí-la (todas as terras se curam e as criaturas se desfazem, mas o cristal guardado vira pó; os anões gostam). Cada final tem epílogo nas Crônicas, e o título "Aquele que Encerrou a Queda".
+- Falas novas de Maelis, Oswin e Bram para os dois atos.
+- Fica para depois: arte própria do pântano e da torre (hoje usam os tiles e criaturas existentes, tingidos), a Quinta Era como consequência do final.
+### A Quinta Era, Coroa Eterna (feita, versão 1.18)
+P4.3 da auditoria, como ela recomendou: não um degrau a mais de desenvolvimento, e sim o estado do reino depois do terceiro ato (`Data/Kingdom/coroa_eterna.json`).
+- Com o final da Queda e o Reino da Alta Fantasia já alcançado, na noite seguinte começa a Coroa Eterna (marco `era:coroa_eterna`, página nas Crônicas, o título "Soberano da Coroa Eterna" e o anúncio de era na tela). O epílogo do final abre como uma leitura e fica guardado.
+- Cada final dá uma Coroa: a Chama Guardada (azul e calma: felicidade, segurança, um pouco de ouro), a Chama Coroada (dourada e quente: muito ouro e segurança, o povo um pouco inquieto) e a Terra Curada (verde: felicidade e hortas mais fartas, sem cristal). A cor da tela no vilarejo muda para a da Coroa, e nas duas com a Chama o cristal vivo brota nas ruas (seis cristais acesos).
+- Música própria (lá lídio, coro, sinos e bordão).
+- A ameaça nova: o eco da Chama em terras distantes atiça as criaturas (toda horda vem 25% mais forte), com notícias a cada 14 dias.
+- A partida continua: o reinado é eterno, e a linhagem segue (fase 21).
+- **Limite assumido**: não há arte `_e4`. Os sprites são os da Alta Fantasia, sob a cor de cada Coroa; o atlas de 1024×2048 já está cheio e a arte nova é do NidraIA.
 ### Depois do plano da auditoria (para decidir mais tarde)
-- Guarda Real (P3.4), combate com escolhas (P2.5) em paralelo à arte, segundo e terceiro atos (P4.1), regiões novas (P4.2) e a Quinta Era como desfecho (P4.3).
+- Todos os itens da auditoria estão feitos. Próximos passos naturais: a arte própria do que foi feito com sprites emprestados (criaturas novas, pântano, torre, a Coroa Eterna), escoltar e guardar com a Guarda a partir do mapa, e mais facções (elfos, tribos do norte).
 ### Depois da 2.0 (para decidir mais tarde)
 - Linhagem: casamento, herdeiros, envelhecimento e sucessão.
 - Mais facções e diplomacia (elfos, tribos do norte) e conflitos entre elas no mapa.
@@ -166,6 +196,6 @@ Escolhido pelo Nidragnnar entre os itens de depois do plano (P3.5 da auditoria).
 
 ## Notas técnicas
 
-- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`), a 14 para a v9 (`guild.json`), a 15 para a v10 (`life.json`), a 16 para a v11 (`castle.json`), a 17 para a v12 (a semente do sorteio no `metadata.json`) a 18 para a v13 (`people.json`) a 19 para a v14 (`factions.json`) a 20 para a v15 (`market.json`) a 21 para a v16 (`family.json`) e o mundo vivo para a v17 (`villages.json`).
+- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`), a 14 para a v9 (`guild.json`), a 15 para a v10 (`life.json`), a 16 para a v11 (`castle.json`), a 17 para a v12 (a semente do sorteio no `metadata.json`) a 18 para a v13 (`people.json`) a 19 para a v14 (`factions.json`) a 20 para a v15 (`market.json`) a 21 para a v16 (`family.json`) o mundo vivo para a v17 (`villages.json`) e a Guarda Real para a v18 (`guard.json`).
 - Conteúdo (crônicas, títulos, eventos, cargos, estações) em JSON dentro de `Data/`, como missões e diálogos hoje.
 - O roteiro ponta a ponta ganha etapas a cada fase; a arte nova vem do NidraIA em sessão separada.

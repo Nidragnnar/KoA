@@ -90,9 +90,10 @@ bool World::atenderPedido(int indice) {
 // No relatório, só as notícias mais importantes (no máximo noticias_por_manha); as outras ficam no painel das Terras
 void World::noiteDoMundo(std::vector<std::string>& notas) {
     mundoVivo.noticias.clear();
-    if (!mundoVivoAtivo()) return;
-    const DadosMundo& d = dados().mundo;
     std::vector<Noticia> n;
+    noiteDaGuarda(n);  // 1.15: o soldo e as lutas da Guarda Real entram nas mesmas notícias
+    if (!mundoVivoAtivo()) return publicarNoticias(std::move(n), notas);
+    const DadosMundo& d = dados().mundo;
     // A terra tomada empurra as vizinhas e as aldeias perto
     for (const auto& [origem, vizinhas] : d.vizinhanca) {
         const auto it = estadoRegioes.find(origem);
@@ -143,7 +144,8 @@ void World::noiteDoMundo(std::vector<std::string>& notas) {
         }
         // Pedido de ajuda (um por aldeia de cada vez)
         if (std::ranges::none_of(mundoVivo.pedidos, [&](const PedidoAberto& p) { return p.aldeia == a.id; }))
-            if (const AjudaDef* aj = ajudaNecessaria(d, e, corr, sorteMundo(sementeBase_, relogio.dia, a.id + "|ajuda"))) {
+            if (const AjudaDef* aj = ajudaNecessaria(d, e, corr, sorteMundo(sementeBase_, relogio.dia, a.id + "|ajuda"));
+                aj && (aj->quando == "prosperidade_abaixo" || !aldeiaProtegida(a.id))) {  // 1.15: a Guarda protege de criaturas e bandidos
                 mundoVivo.pedidos.push_back({aj->id, a.id, relogio.dia + aj->prazo});
                 n.push_back({8, preencher(aj->texto, {{"aldeia", a.nome}}) + std::format(" ({} dias; R: Terras)", aj->prazo)});
             }
@@ -151,7 +153,8 @@ void World::noiteDoMundo(std::vector<std::string>& notas) {
         if (relogio.dia >= e.proximaCaravana) {
             e.proximaCaravana = relogio.dia + a.caravana.aCada;
             if (e.prosperidade < 20.0f) continue;  // aldeia pobre não manda caravana
-            const bool atacada = sorteMundo(sementeBase_, relogio.dia, a.id + "|caravana") < riscoCaravana(corr, seguranca);
+            const float escolta = forcaNoPosto("escolta") > 0.0f ? dados().guarda.escoltaCaravana : 1.0f;  // 1.15: a Guarda escolta
+            const bool atacada = sorteMundo(sementeBase_, relogio.dia, a.id + "|caravana") < riscoCaravana(corr, seguranca) * escolta;
             for (const auto& [bem, v] : a.caravana.mercado) {
                 float& p = mercado.pressao[bem];
                 p = std::clamp(p + (atacada ? -v : v), dados().mercado.pressaoMin, dados().mercado.pressaoMax);
@@ -183,8 +186,13 @@ void World::noiteDoMundo(std::vector<std::string>& notas) {
             n.push_back({3, v->texto + " (só hoje; R: Terras)"});
         }
     }
+    publicarNoticias(std::move(n), notas);
+}
+
+// No relatório, só as mais importantes; todas ficam no painel das Terras
+void World::publicarNoticias(std::vector<Noticia> n, std::vector<std::string>& notas) {
     mundoVivo.noticias = ordenarNoticias(std::move(n));
-    for (size_t i = 0; i < mundoVivo.noticias.size() && static_cast<int>(i) < d.noticiasPorManha; ++i)
+    for (size_t i = 0; i < mundoVivo.noticias.size() && static_cast<int>(i) < dados().mundo.noticiasPorManha; ++i)
         notas.push_back("Notícia: " + mundoVivo.noticias[i]);
 }
 

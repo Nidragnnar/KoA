@@ -23,7 +23,8 @@ enum class Painel {
     Pausa, Leitura, Relatorio, Conversa, Escolha, Decisao, Conselho, Guilda, Cozinha, Alas, Brasao,
     Regioes, Construcao, Forja, Loja, Cronicas, Diario, MenuObras, Reino, Mensagens, Ficha, Povo, Vizinhos,
     Mercado,  // fase 20
-    Familia   // fase 21
+    Familia,  // fase 21
+    Guarda    // 1.15
 };
 
 // O vilarejo jogável
@@ -99,7 +100,8 @@ private:
     void abrirAba(int k);
     bool entradaLivro();
     void entradaFamilia();  // fase 21
-    void entradaRegioes();  // mundo vivo: os pedidos nas Terras    // true = a faixa de abas tratou a entrada deste passo
+    void entradaRegioes();  // mundo vivo: os pedidos nas Terras
+    void entradaGuarda();   // 1.15: a Guarda Real    // true = a faixa de abas tratou a entrada deste passo
     void desenharClima(ke::Renderer2D& r);  // fase 18: chuva, neve e raios por cima do mundo
     void verificarGravacao(bool esperar);
     void darPresenteNaConversa();
@@ -153,6 +155,7 @@ private:
     bool mercadoCorvin_ = false;  // fase 20: o painel do mercado aberto na banca do Corvin (só vende e encomenda)
     int abaMercado_ = 0, selMercado_ = 0, rolagemMercado_ = 0;
     int abaLivro_ = 0;  // a última aba do Livro aberta
+    int selGuarda_ = 0, confirmarDispensa_ = 0;  // 1.15
     int selRegioes_ = 0;  // mundo vivo: o pedido escolhido nas Terras
     int selFamilia_ = 0, confirmarSucessao_ = 0;  // fase 21: a linha escolhida; o filho cuja sucessão espera confirmação
     std::string painel_;  // id da construção com o painel aberto ("" = fechado)

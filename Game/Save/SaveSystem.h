@@ -15,6 +15,7 @@
 #include "Game/Kingdom/Mercado.h"
 #include "Game/Kingdom/Linhagem.h"
 #include "Game/Kingdom/MundoVivo.h"
+#include "Game/Kingdom/Guarda.h"
 #include "Game/Kingdom/Povo.h"
 #include "Game/Kingdom/Guilda.h"
 #include "Game/Lore/Lore.h"
@@ -27,7 +28,7 @@ namespace koa {
 // v8: hordas e a defesa do portão; v9: guilda, expedições e relíquias; v10: vida cotidiana (horta, pratos, presentes);
 // v11: o castelo (alas) e o brasão da linhagem; v12: a semente do sorteio (cada save segue a própria sorte);
 // v13: o povo com nome (people.json); v14: vizinhos, tratados, reputação e desvios (factions.json)
-constexpr int VERSAO_SAVE = 17;
+constexpr int VERSAO_SAVE = 18;
 
 struct EstadoConstrucao {
     std::string id, def;
@@ -141,6 +142,9 @@ struct DadosSave {
     // villages.json (v17). Saves antigos: as aldeias começam como nos dados
     bool temMundo = false;
     EstadoMundo mundo;
+    // guard.json (v18). Saves antigos: sem esquadras
+    std::vector<Esquadra> esquadras;
+    int proximaEsquadra = 1;
 };
 
 // Saves em pastas (Saves/Save_001/*.json) com backup antes de sobrescrever

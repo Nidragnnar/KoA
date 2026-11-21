@@ -186,7 +186,9 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
              {"Kingdom/faccoes.json", [&](const nlohmann::json& jj) { return lerFaccoes(jj, faccoes, erro); }},
              {"Kingdom/mercado.json", [&](const nlohmann::json& jj) { return lerMercado(jj, mercado, erro); }},
              {"Kingdom/linhagem.json", [&](const nlohmann::json& jj) { return lerLinhagem(jj, linhagem, erro); }},
-             {"World/mundo.json", [&](const nlohmann::json& jj) { return lerMundo(jj, mundo, erro); }}}) {
+             {"World/mundo.json", [&](const nlohmann::json& jj) { return lerMundo(jj, mundo, erro); }},
+             {"Kingdom/guarda.json", [&](const nlohmann::json& jj) { return lerGuarda(jj, guarda, erro); }},
+             {"Kingdom/coroa_eterna.json", [&](const nlohmann::json& jj) { return lerCoroa(jj, coroa, erro); }}}) {
         const auto texto = ke::fs::lerTexto(pasta / arq);
         const auto jj = texto ? nlohmann::json::parse(*texto, nullptr, false) : nlohmann::json();
         if (!texto || jj.is_discarded()) {

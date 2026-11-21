@@ -73,6 +73,13 @@ ModificadorDia World::modificadorReino(Estacao e, int dia) const {
     m.ouroDia += static_cast<int>(p.ouroDia);
     m.seguranca += static_cast<int>(p.seguranca);
     m.felicidade += p.felicidade + tempoDoDia(dia < 0 ? relogio.dia : dia).felicidade;
+    // 1.18: a Coroa Eterna
+    if (const FinalCoroa* c = coroaAtual()) {
+        m.felicidade += c->felicidade;
+        m.seguranca += c->seguranca;
+        m.ouroDia += c->ouroDia;
+        m.comida *= 1.0f + c->comida;
+    }
     // Fase 21: os traços de quem reina
     const EfeitosTracos tr = efeitosHerdeiro();
     m.felicidade += tr.felicidade;
@@ -90,7 +97,11 @@ void World::noiteDasRegioes(std::vector<std::pair<std::string, int>>& producao, 
     for (auto& [id, e] : estadoRegioes) {
         if (!visitadas.contains(id)) continue;  // terra que o herdeiro ainda não pisou fica como está
         const std::string nome = nomeRegiao(id);
+        // 1.15: região guardada pela Guarda Real não conta como abandonada (a visita do herdeiro continua a mesma)
+        const int visita = e.ultimaVisita;
+        if (regiaoGuardada(id)) e.ultimaVisita = relogio.dia;
         const ResultadoNoite r = noiteDaRegiao(e, regioes.at(id).vida, transformacao(id), relogio.dia);
+        e.ultimaVisita = visita;
         for (const auto& [recurso, n] : r.producao) producao.push_back({recurso + "|" + nome, n});
         if (r.tomada) {
             notas.push_back(nome + ": as criaturas estão tomando conta. Volte lá para expulsá-las.");
@@ -204,8 +215,13 @@ bool World::escolher(const std::string& id, const std::string& opcao) {
         er->second.corrupcao = o->corrupcao;
         er->second.seguranca = 100.0f;
     }
+    // 1.17: o desfecho da Queda pode levar recursos e curar todas as terras
+    for (const auto& r : o->perde) inventario.definir(r, 0);
+    if (o->curaRegioes)
+        for (auto& [rid, er] : estadoRegioes) er.corrupcao = std::min(er.corrupcao, 15.0f), er.seguranca = 100.0f;
     if (!d.inimigo.empty()) marcar("chefe_" + d.inimigo, dados().inimigos.at(d.inimigo).nome);  // não volta mais
     marcar("escolha:" + id + ":" + opcao, o->nome);
+    if (!o->marco.empty()) marcar(o->marco, o->nome);
     anunciarTransformacao(d.regiao);
     atualizarMissoes();
     return true;

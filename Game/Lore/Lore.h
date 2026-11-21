@@ -44,6 +44,8 @@ struct PistaDef {
     glm::ivec2 tile{0};
     std::string requer;  // marco para aparecer ("" = desde o começo)
     std::vector<std::string> texto;
+    int ato = 1;         // 1.17: de que ato da Queda é (o segundo só depois do primeiro)
+    std::string fonte;   // 1.17: "biblioteca" = os escribas decifram (ou uma expedição à Biblioteca Afundada traz)
 };
 
 // O que o mercador viajante vende

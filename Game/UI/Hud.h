@@ -90,6 +90,9 @@ public:
     // confirmar: o filho cuja sucessão espera o segundo E
     std::vector<std::string> acoesFamilia(const World& w) const;
     void painelFamilia(ke::Renderer2D& r, const World& w, int sel, int confirmar, float tempo);
+    // 1.15: a Guarda Real. Linhas: "p:<esq>" posto, "t:" treinar, "r:" reforçar, "d:" dispensar, "f:<tipo>" formar (ids = índice)
+    std::vector<std::string> acoesGuarda(const World& w) const;
+    void painelGuarda(ke::Renderer2D& r, const World& w, int sel, int confirmar, float tempo);
     void abasLivro(ke::Renderer2D& r, const std::vector<std::string>& nomes, const std::vector<std::string>& teclas, int ativa);
     // Dicas ao passar o mouse: as áreas entram enquanto a interface é desenhada; a dica vai por cima de tudo no fim
     void areaDica(glm::vec2 pos, glm::vec2 tam, std::string texto) { dicas_.push_back({pos, pos + tam, std::move(texto)}); }

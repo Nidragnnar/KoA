@@ -2,7 +2,9 @@
   "_como_funciona": "Para cada morador vale a PRIMEIRA entrada cujas condições batem (de cima para baixo). Condições: primeiro_encontro, ja_falou_hoje, periodo (manha/tarde/noite), estacao (primavera/verao/outono/inverno), casa_nivel_min, afinidade_min, era_min, marco (só depois do acontecimento), sem_marco (só antes), pistas_min (fragmentos da Queda achados), festival (na hora da festa), evento (acontecimento do dia: lua_sangue, aurora, meteoros). 'uma_vez': a entrada vira lembrança e não se repete. {titulo} vira o título atual do herdeiro.",
   "dialogos": {
     "bram": [
-      { "id": "bram_casou", "uma_vez": true, "se": { "marco": "casou" }, "falas": [
+      { "id": "bram_final", "uma_vez": true, "se": { "marco": "misterio:terceiro_ato" }, "falas": [
+        "Ouvi dizer que você subiu a Torre e desceu inteiro. Isso merece uma caneca.",
+        "Não me conte o que fez com a Chama. Prefiro ver nos olhos do povo amanhã."] },      { "id": "bram_casou", "uma_vez": true, "se": { "marco": "casou" }, "falas": [
         "Casado, é? Forjei um par de alianças para o seu avô. Ainda sei fazer.",
         "Felicidades, {titulo}. E não deixe o cônjuge chegar perto da minha bigorna."] },      { "id": "bram_fama_justo", "uma_vez": true, "se": { "marco": "fama:justo" }, "falas": [
         "Os anões de Pedra-Funda perguntaram de você. Disseram que o herdeiro de Valdren 'pesa certo'.",
@@ -91,7 +93,12 @@
       { "se": {}, "falas": ["Dizem que a floresta engole quem entra depois do anoitecer.", "Mas dizem tanta coisa... Disseram que você nunca voltaria!"] }
     ],
     "maelis": [
-      { "id": "maelis_filho", "uma_vez": true, "se": { "marco": "primeiro_filho" }, "falas": [
+      { "id": "maelis_ato2", "uma_vez": true, "se": { "marco": "misterio:segundo_ato" }, "falas": [
+        "Varek. Eu era menina quando ouvi esse nome pela última vez, sussurrado na capela como uma praga.",
+        "A Ordem sempre soube que alguém tinha saído da Torre com a luz. Nunca quiseram dizer quem. Vá com cuidado, {titulo}."] },
+      { "id": "maelis_final", "uma_vez": true, "se": { "marco": "misterio:terceiro_ato" }, "falas": [
+        "Acabou. Eu achei que ia sentir alegria. Sinto só um silêncio bom, como depois de uma longa chuva.",
+        "Seja o que for que você decidiu lá em cima, decidiu com os olhos abertos. Seu pai não pôde dizer o mesmo."] },      { "id": "maelis_filho", "uma_vez": true, "se": { "marco": "primeiro_filho" }, "falas": [
         "Abençoei a criança na capela. Ela não chorou quando a água tocou a testa.",
         "Dizem que é sinal de quem vai enfrentar coisa pior que água fria."] },      { "id": "maelis_fama_devoto", "uma_vez": true, "se": { "marco": "fama:devoto" }, "falas": [
         "A Ordem Arcana me mandou uma carta. A primeira em vinte anos.",
@@ -147,7 +154,9 @@
       { "se": {}, "falas": ["Os mortos não pedem muito. Só que alguém lembre deles.", "O castelo ainda guarda segredos sob o entulho. Um dia vamos precisar deles."] }
     ],
     "oswin": [
-      { "id": "oswin_sucessao", "uma_vez": true, "se": { "marco": "sucessao:2" }, "falas": [
+      { "id": "oswin_ato2", "uma_vez": true, "se": { "marco": "misterio:segundo_ato" }, "falas": [
+        "O príncipe Varek... Eu era guarda do portão quando o rei o mandou embora. Ele sorriu para mim ao sair. Nunca esqueci.",
+        "Se for à Torre, leve a melhor espada que Bram fizer. E volte."] },      { "id": "oswin_sucessao", "uma_vez": true, "se": { "marco": "sucessao:2" }, "falas": [
         "Servi quem reinou antes de você. Agora sirvo você.",
         "Os anos passam rápido para quem guarda um portão, {titulo}. A coroa é sua. Que pese menos do que pesou para nós."] },      { "id": "oswin_fama_justo", "uma_vez": true, "se": { "marco": "fama:justo" }, "falas": [
         "Servi três reis. Nenhum deles ouvia o povo antes de decidir.",

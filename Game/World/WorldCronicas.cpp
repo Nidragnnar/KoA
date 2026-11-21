@@ -19,8 +19,12 @@ bool World::marcar(const std::string& marco, const std::string& nome, bool silen
         cronicas.push_back(c);
         if (!silencioso) eventos_.push_back({EventoJogo::Tipo::Cronica, jogador.pos, marco, "", 0, c.texto});
     }
-    if (marco.starts_with("pista:") && pistasEncontradas() == static_cast<int>(dados().lore.pistas.size()))
-        marcar("misterio:primeiro_ato", "", silencioso);  // todas as peças: a primeira verdade sobre a Queda
+    // Os atos da Queda: todas as peças de um ato (e, no segundo, a escolha diante da Sacerdotisa) fecham o ato
+    if (marco.starts_with("pista:") && pistasDoAto(1) == totalDoAto(1)) marcar("misterio:primeiro_ato", "", silencioso);
+    if ((marco.starts_with("pista:") || marco.starts_with("escolha:sacerdotisa:")) && totalDoAto(2) > 0 && pistasDoAto(2) == totalDoAto(2) &&
+        std::ranges::any_of(marcos, [](const std::string& m) { return m.starts_with("escolha:sacerdotisa:"); }))
+        marcar("misterio:segundo_ato", "", silencioso);  // 1.17: quem levou a Chama
+    if (marco.starts_with("final:")) marcar("misterio:terceiro_ato", "", silencioso);  // 1.17: o desfecho
     if (!marco.starts_with("titulo:")) verificarTitulos(silencioso);
     atualizarPistas();  // um acontecimento pode revelar (ou recolher) fragmentos
     atualizarEspeciais();  // ... ou abrir uma passagem e transformar uma região
@@ -36,6 +40,16 @@ int World::contarObrasProntas(bool tipos) const {
             defs.insert(b.defId);
         }
     return tipos ? static_cast<int>(defs.size()) : n;
+}
+
+int World::pistasDoAto(int ato) const {
+    int n = 0;
+    for (const auto& p : dados().lore.pistas) n += p.ato == ato && marcos.contains("pista:" + p.id);
+    return n;
+}
+
+int World::totalDoAto(int ato) const {
+    return static_cast<int>(std::ranges::count_if(dados().lore.pistas, [&](const PistaDef& p) { return p.ato == ato; }));
 }
 
 int World::pistasEncontradas() const {
@@ -285,4 +299,35 @@ std::vector<std::string> World::inscricao(const BuildingData& b) const {
     return l;
 }
 
+// ---------- 1.18: a Quinta Era, Coroa Eterna ----------
+
+std::string World::finalDaQueda() const {
+    for (const char* f : {"aprisionar", "unir", "destruir"})
+        if (marcos.contains(std::string("final:") + f)) return f;
+    return "";
+}
+
+const FinalCoroa* World::coroaAtual() const {
+    if (!coroaEterna()) return nullptr;
+    const auto it = dados().coroa.finais.find(finalDaQueda());
+    return it == dados().coroa.finais.end() ? nullptr : &it->second;
+}
+
+// Depois do final da Queda (com a Alta Fantasia), a Coroa chega na noite seguinte; depois, o eco da Chama dá notícias
+void World::noiteDaCoroa(std::vector<std::string>& notas) {
+    const DadosCoroa& d = dados().coroa;
+    if (!coroaEterna()) {
+        const std::string f = finalDaQueda();
+        const auto it = d.finais.find(f);
+        if (it == d.finais.end() || reino.eraConquistada < d.requerEra) return;
+        marcar("era:coroa_eterna", it->second.nome);
+        if (it->second.cristais) marcar("coroa:cristal", "", true);
+        notas.push_back("Valdren amanheceu diferente: começou a Quinta Era, " + it->second.nome + ".");
+        eventos_.push_back({EventoJogo::Tipo::LerPista, jogador.pos, "epilogo"});  // o epílogo abre na tela
+        eventos_.push_back({EventoJogo::Tipo::EraMudou, jogador.pos, "", "", 4, it->second.nome});
+        return;
+    }
+    if (relogio.dia % d.ecoACada == 0)
+        notas.push_back("Mercadores contam de brasas acesas em terras distantes: o eco da Chama atiça as criaturas. As hordas vêm mais fortes.");
+}
 }

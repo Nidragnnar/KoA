@@ -9,7 +9,7 @@
   "tributo": 10,
   "chance_viajante": 0.25,
   "avanco": { "pressao": 1.5, "aldeia": 3 },
-  "vizinhanca": { "floresta": ["minas"], "minas": ["floresta"] },
+  "vizinhanca": { "floresta": ["minas", "pantano"], "minas": ["floresta"], "pantano": ["floresta"] },
   "aldeias": [
     { "id": "vau_cinzento", "nome": "Vau Cinzento", "perto": "floresta", "povo": 30, "base": 60,
       "descricao": "Pescadores e moleiros no vau do rio, a oeste da floresta.",

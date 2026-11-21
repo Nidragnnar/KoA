@@ -19,12 +19,13 @@ struct Estilo {
 };
 
 // Uma por era + a trilha de perigo (floresta e cripta)
-const Estilo ESTILOS[5] = {
+const Estilo ESTILOS[6] = {
     {54, 45, {0, 2, 3, 5, 7, 8, 10}, {0, 5, 2, 6}, 0.30f, 0.16f, false, false, false},  // Cinzas: lá menor, esparso, vento
     {66, 50, {0, 2, 3, 5, 7, 9, 10}, {0, 6, 3, 4}, 0.45f, 0.07f, false, false, false},  // Despertar: ré dórico
     {78, 48, {0, 2, 4, 5, 7, 9, 11}, {0, 4, 5, 3}, 0.60f, 0.00f, false, false, false},  // Renascido: dó maior
     {88, 53, {0, 2, 4, 6, 7, 9, 11}, {0, 1, 5, 4}, 0.70f, 0.00f, true, true, false},    // Alta Fantasia: fá lídio, coro e sinos
     {50, 40, {0, 1, 3, 5, 7, 8, 10}, {0, 1, 0, 6}, 0.22f, 0.20f, false, false, true},   // Perigo: mi frígio com zumbido grave
+    {72, 57, {0, 2, 4, 6, 7, 9, 11}, {0, 5, 3, 4}, 0.75f, 0.00f, true, true, true},     // Coroa Eterna (1.18): lá lídio, coro, sinos e um bordão
 };
 }
 
@@ -32,7 +33,11 @@ Sintetizador::Sintetizador(int taxa, uint32_t semente) : taxa_(taxa), rng_(semen
 
 float Sintetizador::freqMidi(float midi) { return 440.0f * std::pow(2.0f, (midi - 69.0f) / 12.0f); }
 
-int Sintetizador::estiloAtual() const { return tensao_ > 0.5f ? 4 : std::clamp(static_cast<int>(std::lround(era_)), 0, 3); }
+int Sintetizador::estiloAtual() const {
+    if (tensao_ > 0.5f) return 4;
+    if (era_ >= 3.75f) return 5;  // 1.18: a Coroa Eterna
+    return std::clamp(static_cast<int>(std::lround(era_)), 0, 3);
+}
 
 void Sintetizador::nota(int midi, float duracao, float amp, int forma, float ataque, float decaimento, float pan, float vibrato) {
     if (vozes_.size() > 48) return;  // segurança: nunca acumula vozes demais

@@ -1,5 +1,5 @@
 {
-  "_como_funciona": "Fragmentos da Queda das Cinzas. Ficam no chão da 'regiao', no 'tile' (brilham à noite); E para ler. 'requer' = marco para aparecer. Sem 'regiao', o fragmento vem de outro jeito (a carta é vendida pelo mercador). Cada parágrafo de 'texto' é um bloco na leitura. Achar todos libera a página 'misterio:primeiro_ato'.",
+  "_como_funciona": "Fragmentos da Queda das Cinzas. Ficam no chão da 'regiao', no 'tile' (brilham à noite); E para ler. 'requer' = marco para aparecer. Sem 'regiao', o fragmento vem de outro jeito (a carta é vendida pelo mercador; fonte 'biblioteca' = os escribas da Biblioteca Real decifram, ou uma expedição à Biblioteca Afundada traz). 'ato': 1 (os seis primeiros) ou 2 (depois do primeiro ato). Cada parágrafo de 'texto' é um bloco na leitura. Achar todos libera a página 'misterio:primeiro_ato'.",
   "pistas": [
     {
       "id": "ordem_chamuscada", "titulo": "Ordem real, chamuscada",
@@ -52,6 +52,41 @@
         "O selo de cera se parte na sua mão. A letra é a do rei Aldric, o seu pai.",
         "\"Isolde: se a Chama me responder, nosso filho herdará um reino eterno. Se não responder, leve-o para longe.\"",
         "\"E não deixe que ele volte antes de estar pronto para escolher melhor do que eu.\""
+      ]
+    },
+    {
+      "id": "carta_pregador", "titulo": "Carta do Pregador Cinzento", "ato": 2,
+      "regiao": "pantano", "tile": [10, 13], "requer": "misterio:primeiro_ato",
+      "texto": [
+        "Um rolo de pele dentro de uma caixa de ferro, meio afundado na lama.",
+        "\"Irmã: o senhor da Torre pede mais ossos. Diz que a Chama ainda arde, mas fraca, e que só o sangue de Aldric a acende de verdade.\"",
+        "\"Que o herdeiro venha. Ele virá. Os da linhagem sempre voltam para a Chama.\""
+      ]
+    },
+    {
+      "id": "diario_iniciado", "titulo": "Diário de um iniciado", "ato": 2,
+      "regiao": "pantano", "tile": [40, 21], "requer": "misterio:primeiro_ato",
+      "texto": [
+        "Páginas coladas pela umidade. A letra treme no fim.",
+        "\"Vi de onde vêm as sombras. A Chama ferida solta cinza, e a cinza lembra a forma de quem morreu na Queda. Os lobos, os esqueletos, tudo é lembrança queimada.\"",
+        "\"O senhor da Torre diz que, quando a Chama voltar inteira, os mortos voltarão inteiros também. Não sei mais se quero ver isso.\""
+      ]
+    },
+    {
+      "id": "memoria_biblioteca", "titulo": "Memória da Biblioteca", "ato": 2, "fonte": "biblioteca", "requer": "misterio:primeiro_ato",
+      "texto": [
+        "Entre crônicas mofadas, os escribas acharam uma página costurada ao contrário, para ninguém ler.",
+        "\"No ano da Queda, o rei não estava sozinho na Torre. O príncipe Varek, seu irmão mais novo, segurava a tocha do rito.\"",
+        "\"Quando o selo partiu, Aldric caiu. Varek saiu da Torre carregando a luz nas mãos. Ninguém mais o viu.\""
+      ]
+    },
+    {
+      "id": "genealogia_queimada", "titulo": "Genealogia queimada", "ato": 2,
+      "regiao": "cripta", "tile": [6, 5], "requer": "misterio:primeiro_ato",
+      "texto": [
+        "Uma tábua de nomes ao pé do túmulo de Hadrian. Um dos ramos foi raspado a faca.",
+        "Ainda dá para ler, por baixo das marcas: \"Varek, segundo filho, banido por pactuar com os pregadores das cinzas\".",
+        "Hadrian deixou escrito na pedra: \"Se um dia ele voltar, que a linhagem tenha força para dizer não.\""
       ]
     }
   ]

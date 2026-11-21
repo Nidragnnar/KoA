@@ -215,6 +215,40 @@ O plano da 2.0 está em `docs/VISAO_2.0.md`.
 - **Save v17**: arquivo novo `villages.json` (aldeias, pedidos, notícias). Saves v1 a v16 começam com as aldeias como nos dados.
 - **Testes**: 240 (9 novos: dados, evolução pela semente e pela corrupção, avanço da terra tomada, limite de notícias, ajuda e abandono, aldeia abandonada, caravanas, viajantes e save v17) e o roteiro com a etapa 59 (a notícia da fome na manhã e a ajuda pelas Terras).
 
+## Guarda Real (versão 1.15)
+
+- **Regras puras**: `Game/Kingdom/Guarda.h` (`TipoEsquadra`, `DadosGuarda`, `Esquadra`, `BonusGuarda`; `forcaEsquadra`, `soldoDaNoite`, `lutaNaRegiao`). `lerGuarda` não aceita mais de 3 esquadras.
+- **No mundo** (`Game/World/WorldGuarda.cpp`): `World::esquadras`, `formarEsquadra`, `proximoPosto`/`definirPosto`, `treinarEsquadra`, `reforcarEsquadra`, `dispensarEsquadra`, `forcaNoPosto` e `noiteDaGuarda` (soldo ou deserção, efeito de cada posto, lutas com sorteio pela semente). Ganchos: `soldadosDosPostos` (reserva), `noiteDasRegioes` (região guardada não é abandonada), `noiteDoMundo` (escolta das caravanas, aldeia protegida; as notícias da Guarda entram no mesmo limite de 2), `margemSemSorte` (escolta das expedições).
+- **Interface**: `Painel::Guarda` (tecla U e ação "guarda" do castelo), `Hud::painelGuarda`/`acoesGuarda`; dispensar pede o segundo E.
+- **Save v18**: arquivo novo `guard.json`. Saves v1 a v17 começam sem esquadras.
+- **Testes**: 247 (7 novos: força, formar e limite, a conta da luta, guardar a região, soldo e deserção, reserva e proteção da aldeia, save v18) e o roteiro com a etapa 60.
+
+## Combate com escolhas (versão 1.16)
+
+- **Dados**: `InimigoDef` ganhou `comportamento` (`distancia`/`bando`), `tiro`, `aparencia`/`tinta`/`escala` (desenho emprestado e tingido) e `fase2`/`efeitoFase2`; `EquipDef` ganhou `efeito` (`queima`/`atravessa`). Seis criaturas novas nos mapas (letras V, N, O, J, Y, H).
+- **Jogador**: `esquiva`, `recargaEsquiva`, `dirEsquiva`, `carga`, `carregado` (e `esquivando()`: a janela invulnerável). `EntradaMundo` ganhou `esquivar` e `atacarSegurando`; a ação `esquivar` (Shift) entrou nas teclas trocáveis.
+- **Mundo** (`WorldCombate.cpp`): `golpearComEspada(carregado)`, `efeitoArma()`, a queimadura, a fase 2 dos chefes, o recuo e o tiro de quem fica longe, o chamado do bando (aplicado depois do laço) e dois componentes novos: `Projetil` (`atualizarProjeteis`) e `Brasa` (`atualizarBrasas`). `ferirHeroi` respeita a esquiva. As entidades que nascem durante o laço dos inimigos (tiros, brasas) só são criadas depois dele.
+- **Desenho**: `Desenhavel` ganhou cor e escala (criaturas tingidas, herói translúcido na esquiva, brilho da carga); tiros e brasas com mistura aditiva.
+- **Save**: não muda (o estado das lutas não é guardado).
+- **Testes**: 252 (5 novos: a esquiva na janela certa, o golpe carregado em dobro, queimar e atravessar, à distância e em bando, as fases dos chefes na vida certa) e o roteiro com a etapa 61.
+
+## Segundo e terceiro atos e regiões novas (versão 1.17)
+
+- **Regiões**: `Data/World/pantano.json`/`.txt` e `torre.json`/`.txt`, carregadas pela lista `regioes` do vilarejo; as passagens usam `requer` (floresta → pântano com `misterio:primeiro_ato`, pântano → torre com `misterio:segundo_ato`). O pântano tem `vida` (corrupção, Terras, Guarda e o avanço da terra tomada).
+- **Fragmentos**: `PistaDef` ganhou `ato` e `fonte`; `pistasDoAto`/`totalDoAto` fecham cada ato em `marcar()`. A fonte `biblioteca` não fica no mapa: `recuperarMemoria()` (ação Decifrar da Biblioteca Real, ou expedição bem-sucedida à Biblioteca Afundada).
+- **Escolhas**: `OpcaoEscolha` ganhou `marco`, `perde` e `curaRegioes`; o final marca `final:<opção>` e, com ele, `misterio:terceiro_ato`. As facções reagem pelos marcos `escolha:...` (`faccoes.json`).
+- **Chefes**: a Sacerdotisa e Varek usam o desenho de outras criaturas, tingido e ampliado (`aparencia`/`tinta`/`escala`).
+- **Roteiro**: o modo roteiro ignora o mouse de verdade (`Input::ignorarMouseReal`), para a pessoa usando o computador não mudar o teste.
+- **Testes**: 256 (4 novos: as passagens por ato, a sequência do mistério, os três finais e as regiões novas no save) e o roteiro com a etapa 62.
+
+## A Quinta Era, Coroa Eterna (versão 1.18)
+
+- **Dados**: `Game/Kingdom/CoroaEterna.h` (`FinalCoroa`, `DadosCoroa`, `lerCoroa`), lidos de `Data/Kingdom/coroa_eterna.json`.
+- **No mundo**: `finalDaQueda()`, `coroaEterna()` (o marco `era:coroa_eterna`), `coroaAtual()` e `noiteDaCoroa` (a virada e o eco). Efeitos em `modificadorReino`; o eco em `forcaProximaHorda`. O `KingdomEra` não ganhou um quinto valor: a Coroa é um estado por cima da Alta Fantasia, e isso evitou mexer no pipeline de sprites `_eN`.
+- **Tela e som**: a cena troca a cor da era pela da Coroa (no vilarejo), o HUD mostra "Coroa Eterna", o sintetizador ganhou o estilo 6 (era 4), e `Enfeite::marco` mostra o cristal vivo só depois de `coroa:cristal`. O epílogo usa o painel de leitura dos fragmentos (`leitura_ == "epilogo"`).
+- **Save**: não muda (tudo vem dos marcos).
+- **Testes**: 259 (3 novos: a virada pelo final e pela era, cada final com a sua Coroa, o eco nas hordas) e o roteiro com a etapa 63.
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

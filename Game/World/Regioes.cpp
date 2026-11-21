@@ -126,6 +126,9 @@ bool lerEscolhas(const nlohmann::json& j, std::map<std::string, EscolhaDef>& sai
                 o.requerTexto = jo.value("requer_texto", "");
                 o.item = jo.value("item", "");
                 o.corrupcao = jo.value("corrupcao", -1.0f);
+                o.marco = jo.value("marco", "");
+                o.perde = jo.value("perde", std::vector<std::string>{});
+                o.curaRegioes = jo.value("cura_regioes", false);
                 if (jo.contains("recompensa"))
                     for (const auto& [r, q] : jo["recompensa"].items()) o.recompensa[r] = q.get<int>();
                 d.opcoes.push_back(std::move(o));

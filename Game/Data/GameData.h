@@ -18,6 +18,8 @@
 #include "Game/Kingdom/Mercado.h"
 #include "Game/Kingdom/Linhagem.h"
 #include "Game/Kingdom/MundoVivo.h"
+#include "Game/Kingdom/Guarda.h"
+#include "Game/Kingdom/CoroaEterna.h"
 #include "Game/Kingdom/Defesa.h"
 #include "Game/Kingdom/Guilda.h"
 #include "Game/Kingdom/Estacoes.h"
@@ -90,6 +92,8 @@ struct GameData {
     DadosMercado mercado;                        // fase 20: preços, encomendas do Corvin
     DadosLinhagem linhagem;                      // fase 21: casamento, filhos, traços e sucessão
     DadosMundo mundo;                            // mundo vivo: aldeias, caravanas, viajantes
+    DadosGuarda guarda;                          // 1.15: a Guarda Real
+    DadosCoroa coroa;                            // 1.18: a Quinta Era, Coroa Eterna
     DadosCotidiano cotidiano;                    // fase 15: horta, pesca, animais, cozinha e presentes
 
     const InimigoDef* inimigoPorLetra(char c) const {

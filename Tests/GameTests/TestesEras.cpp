@@ -63,7 +63,7 @@ TEST(Eras, EnfeitesEFonteDependemDaEra) {
     int enfeites = 0, cristais = 0;
     for (auto [e, en, v] : w.reg.view<Enfeite, Visual>().each()) {
         ++enfeites;
-        cristais += v.sprite == "cristal" && en.eraMin == 3;
+        cristais += v.sprite == "cristal" && en.eraMin == 3 && en.marco.empty();  // os da Coroa Eterna (1.18) dependem do marco
     }
     EXPECT_GE(enfeites, 10);
     EXPECT_EQ(cristais, 5);

@@ -31,6 +31,7 @@ struct Amostra {
     float precoComida = 0.0f;
     // Mundo vivo: aldeias de pé, ajudas dadas e o máximo de notícias num relatório
     int aldeiasVivas = 0, ajudas = 0, noticiasMax = 0;
+    int esquadras = 0, soldoPago = 0;  // Guarda Real: esquadras no fim e ouro de soldo pago desde o começo
 };
 
 class JogadorAutomatico {
@@ -51,7 +52,7 @@ private:
     World& w_;
     const GameData& dados_;
     Ritmo ritmo_;
-    int obras_ = 0, expedicoes_ = 0, comidaVendida_ = 0, ajudas_ = 0, noticiasMax_ = 0;
+    int obras_ = 0, expedicoes_ = 0, comidaVendida_ = 0, ajudas_ = 0, noticiasMax_ = 0, soldoPago_ = 0;
     std::vector<Amostra> historico_;
 };
 

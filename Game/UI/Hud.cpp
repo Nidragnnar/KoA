@@ -125,7 +125,7 @@ void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
     }
 
     // Data, hora, era e o título do herdeiro (canto superior direito)
-    const std::string era = nomeEra(w.reino.eraAtual());
+    const std::string era = w.coroaEterna() ? "Coroa Eterna" : nomeEra(w.reino.eraAtual());  // 1.18: a Quinta Era
     const std::string data = w.relogio.textoData();
     const std::string titulo = w.titulo().nome;
     // Fase 10: o que o dia reserva (festival ou acontecimento da noite)
@@ -1950,6 +1950,91 @@ void Hud::painelFamilia(ke::Renderer2D& r, const World& w, int sel, int confirma
     }
     f_.desenharCentralizado(r, "W/S ou mouse escolher   E ou clique fazer   Y ou Esc fechar", {320, p.y + s.y - 10}, cor::apagado);
     rodapeFechar("Y ou Esc fechar", {320 + f_.largura("W/S ou mouse escolher   E ou clique fazer   ") / 2.0f, p.y + s.y - 10});
+}
+
+// ---------- 1.15: a Guarda Real ----------
+
+std::vector<std::string> Hud::acoesGuarda(const World& w) const {
+    std::vector<std::string> v;
+    for (const Esquadra& e : w.esquadras) {
+        const std::string id = std::to_string(e.id);
+        v.push_back("p:" + id);
+        v.push_back("t:" + id);
+        v.push_back("r:" + id);
+        v.push_back("d:" + id);
+    }
+    if (static_cast<int>(w.esquadras.size()) < dados_.guarda.esquadrasMax)
+        for (const TipoEsquadra& t : dados_.guarda.tipos) v.push_back("f:" + t.id);
+    return v;
+}
+
+void Hud::painelGuarda(ke::Renderer2D& r, const World& w, int sel, int confirmar, float tempo) {
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.5f});
+    const glm::vec2 p{50, 18}, s{540, 324};
+    desenharPainel(r, p, s);
+    painelClicavel(p, s);
+    const DadosGuarda& dg = dados_.guarda;
+    f_.desenharCentralizado(r, "Guarda Real", {320, p.y + 11}, cor::ouro);
+    std::string soldo;
+    for (const auto& [rid, q] : soldoDaNoite(dg, w.esquadras)) soldo += (soldo.empty() ? "" : ", ") + std::format("{} de {}", q, minusculo(dados_.nomeRecurso(rid)));
+    f_.desenharCentralizado(r,
+                            !w.guardaDisponivel() ? "Erga o Quartel Real no castelo para formar esquadras."
+                                                  : std::format("{} de {} esquadras   soldo por noite: {}", w.esquadras.size(), dg.esquadrasMax,
+                                                                soldo.empty() ? "nada" : soldo),
+                            {320, p.y + 23}, w.guardaDisponivel() ? cor::apagado : cor::ruim);
+    r.retangulo({p.x + 12, p.y + 34}, {s.x - 24, 1}, cor::borda);
+    const auto acoes = acoesGuarda(w);
+    float y = p.y + 40;
+    int k = 0;
+    auto linha = [&](const std::string& texto, const std::string& estado, bool pode, glm::vec4 corEstado) {
+        const bool s1 = k == sel;
+        if (s1) r.retangulo({p.x + 12, y - 2}, {s.x - 24, 13}, {0.45f, 0.36f, 0.22f, 0.4f + 0.05f * std::sin(tempo * 4.0f)});
+        cliques.area({p.x + 12, y - 2}, {s.x - 24, 13}, k);
+        marcaSimNao(r, {p.x + 22, y}, pode);
+        f_.desenhar(r, caber(f_, texto, 290), {p.x + 34, y}, s1 ? cor::ouro : cor::texto);
+        f_.desenhar(r, caber(f_, estado, 200), {p.x + s.x - 16 - std::min(200, f_.largura(estado)), y}, corEstado);
+        y += 13;
+        ++k;
+    };
+    for (const Esquadra& e : w.esquadras) {
+        const TipoEsquadra* t = dg.tipo(e.tipo);
+        f_.desenhar(r, std::format("{} ({})", e.nome, t ? t->nome : e.tipo), {p.x + 18, y}, cor::ouro);
+        const std::string info = std::format("{}/{} soldados   nível {}   força {:.0f}", e.soldados, dg.soldadosMax, e.nivel, w.forcaDaEsquadra(e));
+        f_.desenhar(r, info, {p.x + s.x - 16 - f_.largura(info), y}, cor::texto);
+        y += 13;
+        linha("Posto: " + w.nomePosto(e.posto), "E troca", true, cor::ouro);
+        const bool treina = e.nivel < dg.nivelMax && w.inventario.tem(w.custoTreino(e));
+        linha("Treinar", e.nivel >= dg.nivelMax ? "nível máximo" : std::format("{} de ouro", w.custoTreino(e).contains("ouro") ? w.custoTreino(e).at("ouro") : 0),
+              treina, treina ? cor::ouro : cor::apagado);
+        const bool reforca = e.soldados < dg.soldadosMax && w.inventario.tem(w.custoReforco(e));
+        linha("Reforçar até " + std::to_string(dg.soldadosMax) + " soldados",
+              e.soldados >= dg.soldadosMax ? "completa" : std::format("{} de ouro", w.custoReforco(e).contains("ouro") ? w.custoReforco(e).at("ouro") : 0), reforca,
+              reforca ? cor::ouro : cor::apagado);
+        linha("Dispensar", confirmar == e.id ? "E de novo: confirmar!" : "E dispensa", true, confirmar == e.id ? cor::ruim : cor::apagado);
+        y += 5;
+    }
+    if (k < static_cast<int>(acoes.size())) {
+        f_.desenhar(r, "Formar uma esquadra", {p.x + 18, y}, cor::ouro);
+        y += 13;
+        for (const TipoEsquadra& t : dg.tipos) {
+            const std::string falta = w.podeFormar(t.id);
+            std::string custo;
+            for (const auto& [rid, q] : t.custo) custo += (custo.empty() ? "" : ", ") + std::format("{} {}", q, minusculo(dados_.nomeRecurso(rid)));
+            areaDica({p.x + 12, y - 2}, {s.x - 24, 13}, t.nome + ": " + t.descricao);
+            linha(std::format("{} ({})", t.nome, custo), falta.empty() ? "E forma" : falta, falta.empty(), falta.empty() ? cor::ouro : cor::apagado);
+        }
+    }
+    // O custo de formar a escolhida e o que cada posto faz
+    if (sel >= 0 && sel < static_cast<int>(acoes.size()) && acoes[sel].starts_with("f:"))
+        if (const TipoEsquadra* t = dg.tipo(acoes[sel].substr(2))) {
+            f_.desenhar(r, "Custa:", {p.x + 18, p.y + s.y - 38}, cor::apagado);
+            custoEmLinha(r, t->custo, w.inventario, {p.x + 18 + f_.largura("Custa:") + 6, p.y + s.y - 38});
+        }
+    f_.desenhar(r, caber(f_, "Reserva soma soldados no portão; guardar limpa a região (e às vezes luta); escolta protege caravanas e expedições.",
+                         static_cast<int>(s.x) - 36),
+                {p.x + 18, p.y + s.y - 25}, cor::apagado);
+    f_.desenharCentralizado(r, "W/S ou mouse escolher   E ou clique fazer   U ou Esc fechar", {320, p.y + s.y - 10}, cor::apagado);
+    rodapeFechar("U ou Esc fechar", {320 + f_.largura("W/S ou mouse escolher   E ou clique fazer   ") / 2.0f, p.y + s.y - 10});
 }
 
 }

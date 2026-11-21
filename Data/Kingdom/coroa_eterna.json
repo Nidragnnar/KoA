@@ -1,0 +1,38 @@
+{
+  "_como_funciona": "A Quinta Era (versão 1.18): não é mais um degrau de desenvolvimento, é o estado do reino depois do terceiro ato. Com o marco do final da Queda e o Reino da Alta Fantasia já alcançado, na noite seguinte o reino vira a Coroa Eterna (marco era:coroa_eterna). Cada final dá uma Coroa diferente: a cor da tela (grade: saturação, contraste, brilho, tinta e vinheta), os efeitos no reino (por dia) e o epílogo que abre na tela. Com 'cristais', o cristal vivo aparece nas ruas (enfeites do vilarejo com o marco coroa:cristal). A ameaça: o eco da Chama chega de terras distantes e atiça as criaturas: depois da Coroa, toda horda vem 'eco_forca' mais forte, e a cada 'eco_a_cada' dias chega uma notícia do eco. A partida continua: o reinado é eterno, e a linhagem segue.",
+  "requer_era": 3,
+  "eco_a_cada": 14,
+  "eco_forca": 0.25,
+  "finais": {
+    "aprisionar": {
+      "nome": "Coroa Eterna: a Chama Guardada",
+      "grade": { "saturacao": 1.15, "contraste": 1.05, "brilho": 0.05, "tinta": [0.92, 1.0, 1.12], "vinheta": 0.1 },
+      "efeitos": { "felicidade": 6, "seguranca": 6, "ouro_dia": 4 }, "cristais": true,
+      "epilogo": [
+        "A Torre do Selo voltou a brilhar à noite, azul e calma. Os magos da Ordem revezam-se na guarda da Chama, e o rei guarda a chave.",
+        "Nas ruas de Valdren, o cristal cresce entre as pedras como se fosse musgo. As crianças acham que sempre foi assim.",
+        "Longe dali, em terras que nunca ouviram falar de Valdren, uma brasa velha pisca. O eco da Chama procura o caminho de volta."
+      ]
+    },
+    "unir": {
+      "nome": "Coroa Eterna: a Chama Coroada",
+      "grade": { "saturacao": 1.25, "contraste": 1.12, "brilho": 0.06, "tinta": [1.12, 0.98, 0.86], "vinheta": 0.16 },
+      "efeitos": { "felicidade": -2, "seguranca": 10, "ouro_dia": 12 }, "cristais": true,
+      "epilogo": [
+        "A coroa de Valdren passou a arder. Ninguém mais ousa cercar o reino, e o ouro chega sozinho, trazido por quem tem medo.",
+        "O povo trabalha sob uma luz que nunca se apaga. Alguns chamam de bênção. Outros dormem com a janela fechada.",
+        "E a Chama, que agora tem coroa, chama outras chamas. De terras distantes, o eco responde."
+      ]
+    },
+    "destruir": {
+      "nome": "Coroa Eterna: a Terra Curada",
+      "grade": { "saturacao": 1.1, "contraste": 1.0, "brilho": 0.07, "tinta": [1.02, 1.08, 0.94], "vinheta": 0.08 },
+      "efeitos": { "felicidade": 10, "seguranca": 4, "comida": 0.15 }, "cristais": false,
+      "epilogo": [
+        "Sem a Chama, não caiu mais cinza. As terras se cobriram de verde, e as criaturas viraram lembrança e cantiga de ninar.",
+        "A magia antiga se foi, e com ela os cristais. Valdren aprendeu a viver da terra, do trabalho e uns dos outros.",
+        "Mas nenhuma chama se apaga sem eco. Em terras distantes, alguém juntou as últimas brasas e olha na direção de Valdren."
+      ]
+    }
+  }
+}

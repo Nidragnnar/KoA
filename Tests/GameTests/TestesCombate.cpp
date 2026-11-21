@@ -70,7 +70,7 @@ TEST(Regioes, CarregaFlorestaECripta) {
     ASSERT_TRUE(w.regioes.contains("cripta"));
     ASSERT_TRUE(w.regioes.contains("minas"));  // fase 11
     EXPECT_GT(w.regioes.at("floresta").spawns.size(), 10u);
-    EXPECT_EQ(dados().inimigos.size(), 6u);
+    EXPECT_EQ(dados().inimigos.size(), 14u);  // 1.16: + 6 (à distância e em bando); 1.17: + 2 chefes (Sacerdotisa e Varek)
     EXPECT_EQ(dados().equipamentos.size(), 11u);
     EXPECT_EQ(dados().missoes.size(), 16u);  // fase 19: + 6 das facções
     EXPECT_GT(w.regioes.at("floresta").escuridaoMin, 0.3f) << "a floresta é escura mesmo de dia";

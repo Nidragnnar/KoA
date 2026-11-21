@@ -113,6 +113,11 @@ void JogadorAutomatico::governar() {
         w_.decidir(escolha);
     }
     if (const Custo c = w_.custoReparo(); !c.empty() && w_.inventario.tem(c)) w_.repararPortao();
+    // Guarda Real: com o Quartel e ouro sobrando, uma esquadra de lanceiros guardando a floresta (ou de reserva)
+    if (w_.esquadras.empty() && w_.inventario.quantidade("ouro") >= 300 && w_.formarEsquadra("lanceiros"))
+        w_.definirPosto(w_.esquadras[0].id, w_.visitadas.contains("floresta") ? "regiao:floresta" : "reserva");
+    for (const Esquadra& e : w_.esquadras)
+        if (e.soldados < 6) w_.reforcarEsquadra(e.id);
     // Mundo vivo: ajuda as aldeias quando sobra o dobro do que pedem (viajantes, não)
     for (int k = static_cast<int>(w_.mundoVivo.pedidos.size()) - 1; k >= 0; --k) {
         const PedidoAberto& p = w_.mundoVivo.pedidos[k];
@@ -190,6 +195,11 @@ void JogadorAutomatico::guilda() {
 
 void JogadorAutomatico::castelo() {
     if (static_cast<int>(w_.alas.size()) >= w_.vagasAlas()) return;
+    // 1.15: o Quartel primeiro (abre a Guarda Real); depois as outras na ordem dos dados
+    if (const AlaDef* q = dados_.castelo.ala("quartel"); q && std::ranges::find(w_.alas, q->id) == w_.alas.end()) {
+        if (w_.inventario.tem(q->custo)) w_.erguerAla(q->id);
+        return;
+    }
     for (const AlaDef& a : dados_.castelo.alas)
         if (std::ranges::find(w_.alas, a.id) == w_.alas.end() && w_.inventario.tem(a.custo) && w_.erguerAla(a.id)) return;
 }
@@ -247,6 +257,10 @@ Amostra JogadorAutomatico::jogarDia() {
     a.precoComida = w_.precoHoje("comida");
     for (const auto& [id, e] : w_.mundoVivo.aldeias) a.aldeiasVivas += !e.sumiu;
     a.ajudas = ajudas_;
+    a.esquadras = static_cast<int>(w_.esquadras.size());
+    for (const auto& [chave, v] : w_.ultimoRelatorio.variacoes)
+        if (chave == "ouro|soldo da guarda") soldoPago_ -= v;
+    a.soldoPago = soldoPago_;
     noticiasMax_ = std::max(noticiasMax_, static_cast<int>(std::ranges::count_if(w_.ultimoRelatorio.notas, [](const std::string& n) { return n.starts_with("Notícia: "); })));
     a.noticiasMax = noticiasMax_;
     for (const auto& [npc, q] : w_.desvios) a.sumido += q;

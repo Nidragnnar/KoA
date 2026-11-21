@@ -97,6 +97,8 @@ DadosSave World::capturar() const {
     d.linhagem = linhagem;
     d.temMundo = true;
     d.mundo = mundoVivo;
+    d.esquadras = esquadras;
+    d.proximaEsquadra = proximaEsquadra;
     return d;
 }
 
@@ -323,6 +325,21 @@ void World::aplicar(const DadosSave& d) {
         for (const PedidoAberto& p : d.mundo.pedidos)
             if (p.aldeia.empty() ? dm.viajante(p.def) != nullptr : dm.aldeia(p.aldeia) && dm.ajuda(p.def)) mundoVivo.pedidos.push_back(p);
         mundoVivo.noticias = d.mundo.noticias;
+    }
+    // Guarda Real: só esquadras de tipos que existem, no máximo o limite, posto que não existe volta para a reserva
+    esquadras.clear();
+    proximaEsquadra = d.proximaEsquadra;
+    for (Esquadra e : d.esquadras) {
+        if (!dados().guarda.tipo(e.tipo) || e.soldados <= 0 || static_cast<int>(esquadras.size()) >= dados().guarda.esquadrasMax) continue;
+        e.soldados = std::min(e.soldados, dados().guarda.soldadosMax);
+        e.nivel = std::min(e.nivel, dados().guarda.nivelMax);
+        proximaEsquadra = std::max(proximaEsquadra, e.id + 1);
+        esquadras.push_back(e);
+    }
+    {
+        const auto postos = postosPossiveis();
+        for (Esquadra& e : esquadras)
+            if (std::ranges::find(postos, e.posto) == postos.end()) e.posto = "reserva";
     }
     atualizarPistas();
     atualizarEspeciais();

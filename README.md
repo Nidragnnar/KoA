@@ -6,7 +6,7 @@ era a era, até a **Alta Fantasia**.
 
 Engine própria em **C++20 + SDL3 + OpenGL 3.3** (Kingdom Engine), com EnTT, Dear ImGui, nlohmann/json e GoogleTest.
 
-## Versão 1.14
+## Versão 1.18
 
 A 2.0 está em andamento (identidade e plano em `docs/VISAO_2.0.md`). A fase 9 trouxe as Crônicas do Reino
 (tecla C), os títulos do herdeiro, o mercador viajante, três monumentos e o começo do mistério da Queda das Cinzas.
@@ -60,6 +60,21 @@ A versão 1.14 deu vida ao mundo longe do herdeiro: três aldeias vizinhas cresc
 pedem ajuda (fome, criaturas, bandidos) e podem ser abandonadas (os sobreviventes vêm para Valdren); as caravanas delas
 barateiam o mercado e pagam pedágio, ou são atacadas na estrada; viajantes e mercenários aparecem com pedidos de um dia;
 e a terra tomada avança para as vizinhas. O relatório da manhã traz no máximo duas notícias, e as Terras (R) mostram tudo.
+A versão 1.15 trouxe a Guarda Real (tecla U, com o Quartel Real erguido): até três esquadras de lanceiros, arqueiros
+ou cavaleiros, com treino, a forja e o Marechal somando força. Cada uma fica de reserva no portão, guarda uma região
+(a corrupção cai e, às vezes, há luta, com a conta no relatório), escolta caravanas e expedições ou protege uma aldeia.
+O soldo é cobrado toda noite; sem ele, os soldados desertam.
+A versão 1.16 deu escolhas ao combate: esquiva (Shift ou botão direito) com um instante invulnerável, golpe carregado
+(segure o ataque e solte: dano em dobro e mais alcance), a Lâmina da Chama que queima e a de Cristal que atravessa a
+defesa. Cada região ganhou uma criatura que atira de longe (o tiro dá para esquivar) e uma que anda em bando, e os
+chefes mudam no meio da luta: o Cavaleiro Caído enfurece e investe sem parar, e o Golem deixa o chão em brasa.
+A versão 1.17 continuou a história da Queda das Cinzas. Com o primeiro ato fechado, a floresta leva ao Pântano das
+Cinzas, onde a Sacerdotisa do Culto guarda o caminho; quatro fragmentos novos (um deles recuperado pela Biblioteca)
+revelam Varek, o irmão do rei que a linhagem apagou. No terceiro ato, na Torre do Selo, o herdeiro decide o destino
+da Chama: aprisioná-la, unir-se a ela ou apagá-la para sempre (as terras se curam, mas a magia vai junto).
+A versão 1.18 trouxe a Quinta Era, Coroa Eterna: depois do final da Queda (com o Reino da Alta Fantasia), o reino
+amanhece numa era nova, diferente para cada final (a cor do mundo, o que o reino ganha, o cristal vivo nas ruas e um
+épílogo), com música própria e uma ameaça nova, o eco da Chama, que deixa as hordas mais fortes. A partida continua.
 
 As 8 fases do plano de arquitetura da 1.0 estão feitas:
 
@@ -76,7 +91,8 @@ As 8 fases do plano de arquitetura da 1.0 estão feitas:
 |---|---|
 | W A S D / setas | andar |
 | E / Espaço | interagir (segure para continuar golpeando) |
-| clique esquerdo / J | atacar (o clique vira o herói para o cursor) |
+| clique esquerdo / J | atacar (o clique vira o herói para o cursor); segure e solte para o golpe carregado |
+| Shift / botão direito | esquivar (um impulso com um instante invulnerável) |
 | mouse | escolher e confirmar nos menus e painéis (clicar fora fecha) |
 | H | comer (o prato que mais cura, ou 3 de comida) |
 | F | na conversa, dar presente; no fogão, comer o prato escolhido |
@@ -86,6 +102,7 @@ As 8 fases do plano de arquitetura da 1.0 estão feitas:
 | P | o povo (todos os habitantes; clique para a ficha) |
 | T | os vizinhos: tratados, missões das facções e a fama do herdeiro |
 | Y | a família: árvore da linhagem, casamento, tutores e a sucessão |
+| U | a Guarda Real: formar, treinar, reforçar e dar posto às esquadras |
 | Opções → Controles | trocar qualquer tecla acima (fica no config.json) |
 | Esc | menu (salvar, opções, controles, título, sair) |
 | F5 | salvar |

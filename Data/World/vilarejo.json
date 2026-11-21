@@ -6,7 +6,7 @@
     "T": "árvore (madeira)", "R": "rocha (pedra)", "C": "baú esquecido (ouro)", "G": "túmulo", "t": "tocha",
     "f": "cerca quebrada", "B": "arbusto", "W": "poço", "F": "fogueira", "P": "ponto inicial do herdeiro"
   },
-  "regioes": ["floresta", "cripta", "minas"],
+  "regioes": ["floresta", "cripta", "minas", "pantano", "torre"],
   "saidas": [
     { "tile": [63, 17], "tam": [1, 5], "destino": "floresta", "chegada": [3, 17], "dir": "direita" }
   ],
@@ -41,6 +41,12 @@
     { "sprite": "cristal", "tile": [30, 12], "era": 3, "luz": [0.45, 0.75, 1.0, 64] },
     { "sprite": "cristal", "tile": [20, 23], "era": 3, "luz": [0.45, 0.75, 1.0, 64] },
     { "sprite": "cristal", "tile": [44, 21], "era": 3, "luz": [0.45, 0.75, 1.0, 64] },
+    { "sprite": "cristal", "tile": [23, 18], "era": 3, "marco": "coroa:cristal", "luz": [0.7, 0.9, 1.0, 72] },
+    { "sprite": "cristal", "tile": [41, 18], "era": 3, "marco": "coroa:cristal", "luz": [0.7, 0.9, 1.0, 72] },
+    { "sprite": "cristal", "tile": [31, 26], "era": 3, "marco": "coroa:cristal", "luz": [0.7, 0.9, 1.0, 72] },
+    { "sprite": "cristal", "tile": [49, 18], "era": 3, "marco": "coroa:cristal", "luz": [0.7, 0.9, 1.0, 72] },
+    { "sprite": "cristal", "tile": [17, 18], "era": 3, "marco": "coroa:cristal", "luz": [0.7, 0.9, 1.0, 72] },
+    { "sprite": "cristal", "tile": [33, 12], "era": 3, "marco": "coroa:cristal", "luz": [0.7, 0.9, 1.0, 72] },
     { "sprite": "lanterna_festa", "tile": [30, 19], "era": 0, "festival": true, "luz": [1.0, 0.7, 0.4, 40] },
     { "sprite": "lanterna_festa", "tile": [36, 19], "era": 0, "festival": true, "luz": [1.0, 0.7, 0.4, 40] },
     { "sprite": "barraca_festa", "tile": [29, 23], "era": 1, "festival": true },

@@ -1,0 +1,20 @@
+{
+  "acoes": {},
+  "alas": [],
+  "brasao": {
+    "cor1": "goles",
+    "cor2": "ouro",
+    "cor_simbolo": "ouro",
+    "divisao": "pleno",
+    "forma": "classico",
+    "lema": 0,
+    "simbolo": "coroa"
+  },
+  "brasao_criado": false,
+  "emprestimo": {
+    "dia": 0,
+    "valor": 0,
+    "volta": 0
+  },
+  "guarda_treinada": 0
+}

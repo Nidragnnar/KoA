@@ -71,6 +71,7 @@ struct Decoracao {
 struct Enfeite {
     int eraMin = 1;
     bool festival = false;  // fase 10: só aparece durante o festival
+    std::string marco;      // 1.18: só aparece depois deste marco (o cristal vivo da Coroa Eterna)
 };
 
 // Estrela caída numa noite de meteoros (vale ouro; some no dia seguinte)

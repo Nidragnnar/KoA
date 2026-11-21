@@ -67,6 +67,8 @@ public:
     void simularToque(SDL_Scancode t) { pressionou_[t] = true, ultima_ = t; }
     void simularSegurar(SDL_Scancode t, bool s) { simuladoSeg_[t] = s; }
     void limparSimulacao() { simuladoSeg_.fill(false); }
+    // Nos roteiros de teste, o mouse de verdade (a pessoa mexendo no computador) não interfere: só vale o simulado
+    void ignorarMouseReal(bool i) { ignorarMouse_ = i; }
     void simularMouse(glm::vec2 p) { mouse_ = p, moveu_ = true; }
     void simularClique(BotaoMouse b, glm::vec2 p) { simularMouse(p), clicou_[static_cast<int>(b)] = true; }
 
@@ -86,6 +88,7 @@ private:
     float densidade_ = 1.0f;
     std::map<std::string, SDL_Scancode> acoes_;
     SDL_Scancode ultima_ = SDL_SCANCODE_UNKNOWN;
+    bool ignorarMouse_ = false;
 };
 
 }

@@ -22,6 +22,16 @@ bool lerCombate(const nlohmann::json& ji, const nlohmann::json& je, const nlohma
             if (i.contains("tamanho")) d.tamanho = {i["tamanho"][0].get<int>(), i["tamanho"][1].get<int>()};
             d.chefe = i.value("chefe", false);
             d.escolha = i.value("escolha", "");
+            d.comportamento = i.value("comportamento", "");
+            if (i.contains("tiro")) {
+                const auto& jt = i["tiro"];
+                d.tiro = {jt.value("dano", d.dano), jt.value("velocidade", 100.0f), jt.value("recarga", 2.5f), jt.value("alcance", 160.0f)};
+            }
+            d.aparencia = i.value("aparencia", "");
+            if (i.contains("tinta")) d.tinta = {i["tinta"][0].get<float>(), i["tinta"][1].get<float>(), i["tinta"][2].get<float>()};
+            d.escala = i.value("escala", 1.0f);
+            d.fase2 = i.value("fase2", 0.0f);
+            d.efeitoFase2 = i.value("efeito_fase2", "");
             inimigos[d.id] = d;
         }
         for (const auto& e : je.at("equipamentos")) {
@@ -34,6 +44,7 @@ bool lerCombate(const nlohmann::json& ji, const nlohmann::json& je, const nlohma
             d.dano = e.value("dano", 0);
             d.defesa = e.value("defesa", 0);
             d.forja = e.value("forja", 0);
+            d.efeito = e.value("efeito", "");
             if (e.contains("custo"))
                 for (const auto& [r, q] : e["custo"].items()) d.custo[r] = q.get<int>();
             ordemEquip.push_back(d.id);

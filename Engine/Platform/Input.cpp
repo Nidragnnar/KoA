@@ -31,6 +31,9 @@ void Input::processar(const SDL_Event& e) {
         if (!e.key.repeat) ultima_ = e.key.scancode;
     } else if (e.type == SDL_EVENT_KEY_UP) {
         segurando_[e.key.scancode] = false;
+    } else if (ignorarMouse_ && (e.type == SDL_EVENT_MOUSE_MOTION || e.type == SDL_EVENT_MOUSE_BUTTON_DOWN || e.type == SDL_EVENT_MOUSE_BUTTON_UP ||
+                                 e.type == SDL_EVENT_MOUSE_WHEEL)) {
+        return;  // roteiro: só o mouse simulado
     } else if (e.type == SDL_EVENT_MOUSE_MOTION) {
         mouse_ = paraTela(e.motion.x, e.motion.y);
         moveu_ = true;

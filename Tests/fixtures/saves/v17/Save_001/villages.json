@@ -1,0 +1,49 @@
+{
+  "aldeias": {
+    "ermo_velas": {
+      "gratidao": 1,
+      "povo": 18,
+      "prosperidade": 44.0,
+      "proxima_caravana": 7,
+      "sumiu": false,
+      "ultimo_tributo": 0
+    },
+    "pedra_alta": {
+      "gratidao": 0,
+      "povo": 45,
+      "prosperidade": 45.0,
+      "proxima_caravana": 3,
+      "sumiu": false,
+      "ultimo_tributo": 0
+    },
+    "vau_cinzento": {
+      "gratidao": 0,
+      "povo": 30,
+      "prosperidade": 26.0,
+      "proxima_caravana": 5,
+      "sumiu": false,
+      "ultimo_tributo": 0
+    }
+  },
+  "noticias": [
+    "Vau Cinzento está passando fome e pede comida. (3 dias; R: Terras)",
+    "Mercenários oferecem limpar a floresta por ouro. (só hoje; R: Terras)"
+  ],
+  "pedidos": [
+    {
+      "aldeia": "vau_cinzento",
+      "def": "fome",
+      "prazo": 5
+    },
+    {
+      "aldeia": "pedra_alta",
+      "def": "criaturas",
+      "prazo": 4
+    },
+    {
+      "aldeia": "",
+      "def": "mercenarios_floresta",
+      "prazo": 2
+    }
+  ]
+}

@@ -21,6 +21,46 @@
           "descricao": "A brasa oferece poder: uma lâmina ardente e minas que dão cristal e ouro. Mas a Chama cobra: o povo fica inquieto e a Lua de Sangue vem mais vezes.",
           "item": "lamina_chama", "recompensa": { "ouro": 60 }, "corrupcao": 50 }
       ]
+    },
+    "sacerdotisa": {
+      "titulo": "A Sacerdotisa das Cinzas se rende",
+      "inimigo": "sacerdotisa_cinzas",
+      "regiao": "pantano",
+      "texto": [
+        "A sacerdotisa cai na lama, as mãos ainda soltando fumaça. Ela ri baixo.",
+        "\"O senhor da Torre espera você, herdeiro. Ele é do seu sangue. Faça o que quiser comigo: a Chama já sabe que você vem.\""
+      ],
+      "opcoes": [
+        { "id": "interrogar", "nome": "Arrancar dela o caminho da Torre",
+          "descricao": "Ela fala, entre dentes, de Varek e dos rituais. O Culto não perdoa quem entrega os seus.",
+          "recompensa": { "ouro": 60 }, "corrupcao": 40 },
+        { "id": "entregar", "nome": "Entregá-la à Ordem Arcana",
+          "descricao": "Os magos sabem o que fazer com uma sacerdotisa das cinzas. A Ordem fica em dívida; o Culto, furioso.",
+          "recompensa": { "cristal": 4 }, "corrupcao": 30 },
+        { "id": "libertar", "nome": "Deixá-la ir",
+          "descricao": "Ela some na névoa, sem dívida nem rancor. O Culto lembra da piedade. O pântano não melhora.",
+          "recompensa": {}, "corrupcao": 70 }
+      ]
+    },
+    "chama_final": {
+      "titulo": "Varek ajoelha diante da Chama",
+      "inimigo": "varek",
+      "regiao": "torre",
+      "texto": [
+        "O tio que ninguém nomeava cai de joelhos. Entre as mãos dele, a Chama pulsa: pequena, ferida, viva.",
+        "\"Seu pai quis prendê-la e quebrou o mundo. Eu quis tê-la e perdi o nome. E você, sobrinho? O que a linhagem faz agora?\""
+      ],
+      "opcoes": [
+        { "id": "aprisionar", "nome": "Selar a Chama de novo",
+          "descricao": "O rito que Aldric errou, agora certo. A magia fica, presa na Torre, e o reino guarda a chave. As cinzas param de nascer, devagar.",
+          "recompensa": { "cristal": 10 }, "corrupcao": 10, "marco": "final:aprisionar" },
+        { "id": "unir", "nome": "Tomar a Chama para a coroa",
+          "descricao": "A Chama queima na sua mão e escolhe você. Poder sem medida, ouro e uma lâmina ardente. O povo sente o calor, e o medo.",
+          "item": "lamina_chama", "recompensa": { "ouro": 250, "cristal": 15 }, "corrupcao": 60, "marco": "final:unir" },
+        { "id": "destruir", "nome": "Apagar a Chama para sempre",
+          "descricao": "Sem Chama não há cinza: as terras se curam e as criaturas se desfazem. Mas a magia vai junto, e o cristal guardado vira pó.",
+          "recompensa": { "ouro": 100 }, "corrupcao": 0, "marco": "final:destruir", "perde": ["cristal"], "cura_regioes": true }
+      ]
     }
   }
 }

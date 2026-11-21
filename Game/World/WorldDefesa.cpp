@@ -34,6 +34,7 @@ int World::soldadosDosPostos() const {
     n += efeitosAlas().soldados;                        // fase 16: o Quartel Real manda o seu
     n += efeitosTratados().soldados;                    // fase 19: o Juramento da Bigorna
     n += guardaTreinada;                                // fase 20: a guarda treinada no Quartel (só nesta horda)
+    n += static_cast<int>(std::round(forcaNoPosto("reserva") / 6.0f));  // 1.15: as esquadras de reserva
     return n;
 }
 
@@ -57,6 +58,7 @@ int World::forcaProximaHorda() const {
     // Fase 18: na neblina a horda chega escondida (e maior)
     f = static_cast<int>(std::round(f * tempoDoDia(hordaDia > 0 ? hordaDia : relogio.dia).forcaHorda));
     f = static_cast<int>(std::round(f * std::max(0.2f, 1.0f + efeitosTratados().forcaHorda)));  // fase 19: a Guarda Arcana
+    if (coroaEterna()) f = static_cast<int>(std::round(f * (1.0f + dados().coroa.ecoForca)));  // 1.18: o eco da Chama
     return f;
 }
 

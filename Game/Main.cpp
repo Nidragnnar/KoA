@@ -91,6 +91,7 @@ int main(int argc, char* argv[]) {
     if (!pastaRoteiro.empty()) {
         roteiro = std::make_unique<koa::Roteiro>(ctx, pastaRoteiro);
         ctx.roteiro = roteiro.get();
+        app.input().ignorarMouseReal(true);  // a pessoa mexendo no mouse não muda o teste
     }
 
     app.cenas().trocar(std::make_unique<koa::TitleScene>(ctx));

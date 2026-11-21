@@ -294,7 +294,7 @@ bool World::carregarDeTexto(const GameData& dados, const std::string& texto, con
             const auto e = reg.create();
             reg.emplace<Posicao>(e, baseTile(t.x, t.y));
             reg.emplace<Visual>(e, en.at("sprite").get<std::string>());
-            reg.emplace<Enfeite>(e, en.value("era", 1), en.value("festival", false));
+            reg.emplace<Enfeite>(e, en.value("era", 1), en.value("festival", false), en.value("marco", ""));
             if (en.contains("luz")) {
                 const auto& l = en["luz"];
                 reg.emplace<Luz>(e, glm::vec3{l[0].get<float>(), l[1].get<float>(), l[2].get<float>()}, l[3].get<float>(),
@@ -846,14 +846,34 @@ void World::passo(float dt, const EntradaMundo& in) {
         jogador.empurrao *= std::max(0.0f, 1.0f - 10.0f * dt);
     }
     jogador.invulneravel = std::max(0.0f, jogador.invulneravel - dt);
-    {  // fase 18: na neve todo mundo anda mais devagar
+    // 1.16: esquiva (para onde anda, ou para a frente): um impulso curto, invulnerável quase o tempo todo
+    jogador.recargaEsquiva = std::max(0.0f, jogador.recargaEsquiva - dt);
+    if (in.esquivar && jogador.recargaEsquiva <= 0.0f && jogador.acao <= 0.0f && jogador.vida > 0) {
+        jogador.esquiva = Jogador::DURACAO_ESQUIVA;
+        jogador.recargaEsquiva = Jogador::RECARGA_ESQUIVA;
+        jogador.dirEsquiva = glm::length(in.mover) > 0.1f ? glm::normalize(in.mover) : vetor(jogador.dir);
+        jogador.carga = 0.0f;
+        eventos_.push_back({EventoJogo::Tipo::Esquivou, jogador.pos, "inicio"});
+    }
+    if (jogador.esquiva > 0.0f) {
+        jogador.pos += ke::moverComColisao(mapa, jogador.caixa(), jogador.dirEsquiva * jogador.velocidade * 2.6f * dt, obst, 0.0f);
+        jogador.esquiva = std::max(0.0f, jogador.esquiva - dt);
+        jogador.andando = true;
+    } else {  // fase 18: na neve todo mundo anda mais devagar
         const float velocidade = jogador.velocidade;
         jogador.velocidade *= tempoAqui().velocidade;
         moverJogador(jogador, jogador.vida > 0 ? in.mover : glm::vec2(0.0f), dt, mapa, obst);
         jogador.velocidade = velocidade;
     }
-    if (jogador.acao <= 0.0f) jogador.atacando = false;
-    if (in.atacar && jogador.acao <= 0.0f && jogador.vida > 0) golpearComEspada();
+    if (jogador.acao <= 0.0f) jogador.atacando = false, jogador.carregado = false;
+    if (in.atacar && jogador.acao <= 0.0f && jogador.vida > 0 && jogador.esquiva <= 0.0f) golpearComEspada();
+    // 1.16: segurando o ataque depois do golpe, a espada carrega; soltando com a carga cheia, sai o golpe carregado
+    if (in.atacarSegurando && jogador.acao <= 0.0f && jogador.vida > 0 && jogador.esquiva <= 0.0f) {
+        jogador.carga += dt;
+    } else if (!in.atacarSegurando) {
+        if (jogador.carga >= Jogador::CARGA_CHEIA && jogador.acao <= 0.0f && jogador.vida > 0) golpearComEspada(true);
+        jogador.carga = 0.0f;
+    }
     // Fase 15: ferido, o H come o prato que mais cura (e só depois a comida comum)
     const ReceitaDef* melhorPrato = nullptr;
     if (in.comer && jogador.vida < jogador.vidaMax)
@@ -901,6 +921,8 @@ void World::passo(float dt, const EntradaMundo& in) {
     atualizarAldeoes(dt);
     if (noVilarejo()) atualizarAnimais(dt);
     atualizarInimigos(dt, obst);
+    atualizarProjeteis(dt);  // 1.16: tiros de quem ataca de longe
+    atualizarBrasas(dt);     // 1.16: o chão em brasa do Golem
     // Fase 13: a horda chega na hora avisada; sem o herdeiro no vilarejo, as defesas lutam sozinhas
     if (hordaDia == relogio.dia && !batalha_ && relogio.minutos >= dados().defesa.hora * 60) {
         if (noVilarejo()) iniciarBatalha();
@@ -1116,6 +1138,7 @@ void World::dormir(bool desmaio) {
     manhaDasAlas(ultimoRelatorio.notas);    // fase 20: o empréstimo que volta
     noiteDaLinhagem(ultimoRelatorio.notas); // fase 21: nascimentos, maioridade, velhice e sucessão
     noiteDoMundo(ultimoRelatorio.notas);    // 1.14: aldeias, caravanas, viajantes e a terra tomada (até 2 notícias)
+    noiteDaCoroa(ultimoRelatorio.notas);    // 1.18: a Quinta Era
     if (perda > 0) ultimoRelatorio.variacoes.push_back({"ouro (desmaio)", -perda});
     for (auto it = prontas.rbegin(); it != prontas.rend(); ++it) ultimoRelatorio.notas.insert(ultimoRelatorio.notas.begin(), "Obra concluída: " + *it + "!");
     bloqueio_.clear();

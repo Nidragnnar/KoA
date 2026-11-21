@@ -236,7 +236,7 @@ TEST(Cenarios, MontarSavesDeTeste) {
     free(pasta);
     auto gravar = [&](World& w, const std::string& slot) {
         DadosSave d = w.capturar();
-        d.versaoJogo = "1.14.0";
+        d.versaoJogo = "1.18.0";
         d.dataHora = "cenário de teste";
         ASSERT_TRUE(s.salvar(d, slot));
     };
@@ -285,64 +285,76 @@ TEST(Cenarios, MontarSavesDeTeste) {
         w.equip.arma = "espada_linhagem";
         w.equip.armadura = "cota_malha";
     };
-    // Mundo vivo (1.14): reino de meio de jogo, estrada leste limpa (as aldeias já mandam notícias)
-    auto comAldeias = [&](World& w) {
+    // 1.15 a 1.18: reino adiantado, com o conselho, o castelo no nível 3 (Quartel e Biblioteca) e a forja grande
+    auto adiantado = [&](World& w) {
         reinoAvancado(w);
-        equipar(w);
         w.estado.populacao = std::min(26, w.resumo().populacaoMax);
         std::vector<std::string> notas;
         w.ajustarPovo(false, notas);
-        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 400);
+        w.marcar("era:2", "Reino Renascido", true);
+        w.marcar("primeiro_cristal", "", true);
+        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 3000);
+        w.inventario.definir("cristal", 40);
+        while (w.nivelCastelo() < 3) ASSERT_TRUE(w.melhorarConstrucao("castelo"));
+        for (const char* a : {"quartel", "biblioteca"}) ASSERT_TRUE(w.erguerAla(a)) << a;
+        w.marcar("conselho_formado", "O Conselho Real", true);
+        ASSERT_TRUE(w.nomear("marechal", "oswin"));
+        w.lealdade["oswin"] = 80;
+        for (const char* r : {"madeira", "pedra"}) w.inventario.definir(r, 300);
+        w.inventario.definir("ouro", 600);
         w.inventario.definir("comida", 300);
         w.hordaDia = 0;
         w.proximaHorda = w.relogio.dia + 20;
         w.ultimaDecisao = w.relogio.dia;
         w.relogio.minutos = 9 * 60;
     };
-    // Save_002 (mundo vivo): OS PEDIDOS. O Vau Cinzento passa fome (3 dias de prazo), Pedra Alta pede ouro contra as
-    // criaturas (2 dias), e mercenários de passagem oferecem limpar a floresta (só hoje). O comboio de Pedra Alta chega
-    // amanhã (o mercado está de pé: pedágio). O Ermo das Velas já foi ajudado uma vez: mais uma e ele manda tributo
+    // Save_002 (1.15 a 1.17): O SEGUNDO ATO E A GUARDA. O primeiro ato da Queda está fechado: a floresta (canto de baixo
+    // à esquerda) leva ao Pântano das Cinzas, onde estão dois fragmentos novos e a Sacerdotisa. A genealogia está na
+    // cripta; a memória, com os escribas da Biblioteca (castelo, Alas: Decifrar). A Guarda Real (U) tem uma esquadra de
+    // lanceiros de reserva e ouro para mais. A Lâmina de Cristal está na mão (atravessa a defesa); Shift esquiva
     {
         World w = vilarejo();
-        comAldeias(w);
-        auto& m = w.mundoVivo;
-        m.aldeias.at("vau_cinzento").prosperidade = 26.0f;
-        m.aldeias.at("pedra_alta").prosperidade = 45.0f;
-        m.aldeias.at("pedra_alta").proximaCaravana = w.relogio.dia + 1;
-        m.aldeias.at("ermo_velas").gratidao = 1;
-        m.pedidos = {{"fome", "vau_cinzento", w.relogio.dia + 3}, {"criaturas", "pedra_alta", w.relogio.dia + 2},
-                     {"mercenarios_floresta", "", w.relogio.dia}};
-        m.noticias = {"Vau Cinzento está passando fome e pede comida. (3 dias; R: Terras)",
-                      "Mercenários oferecem limpar a floresta por ouro. (só hoje; R: Terras)"};
-        std::printf("[cenário] Save_002: %zu pedidos; mundo vivo %s\n", m.pedidos.size(), w.mundoVivoAtivo() ? "ativo" : "parado");
+        adiantado(w);
+        for (const PistaDef& p : dados().lore.pistas)
+            if (p.ato == 1) w.marcar("pista:" + p.id, p.titulo, true);
+        EXPECT_TRUE(w.marcos.contains("misterio:primeiro_ato"));
+        ASSERT_TRUE(w.formarEsquadra("lanceiros"));
+        w.inventario.definir("ouro", 600);
+        w.equip.possuidos.insert("espada_cristal");
+        w.equip.arma = "espada_cristal";
+        std::printf("[cenário] Save_002: primeiro ato %s; esquadras %zu; arma %s\n", w.marcos.contains("misterio:primeiro_ato") ? "fechado" : "aberto",
+                    w.esquadras.size(), w.equip.arma.c_str());
         w.tirarEventos();
         gravar(w, "Save_002");
         World c = vilarejo();
         c.aplicar(*s.carregar("Save_002"));
-        EXPECT_EQ(c.mundoVivo.pedidos.size(), 3u);
-        EXPECT_TRUE(c.mundoVivoAtivo());
+        EXPECT_EQ(c.esquadras.size(), 1u);
+        EXPECT_TRUE(c.marcos.contains("misterio:primeiro_ato"));
     }
-    // Save_003 (mundo vivo): A TERRA TOMADA. A floresta está tomada (corrupção 92) e sem visita há dias: esta noite ela
-    // começa a avançar sobre as minas e o Vau Cinzento, que já está quase vazio (7 pessoas, prosperidade 18). Sem ajuda,
-    // em uma ou duas noites ele é abandonado e os sobreviventes vêm para Valdren (há casas sobrando). Dá para salvá-lo
-    // (comida pelas Terras) ou ir limpar a floresta
+    // Save_003 (1.17 e 1.18): DIANTE DE VAREK. O segundo ato está fechado e o herdeiro está na Torre do Selo, com a Lâmina
+    // da Chama (queima) e o reino na Alta Fantasia. Varek investe sem parar na fase 2 e se rende com 30% da vida: a escolha
+    // final (aprisionar, unir-se, destruir). Na noite seguinte começa a Quinta Era, Coroa Eterna, com o epílogo
     {
         World w = vilarejo();
-        comAldeias(w);
-        w.estado.populacaoBase += 12;
-        w.estadoRegioes.at("floresta").corrupcao = 92.0f;
-        w.estadoRegioes.at("floresta").ultimaVisita = w.relogio.dia - 6;
-        auto& vau = w.mundoVivo.aldeias.at("vau_cinzento");
-        vau.povo = 7;
-        vau.prosperidade = 18.0f;
-        w.mundoVivo.pedidos = {{"fome", "vau_cinzento", w.relogio.dia + 1}};
-        std::printf("[cenário] Save_003: floresta %.0f; Vau com %d pessoas; vagas em Valdren: %d\n", w.estadoRegioes.at("floresta").corrupcao, vau.povo,
-                    w.resumo().populacaoMax - w.estado.populacao);
+        adiantado(w);
+        for (const PistaDef& p : dados().lore.pistas) w.marcar("pista:" + p.id, p.titulo, true);
+        ASSERT_TRUE(w.escolher("sacerdotisa", "entregar"));
+        EXPECT_TRUE(w.marcos.contains("misterio:segundo_ato"));
+        w.marcar("era:3", "Reino da Alta Fantasia", true);
+        w.reino.eraConquistada = 3;
+        w.equip.possuidos.insert("lamina_chama");
+        w.equip.arma = "lamina_chama";
+        w.equip.possuidos.insert("couraca_cristal");
+        w.equip.armadura = "couraca_cristal";
+        w.entrarRegiao("torre", {14, 18}, Direcao::Cima);
+        w.jogador.vida = w.jogador.vidaMax;
+        w.inventario.definir("comida", 300);
+        std::printf("[cenário] Save_003: região %s; segundo ato %s\n", w.regiaoAtual.c_str(), w.marcos.contains("misterio:segundo_ato") ? "fechado" : "aberto");
         w.tirarEventos();
         gravar(w, "Save_003");
         World c = vilarejo();
         c.aplicar(*s.carregar("Save_003"));
-        EXPECT_EQ(c.mundoVivo.aldeias.at("vau_cinzento").povo, 7);
+        EXPECT_EQ(c.regiaoAtual, "torre");
     }
 }
 TEST(SaveV5, SaveV4GanhaCronicasDoQueJaAconteceu) {

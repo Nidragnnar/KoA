@@ -1,0 +1,18 @@
+{
+  "nome": "Pântano das Cinzas",
+  "mapa": "pantano.txt",
+  "escuridao_min": 0.5,
+  "ambiente": [0.42, 0.52, 0.44],
+  "hostil": true,
+  "saidas": [
+    { "tile": [3, 0], "tam": [4, 1], "destino": "floresta", "chegada": [7, 33], "dir": "cima" },
+    { "tile": [43, 10], "tam": [1, 4], "destino": "torre", "chegada": [14, 18], "dir": "cima", "requer": "misterio:segundo_ato" }
+  ],
+  "vida": {
+    "corrupcao_inicial": 85,
+    "prosperidade": 0.3,
+    "producao": { "comida": 0.05 },
+    "dica": "Água parada e cinza. Vencer criaturas baixa a corrupção. A trilha leste leva à Torre do Selo, quando o segundo ato da Queda se fechar.",
+    "invasao": [ { "tipo": "sombra", "tile": [8, 11] }, { "tipo": "matilha", "tile": [20, 13] }, { "tipo": "arqueiro_espectral", "tile": [30, 13] } ]
+  }
+}

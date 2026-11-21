@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 #include <nlohmann/json_fwd.hpp>
 
 #include "Game/Inventory/Inventory.h"
@@ -23,6 +24,17 @@ struct InimigoDef {
     glm::ivec2 tamanho{16, 16};
     bool chefe = false;
     std::string escolha;  // fase 11: chefe que se rende e deixa o herdeiro decidir (Data/Lore/escolhas.json)
+    // 1.16: combate com escolhas
+    std::string comportamento;  // "" (vai para cima), "distancia" (fica longe e atira) ou "bando" (chama os do mesmo tipo)
+    struct Tiro {
+        int dano = 0;
+        float velocidade = 100.0f, recarga = 2.5f, alcance = 160.0f;
+    } tiro;
+    std::string aparencia;    // sprite de outra criatura ("" = o próprio)
+    glm::vec3 tinta{1.0f};
+    float escala = 1.0f;
+    float fase2 = 0.0f;       // chefe: fração da vida em que muda de padrão (0 = nunca)
+    std::string efeitoFase2;  // "investida" ou "brasa"
 };
 
 struct EquipDef {
@@ -30,6 +42,7 @@ struct EquipDef {
     int dano = 0, defesa = 0;
     int forja = 0;  // nível mínimo da forja para fabricar (0 = não se fabrica)
     Custo custo;
+    std::string efeito;  // 1.16: "queima" ou "atravessa"
 };
 
 struct ObjetivoMissao {
@@ -70,6 +83,23 @@ struct Inimigo {
     bool andando = false;
     bool rendido = false;         // chefe de joelhos, esperando a decisão do herdeiro
     bool horda = false;           // fase 13: marcha para o portão e a praça, em vez de vagar
+    // 1.16
+    int fase = 1;                 // chefe: 2 depois de perder vida o bastante
+    float queimando = 0.0f, tickQueima = 0.0f;  // Lâmina da Chama
+    float recargaTiro = 1.0f, recargaBrasa = 1.5f;
+};
+
+// 1.16: tiro de quem ataca de longe (o herói pode esquivar)
+struct Projetil {
+    glm::vec2 vel{0.0f};
+    int dano = 0;
+    float vida = 1.5f;
+    std::string tipo;  // quem atirou (para a cor)
+};
+
+// 1.16: chão em brasa deixado pelo Golem na segunda fase
+struct Brasa {
+    float raio = 18.0f, vida = 4.0f, tick = 0.0f;
 };
 
 // Fase 13: soldado dos postos da guarda, que vai ao portão na noite da horda

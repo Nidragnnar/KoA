@@ -101,6 +101,10 @@ struct OpcaoEscolha {
     Custo recompensa;
     std::string item;                 // equipamento dado na hora
     float corrupcao = -1.0f;          // a corrupção da região vira isto (-1 = não muda)
+    // 1.17: o desfecho da Queda
+    std::string marco;                // marco a mais ("final:destruir")
+    std::vector<std::string> perde;   // recursos que viram pó
+    bool curaRegioes = false;         // todas as terras se curam (sem a Chama, sem cinza)
 };
 
 struct EscolhaDef {

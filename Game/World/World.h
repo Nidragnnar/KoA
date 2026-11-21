@@ -71,7 +71,9 @@ struct EventoJogo {
         // Fase 16
         AlaErguida, BrasaoNovo,
         // Fase 18
-        AbrirFicha
+        AbrirFicha,
+        // 1.16
+        Esquivou, GolpeCarregado, Tiro, FaseChefe, Queimou
     };
     Tipo tipo;
     glm::vec2 pos{0.0f};
@@ -88,6 +90,8 @@ struct EntradaMundo {
     bool interagirSegurando = false;   // E segurado: continua golpeando
     bool atacar = false;               // J: golpe de espada
     bool comer = false;                // H: comer para recuperar vida
+    bool esquivar = false;             // 1.16: Shift ou botão direito
+    bool atacarSegurando = false;      // 1.16: ataque segurado (golpe carregado ao soltar)
 };
 
 // Saída de uma região para outra (pisar no retângulo leva ao destino)
@@ -172,6 +176,8 @@ public:
     bool marcar(const std::string& marco, const std::string& nome = "", bool silencioso = false);
     const TituloDef& titulo() const;  // o mais alto conquistado
     int pistasEncontradas() const;
+    int pistasDoAto(int ato) const;  // 1.17
+    int totalDoAto(int ato) const;
     bool visitanteHoje(const NpcDef& d) const;  // o mercador está no vilarejo hoje?
     bool comprar(const std::string& npc, const std::string& item);
     bool itemEsgotado(const ItemLoja& i) const { return !i.pista.empty() && marcos.contains("pista:" + i.pista); }
@@ -359,7 +365,15 @@ public:
     std::string podeAgirAla(const std::string& ala) const;  // "" = pode
     int diasParaAgir(const std::string& ala) const;         // 0 = pronta
     bool agirAla(const std::string& ala);
+    bool recuperarMemoria();  // 1.17: o fragmento da Biblioteca
     void manhaDasAlas(std::vector<std::string>& notas);
+    // 1.16: o golpe de espada (carregado = segurou o ataque: dano em dobro, mais alcance, empurra mais)
+    void golpearComEspada(bool carregado = false);
+    std::string efeitoArma() const;  // "queima", "atravessa" ou ""
+    const InimigoDef* defInimigo(const std::string& tipo) const {
+        const auto it = dados_->inimigos.find(tipo);
+        return it == dados_->inimigos.end() ? nullptr : &it->second;
+    }
     // Fase 21: a linhagem (família, casamento, filhos, tutores e sucessão com salto de anos)
     Linhagem linhagem;
     void iniciarLinhagem();  // jogo novo e saves de antes da família: o fundador, primeira geração
@@ -387,6 +401,34 @@ public:
     std::string podeAtender(int pedido) const;  // "" = pode
     bool atenderPedido(int pedido);
     void noiteDoMundo(std::vector<std::string>& notas);
+    void publicarNoticias(std::vector<Noticia> n, std::vector<std::string>& notas);
+    // Guarda Real (1.15): até 3 esquadras do Quartel, com postos fora do castelo
+    std::vector<Esquadra> esquadras;
+    int proximaEsquadra = 1;
+    bool guardaDisponivel() const;  // com o Quartel Real erguido
+    Esquadra* esquadra(int id);
+    BonusGuarda bonusGuarda(const Esquadra& e) const;
+    float forcaDaEsquadra(const Esquadra& e) const;
+    float forcaNoPosto(const std::string& posto) const;
+    std::string podeFormar(const std::string& tipo) const;  // "" = pode
+    bool formarEsquadra(const std::string& tipo);
+    std::vector<std::string> postosPossiveis() const;
+    std::string nomePosto(const std::string& posto) const;
+    bool proximoPosto(int esquadra);
+    bool definirPosto(int esquadra, const std::string& posto);
+    Custo custoTreino(const Esquadra& e) const;
+    Custo custoReforco(const Esquadra& e) const;
+    bool treinarEsquadra(int esquadra);
+    bool reforcarEsquadra(int esquadra);
+    bool dispensarEsquadra(int esquadra);
+    bool regiaoGuardada(const std::string& regiao) const;
+    bool aldeiaProtegida(const std::string& aldeia) const;
+    void noiteDaGuarda(std::vector<Noticia>& noticias);
+    // 1.18: a Quinta Era, Coroa Eterna (o estado do reino depois do terceiro ato)
+    std::string finalDaQueda() const;  // "aprisionar", "unir", "destruir" ou ""
+    bool coroaEterna() const { return marcos.contains("era:coroa_eterna"); }
+    const FinalCoroa* coroaAtual() const;  // nullptr antes da Coroa
+    void noiteDaCoroa(std::vector<std::string>& notas);
 
     const std::vector<ke::AABB>& obstaculos() const;  // fase 17: em cache (refeito só quando algo muda)
     std::vector<ke::AABB> calcularObstaculos() const;  // o cálculo completo, sem cache (os testes comparam os dois)
@@ -428,7 +470,8 @@ private:
     static InfoRegiao lerInfoRegiao(const std::string& id, const nlohmann::json& j);
     void criarInimigo(const std::string& tipo, glm::ivec2 tile);
     void atualizarInimigos(float dt, const std::vector<ke::AABB>& obst);
-    void golpearComEspada();
+    void atualizarProjeteis(float dt);  // 1.16
+    void atualizarBrasas(float dt);     // 1.16
     void ferirHeroi(int dano, glm::vec2 de);
     void verificarSaidas();
     void atualizarMissoes();

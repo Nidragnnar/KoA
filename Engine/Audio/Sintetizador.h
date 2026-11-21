@@ -21,7 +21,7 @@ public:
     // Preenche `quadros` amostras estéreo intercaladas (L, R) entre -1 e 1
     void gerar(float* estereo, int quadros);
 
-    void definirEra(float era) { era_ = era; }          // 0..3: escala, andamento e instrumentos
+    void definirEra(float era) { era_ = era; }          // 0..3: escala, andamento e instrumentos; 4: a Coroa Eterna
     void definirNoite(float n) { noite_ = n; }          // 0..1: música mais calma
     void definirTensao(float t) { tensao_ = t; }        // 0..1: floresta e cripta (trilha sombria)
     void definirVolumes(float musica, float efeitos) { volMusica_ = musica, volEfeitos_ = efeitos; }

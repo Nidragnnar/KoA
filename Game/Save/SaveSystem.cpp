@@ -25,7 +25,7 @@ struct ModuloSave {
 };
 constexpr ModuloSave MODULOS[] = {{"npcs", 2},     {"relationships", 2}, {"quests", 4},  {"chronicles", 5}, {"regions", 6},
                                   {"council", 7},  {"defense", 8},       {"guild", 9},   {"life", 10},      {"castle", 11},
-                                  {"people", 13}, {"factions", 14}, {"market", 15}, {"family", 16}, {"villages", 17}};
+                                  {"people", 13}, {"factions", 14}, {"market", 15}, {"family", 16}, {"villages", 17}, {"guard", 18}};
 
 std::filesystem::path comSufixo(std::filesystem::path p, const char* sufixo) {
     p += sufixo;
@@ -153,11 +153,16 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
     for (const PedidoAberto& p : d.mundo.pedidos) pedidos.push_back({{"def", p.def}, {"aldeia", p.aldeia}, {"prazo", p.prazo}});
     json vivo = {{"aldeias", aldeias}, {"pedidos", pedidos}, {"noticias", d.mundo.noticias}};
 
+    json esqs = json::array();
+    for (const Esquadra& e : d.esquadras)
+        esqs.push_back({{"id", e.id}, {"tipo", e.tipo}, {"nome", e.nome}, {"posto", e.posto}, {"soldados", e.soldados}, {"nivel", e.nivel}});
+    json guarda = {{"esquadras", esqs}, {"proxima", d.proximaEsquadra}};
+
     const std::pair<const char*, const json*> arquivos[] = {
         {"player.json", &player}, {"inventory.json", &inv}, {"kingdom.json", &reino}, {"world.json", &mundo},
         {"npcs.json", &jNpcs}, {"relationships.json", &jRel}, {"quests.json", &quests}, {"chronicles.json", &cronicas},
         {"regions.json", &regioes}, {"council.json", &conselho}, {"defense.json", &defesa}, {"guild.json", &guilda}, {"life.json", &vida},
-        {"castle.json", &castelo}, {"people.json", &pessoas}, {"factions.json", &vizinhos}, {"market.json", &mercado}, {"family.json", &familia}, {"villages.json", &vivo},
+        {"castle.json", &castelo}, {"people.json", &pessoas}, {"factions.json", &vizinhos}, {"market.json", &mercado}, {"family.json", &familia}, {"villages.json", &vivo}, {"guard.json", &guarda},
         {"metadata.json", &meta}};  // metadata por último: só existe save "válido" quando tudo foi gravado
     // Fase 17: o save inteiro vai para uma pasta nova e só então troca de lugar com o antigo (que vira o backup).
     // Uma queda no meio nunca mistura arquivos de dois momentos diferentes
@@ -268,6 +273,11 @@ json SaveSystem::migrar(json tudo, int deVersao) {
         // v16 não tinha o mundo vivo: as aldeias começam como nos dados
         tudo["villages"] = {{"padrao", true}};
         deVersao = 17;
+    }
+    if (deVersao < 18) {
+        // v17 não tinha a Guarda Real: começa sem esquadras
+        tudo["guard"] = json::object();
+        deVersao = 18;
     }
     tudo["metadata"]["versao_formato"] = deVersao;
     return tudo;
@@ -403,6 +413,11 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
             const json& jr = jfac["reputacao"];
             d.reputacao = {jr.value("justica", 0.0f), jr.value("generosidade", 0.0f), jr.value("devocao", 0.0f)};
         }
+        const json& jgua = tudo["guard"];
+        for (const auto& je : jgua.value("esquadras", json::array()))
+            d.esquadras.push_back({je.value("id", 0), je.value("tipo", ""), je.value("nome", ""), je.value("posto", "reserva"), std::max(0, je.value("soldados", 0)),
+                                   std::max(0, je.value("nivel", 0))});
+        d.proximaEsquadra = std::max(1, jgua.value("proxima", 1));
         const json& jviv = tudo["villages"];
         d.temMundo = !jviv.value("padrao", false);
         const json jald = jviv.value("aldeias", json::object());  // guardado: items() não pode olhar um temporário

@@ -153,7 +153,7 @@
     {
       "_castelo": "Fase 16: o castelo dos reis de Valdren (fixo no mapa). Nível 1 são as ruínas (não contam como obra). Cada nível do 2 em diante abre vagas de alas (Data/Kingdom/castelo.json). Por nível, 'requer' = marco que precisa ter acontecido (era:2 = Reino Renascido, era:3 = Alta Fantasia).",
       "id": "castelo", "aparencia": "castelo", "tamanho": [10, 5], "construivel": false, "limite": 1,
-      "funcao": "castelo", "ruinas": true, "acoes": ["alas", "brasao"],
+      "funcao": "castelo", "ruinas": true, "acoes": ["alas", "guarda", "brasao"],
       "niveis": [
         { "nivel": 1, "nome": "Ruínas do Castelo", "descricao": "Torres partidas e um portão desabado. Ninguém mora aqui desde a Queda." },
         { "nivel": 2, "nome": "Torre de Menagem", "descricao": "A torre principal de pé, o portão de novo no lugar e o estandarte da linhagem no alto.",

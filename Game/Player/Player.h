@@ -24,6 +24,12 @@ struct Jogador {
     glm::vec2 empurrao{0.0f};      // recuo ao ser atingido
     bool atacando = false;         // a ação em curso é golpe de espada (não de ferramenta)
     int golpeId = 0;
+    // 1.16: esquiva (um impulso curto; invulnerável quase o tempo todo) e golpe carregado (segurar o ataque)
+    float esquiva = 0.0f, recargaEsquiva = 0.0f, carga = 0.0f;
+    glm::vec2 dirEsquiva{0.0f, 1.0f};
+    bool carregado = false;  // o golpe em curso é o carregado
+    static constexpr float DURACAO_ESQUIVA = 0.3f, INVULNERAVEL_ATE = 0.05f, RECARGA_ESQUIVA = 0.9f, CARGA_CHEIA = 0.6f;
+    bool esquivando() const { return esquiva > INVULNERAVEL_ATE; }
 
     static constexpr float DURACAO_ACAO = 0.32f;
     static constexpr float DURACAO_ATAQUE = 0.28f;

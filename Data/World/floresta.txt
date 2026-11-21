@@ -6,8 +6,8 @@ TT.TR..R..T...T...B........T.....T.R.T.TT..#t::::t#..TTT
 TR..........T....T..TT.......TTT...........:::D::::T..TT
 ...T..B.TB..B..T.R.....T.T.TT..TR.......T.T::::::::T..BT
 .RRT.T....T.....T.T.R...T.....BT.....T.....::::::::T..TT
-TT...R..C...B.....T....T.TR.T.T.....T..TT...T.==..T.R.TT
-TT...TT.T.....T.TT.TT.###:::::###.B......T.T..=E......TB
+TT...R..C...BN.N..T....T.TR.T.T.....T..TT...T.==..T.R.TT
+TT...TT.T...N.T.TT.TT.###:::::###.B......T.T..=E......TB
 T..T...T......L.T...T.#::::A::::#R.....T......==....T.T.
 TT..TT.............T..:::E:::::::RT..TT.T.TTT.==T....TTT
 TB....TT.....RT....TTt:::::C:::::t==......T...==.T.....T
@@ -15,8 +15,8 @@ T...............T.B.T.:::::::E:::=====L===TT..====T...TT
 TT.B...T.........T====#::::::::::.TT==============....TT
 RT....tT.TT.==========:::::::::##.T.T....T======..L..TTT
 ====..============.T..T.B.TT..B.....RR.......T........TT
-==P=======S=....BT........................T.B.......T.TT
-======......R.....R.S.RTT.T.TTT..T..TTTT.BT...TT..T...TT
+==P=======S=....BT.V......................T.B.......T.TT
+======..V...R.....R.S.RTT.T.TTT..T..TTTT.BT...TT..T...TT
 ====.T....T..T....RT................S....T......T....T.T
 T...TT......T..BS.........TT....T........RR.T...T..TC.TT
 TR.T..BT....TT.T....T........T.TT..T.T.TTB.TT.T...TT.TTT
@@ -32,5 +32,5 @@ TT........~~~~~~~~~BTT..B.......B...RR..C.........T.T.T.
 TT..RT.T..~~~~~~~~~T...T.T.........T.................BT.
 TT.T...TT..T~~~~~B..T........TTT..T..BTT....R.T.B.....TT
 TBT.....T.T......T.....T..T.R.R..B..BB................TT
-TTTTBTTT..TBTBTTTTTTTTT.TTTT#Z#TT.TTTTRTTTTTTTTTTTTTRT.T
-TTT..T.TTTTTTTTTTT.T.TTT.TTT#=#TTTTTTTTT.TT.TTTTT.BT.TTT
+TTTTBT....TBTBTTTTTTTTT.TTTT#Z#TT.TTTTRTTTTTTTTTTTTTRT.T
+TTT..T....TTTTTTTT.T.TTT.TTT#=#TTTTTTTTT.TT.TTTTT.BT.TTT

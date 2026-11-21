@@ -104,11 +104,13 @@ bool World::agirAla(const std::string& id) {
         emprestimoDia = relogio.dia + x.diasEmprestimo;
         texto += std::format(" Volta {} de ouro no dia {}.", emprestimoVolta, emprestimoDia);
     }
-    if (x.decifrar) {
+    if (x.decifrar && recuperarMemoria()) {
+        texto += " Os escribas recuperaram uma memória da Queda (C para ler).";
+    } else if (x.decifrar) {
         // O primeiro fragmento que ainda falta (na ordem dos dados), de preferência um que já dá para achar
         const PistaDef *alvo = nullptr, *depois = nullptr;
         for (const PistaDef& p : dados().lore.pistas) {
-            if (marcos.contains("pista:" + p.id) || marcos.contains("decifrou:" + p.id)) continue;
+            if (marcos.contains("pista:" + p.id) || marcos.contains("decifrou:" + p.id) || p.fonte == "biblioteca") continue;
             if (p.requer.empty() || marcos.contains(p.requer)) {
                 alvo = &p;
                 break;
@@ -126,6 +128,16 @@ bool World::agirAla(const std::string& id) {
     marcar("ala_acao:" + x.id, x.nome, true);
     reagirAoMarco("ala_acao:" + x.id);  // os vizinhos e a fama reagem a cada vez (o marco só conta na primeira)
     return true;
+}
+
+// 1.17: o fragmento que só os escribas (ou uma expedição à Biblioteca Afundada) acham. true = achou agora
+bool World::recuperarMemoria() {
+    for (const PistaDef& p : dados().lore.pistas)
+        if (p.fonte == "biblioteca" && !marcos.contains("pista:" + p.id) && (p.requer.empty() || marcos.contains(p.requer))) {
+            marcar("pista:" + p.id, p.titulo);
+            return true;
+        }
+    return false;
 }
 
 // O empréstimo volta: com juros se o povo está bem; só o que foi emprestado se anda triste
