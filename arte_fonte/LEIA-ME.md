@@ -55,5 +55,10 @@ de 3 vistas; os outros quadros saem por código:
 - Personagens: herói (andar, golpe e espada), os 5 moradores, os 4 aldeões, sombra, lobo, cavaleiro caído e dragão.
   Personagens sem a era sombria (`"era": ""`): os verdes de musgo pintavam pele e roupa de verde.
   Gere as pranchas de 3 vistas em 1536×1024: em 1024×768 sai bem mais rápido (30 s contra 6 min), mas com manchas.
+- 1.16 e 1.17: as 6 criaturas novas (arqueiro espectral, matilha, conjurador de ossos, ossada, cuspidora e enxame) e os
+  chefes dos atos (Sacerdotisa das Cinzas e Varek), cada uma com o seu procedural em `criaturasDosAtos` (antes eram
+  sprites de outras criaturas tingidos). Com força 0,6 o NidraIA mudava a pose (o lobo de costas, a ossada maior que a
+  silhueta) e a máscara procedural cortava a arte no lugar errado: com 0,42 a 0,45 a arte segue a base.
+  Varek ficou com a versão de 0,6 (escolhida no teste).
 - Ficam procedurais: esqueleto (o vão entre os ossos sai preto e vira um vulto), fogueira (a prancha de 4 quadros
   saiu sem chama), ícones, tocha, cerca, arbusto, toco, luz e sombra.

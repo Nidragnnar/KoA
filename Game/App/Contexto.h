@@ -15,7 +15,7 @@ namespace koa {
 
 class Roteiro;
 
-constexpr const char* VERSAO_JOGO = "1.18.0";
+constexpr const char* VERSAO_JOGO = "1.19.0";
 constexpr const char* SLOTS[] = {"Save_001", "Save_002", "Save_003"};
 
 // Preferências do jogador (config.json na pasta do usuário)

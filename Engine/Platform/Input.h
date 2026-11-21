@@ -55,7 +55,7 @@ public:
     glm::vec2 mouse() const { return mouse_; }
     bool mouseMoveu() const { return moveu_; }
     bool clicou(BotaoMouse b) const { return clicou_[static_cast<int>(b)]; }
-    bool segurandoMouse(BotaoMouse b) const { return segurandoMouse_[static_cast<int>(b)]; }
+    bool segurandoMouse(BotaoMouse b) const { return segurandoMouse_[static_cast<int>(b)] || simuladoMouse_[static_cast<int>(b)]; }
     float roda() const { return roda_; }  // > 0 = para cima
     // Onde a tela interna aparece na janela (em pixels, a partir do canto de cima) e a densidade de pixels
     void definirTela(int x, int y, int largura, int altura, int baseL, int baseA, float densidade) {
@@ -66,11 +66,12 @@ public:
     // Para roteiros de teste: aperta/segura teclas e clica como se fosse o jogador
     void simularToque(SDL_Scancode t) { pressionou_[t] = true, ultima_ = t; }
     void simularSegurar(SDL_Scancode t, bool s) { simuladoSeg_[t] = s; }
-    void limparSimulacao() { simuladoSeg_.fill(false); }
+    void limparSimulacao() { simuladoSeg_.fill(false), simuladoMouse_.fill(false); }
     // Nos roteiros de teste, o mouse de verdade (a pessoa mexendo no computador) não interfere: só vale o simulado
     void ignorarMouseReal(bool i) { ignorarMouse_ = i; }
     void simularMouse(glm::vec2 p) { mouse_ = p, moveu_ = true; }
     void simularClique(BotaoMouse b, glm::vec2 p) { simularMouse(p), clicou_[static_cast<int>(b)] = true; }
+    void simularSegurarMouse(BotaoMouse b, bool s) { simuladoMouse_[static_cast<int>(b)] = s; }
 
 private:
     glm::vec2 paraTela(float x, float y) const;
@@ -78,7 +79,7 @@ private:
     std::array<bool, SDL_SCANCODE_COUNT> segurando_{};
     std::array<bool, SDL_SCANCODE_COUNT> pressionou_{};
     std::array<bool, SDL_SCANCODE_COUNT> simuladoSeg_{};
-    std::array<bool, 3> segurandoMouse_{}, clicou_{};
+    std::array<bool, 3> segurandoMouse_{}, clicou_{}, simuladoMouse_{};
     glm::vec2 mouse_{-1.0f};
     bool moveu_ = false;
     float roda_ = 0.0f;

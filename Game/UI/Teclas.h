@@ -17,7 +17,7 @@ inline constexpr AcaoTecla ACOES_TECLAS[] = {
     {"esquerda", "andar para a esquerda", SDL_SCANCODE_A},
     {"direita", "andar para a direita", SDL_SCANCODE_D},
     {"interagir", "interagir (cortar, falar, pescar)", SDL_SCANCODE_E},
-    {"atacar", "atacar (segure e solte: golpe carregado)", SDL_SCANCODE_J},
+    {"atacar", "atacar (segure: golpe forte quando carregar)", SDL_SCANCODE_J},
     {"esquivar", "esquivar", SDL_SCANCODE_LSHIFT},
     {"comer", "comer", SDL_SCANCODE_H},
     {"presente", "dar presente; comer no fogão", SDL_SCANCODE_F},

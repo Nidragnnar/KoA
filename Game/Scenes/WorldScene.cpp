@@ -216,18 +216,22 @@ void WorldScene::entradaJogo() {
         return;
     }
     // Clique esquerdo: ataca virado para o cursor (o J ataca para onde o herói já olha)
+    auto mirar = [&] {
+        if (mundo_.jogador.acao > 0.0f) return;
+        const glm::vec2 d = cam_.canto() + in.mouse() - (mundo_.jogador.pos - glm::vec2(0, 10));
+        if (std::abs(d.x) > std::abs(d.y)) mundo_.jogador.dir = d.x < 0 ? Direcao::Esquerda : Direcao::Direita;
+        else if (std::abs(d.y) > 0.0f) mundo_.jogador.dir = d.y < 0 ? Direcao::Cima : Direcao::Baixo;
+    };
     if (in.clicou(ke::BotaoMouse::Esquerdo) && mundo_.pescando()) {
         e.interagir = true;  // pescando, o clique puxa a linha
     } else if (in.clicou(ke::BotaoMouse::Esquerdo)) {
         e.atacar = true;
-        if (mundo_.jogador.acao <= 0.0f) {
-            const glm::vec2 d = cam_.canto() + in.mouse() - (mundo_.jogador.pos - glm::vec2(0, 10));
-            if (std::abs(d.x) > std::abs(d.y)) mundo_.jogador.dir = d.x < 0 ? Direcao::Esquerda : Direcao::Direita;
-            else if (std::abs(d.y) > 0.0f) mundo_.jogador.dir = d.y < 0 ? Direcao::Cima : Direcao::Baixo;
-        }
+        mirar();
+    } else if (in.segurandoMouse(ke::BotaoMouse::Esquerdo) && !mundo_.pescando() && glm::length(e.mover) < 0.1f) {
+        mirar();  // 1.19: segurando o botão, o golpe forte sai para o lado do cursor
     }
     e.comer = in.pressionouAcao("comer");
-    // 1.16: esquiva (Shift ou botão direito) e o ataque segurado (golpe carregado ao soltar)
+    // 1.16: esquiva (Shift ou botão direito) e o ataque segurado (1.19: o golpe forte sai quando a carga enche)
     e.esquivar = in.pressionouAcao("esquivar") || in.clicou(ke::BotaoMouse::Direito);
     e.atacarSegurando = in.segurandoAcao("atacar") || (in.segurandoMouse(ke::BotaoMouse::Esquerdo) && !mundo_.pescando());
     if (in.pressionou(SDL_SCANCODE_ESCAPE)) {
@@ -873,6 +877,9 @@ void WorldScene::tratarEventos() {
         case EventoJogo::Tipo::GolpeCarregado: som.tocar(ke::Som::Golpe), som.tocar(ke::Som::Acerto); break;  // 1.16
         case EventoJogo::Tipo::Esquivou: som.tocar(ke::Som::Menu); break;
         case EventoJogo::Tipo::Tiro: som.tocar(ke::Som::Magia); break;
+        case EventoJogo::Tipo::ChefePrepara: som.tocar(ke::Som::Magia); break;  // 1.19
+        case EventoJogo::Tipo::GolpeChefe: som.tocar(ke::Som::Construir), som.tocar(ke::Som::Dano); break;
+        case EventoJogo::Tipo::Cambaleou: som.tocar(ke::Som::Acerto); break;
         case EventoJogo::Tipo::AcertouInimigo: som.tocar(ke::Som::Acerto); break;
         case EventoJogo::Tipo::Ganhou:
         case EventoJogo::Tipo::InimigoDerrotado: som.tocar(e.recurso == "ouro" ? ke::Som::Moeda : ke::Som::Coleta); break;
@@ -958,6 +965,14 @@ void WorldScene::tratarEventos() {
             hud_.aviso(e.texto, cor::ruim);
             cam_.tremor = std::max(cam_.tremor, 4.0f);
             break;
+        // 1.19: o chefe que cambaleia (a postura quebrou) e o golpe em área que cai
+        case EventoJogo::Tipo::Cambaleou: textoFlutuante(e.pos - glm::vec2(0, 14), "Cambaleou!", {1.0f, 0.9f, 0.4f, 1}); break;
+        case EventoJogo::Tipo::GolpeChefe: {
+            cam_.tremor = std::max(cam_.tremor, 5.0f);
+            const float raio = static_cast<float>(e.quantidade);
+            poeira(e.pos, {raio, raio * 0.5f}, 36, {0.55f, 0.45f, 0.38f, 0.9f});
+            break;
+        }
         case EventoJogo::Tipo::GolpeCarregado:
             cam_.tremor = std::max(cam_.tremor, 2.5f);
             [[fallthrough]];

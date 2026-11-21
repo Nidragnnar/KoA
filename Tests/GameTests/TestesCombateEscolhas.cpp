@@ -100,16 +100,115 @@ TEST(CombateEscolhas, GolpeCarregadoDaODobro) {
     passos(w, 1, ataque);
     const int normal = 100 - i.vida;
     EXPECT_EQ(normal, w.danoArma());
-    // Segura depois do golpe até a carga encher e solta
+    // 1.19: segurando depois do golpe, o golpe forte sai sozinho quando a carga enche (sem precisar soltar)
     naFrente(w, e);
     EntradaMundo segura;
     segura.atacarSegurando = true;
-    passos(w, 60, segura);
-    EXPECT_GE(w.jogador.carga, Jogador::CARGA_CHEIA);
-    const int antes = i.vida;
-    passos(w, 1);  // soltou
-    EXPECT_EQ(antes - i.vida, 2 * w.danoArma());
-    EXPECT_TRUE(w.jogador.carregado);
+    int quadros = 0;
+    while (!w.jogador.carregado && quadros < 120) passos(w, 1, segura), ++quadros;
+    ASSERT_TRUE(w.jogador.carregado) << "segurando, o golpe forte sai";
+    EXPECT_NEAR(quadros / 60.0f, Jogador::DURACAO_ATAQUE + Jogador::CARGA_CHEIA, 0.1f) << "depois do golpe normal e da carga";
+    EXPECT_EQ(100 - i.vida, 2 * w.danoArma());
+    EXPECT_FLOAT_EQ(w.jogador.carga, 0.0f) << "e a carga recomeça";
+    // Soltando antes de encher, não sai golpe nenhum
+    passos(w, 30);
+    naFrente(w, e);
+    passos(w, 20, segura);
+    passos(w, 1);
+    EXPECT_EQ(i.vida, 100);
+    EXPECT_FLOAT_EQ(w.jogador.carga, 0.0f);
+}
+
+// 1.19: o chefe aguenta golpes sem recuar (a postura); quebrada, cambaleia. O golpe carregado conta 2
+TEST(Chefes, AguentamGolpesSemRecuar) {
+    World w = vilarejo();
+    w.entrarRegiao("cripta", {10, 10}, Direcao::Baixo);
+    const entt::entity c = primeiro(w, "cavaleiro_caido");
+    ASSERT_TRUE(c != entt::null);
+    const int postura = dados().inimigos.at("cavaleiro_caido").postura;
+    ASSERT_GE(postura, 3);
+    Inimigo& cav = naFrente(w, c, 1000);
+    for (int g = 1; g < postura; ++g) {
+        w.golpearComEspada();
+        EXPECT_FLOAT_EQ(glm::length(cav.empurrao), 0.0f) << "golpe " << g << ": não recua";
+    }
+    w.tirarEventos();
+    w.golpearComEspada();
+    EXPECT_GT(glm::length(cav.empurrao), 1.0f) << "a postura quebrou";
+    EXPECT_TRUE(std::ranges::any_of(w.tirarEventos(), [](const EventoJogo& e) { return e.tipo == EventoJogo::Tipo::Cambaleou; }));
+    EXPECT_EQ(cav.golpesSofridos, 0);
+    cav.empurrao = {0, 0};
+    for (int g = 0; g < (postura + 1) / 2 - 1; ++g) w.golpearComEspada(true);
+    EXPECT_FLOAT_EQ(glm::length(cav.empurrao), 0.0f);
+    w.golpearComEspada(true);
+    EXPECT_GT(glm::length(cav.empurrao), 1.0f) << "o golpe carregado quebra a postura com metade dos golpes";
+    // Criatura comum continua recuando a cada golpe
+    World f = vilarejo();
+    f.entrarRegiao("floresta", {10, 10}, Direcao::Baixo);
+    const entt::entity s = primeiro(f, "sombra");
+    ASSERT_TRUE(s != entt::null);
+    Inimigo& sombra = naFrente(f, s);
+    f.golpearComEspada();
+    EXPECT_GT(glm::length(sombra.empurrao), 1.0f);
+}
+
+// 1.19: o golpe em área avisa antes (para e marca o chão); quem fica no círculo leva, quem sai escapa
+TEST(Chefes, GolpeEmAreaAvisaAntes) {
+    for (const bool foge : {false, true}) {
+        SCOPED_TRACE(foge ? "saiu do círculo" : "ficou no círculo");
+        World w = vilarejo();
+        w.entrarRegiao("cripta", {10, 10}, Direcao::Baixo);
+        const entt::entity c = primeiro(w, "cavaleiro_caido");
+        ASSERT_TRUE(c != entt::null);
+        const InimigoDef& d = dados().inimigos.at("cavaleiro_caido");
+        Inimigo& cav = w.reg.get<Inimigo>(c);
+        const glm::vec2 pos = w.reg.get<Posicao>(c).v;
+        w.jogador.pos = pos + glm::vec2(22, 0);
+        cav.perseguindo = true;
+        cav.recarga = 99.0f;  // sem o dano por encostar: só o golpe em área
+        cav.recargaInvestida = 99.0f;
+        cav.recargaGolpe = 0.0f;
+        const int vida = w.jogador.vida;
+        passos(w, 1);
+        ASSERT_GT(cav.preparo, 0.0f) << "perto do herói, prepara o golpe";
+        EXPECT_TRUE(std::ranges::any_of(w.tirarEventos(), [](const EventoJogo& e) { return e.tipo == EventoJogo::Tipo::ChefePrepara; }));
+        EXPECT_EQ(w.jogador.vida, vida) << "o aviso não fere";
+        passos(w, 10);
+        EXPECT_LT(glm::distance(w.reg.get<Posicao>(c).v, pos), 0.5f) << "preparando, fica parado";
+        if (foge) w.jogador.pos = pos + glm::vec2(d.golpe.raio + 20.0f, 0);
+        passos(w, static_cast<int>(d.golpe.preparo * 60.0f) + 2);
+        EXPECT_FLOAT_EQ(cav.preparo, 0.0f);
+        if (foge) EXPECT_EQ(w.jogador.vida, vida);
+        else EXPECT_LT(w.jogador.vida, vida);
+        EXPECT_GT(cav.recargaGolpe, 0.0f);
+    }
+}
+
+// 1.19: o jeito antigo de vencer (golpear sem parar, colado no chefe) não deixa mais o chefe sem revidar
+TEST(Chefes, GolpearSemPararNaoTravaOChefe) {
+    for (const char* regiao : {"cripta", "minas"}) {
+        SCOPED_TRACE(regiao);
+        World w = vilarejo();
+        w.entrarRegiao(regiao, {10, 10}, Direcao::Baixo);
+        entt::entity c = entt::null;
+        for (auto [e, p, i] : w.reg.view<Posicao, Inimigo>().each())
+            if (dados().inimigos.at(i.tipo).chefe) c = e;
+        ASSERT_TRUE(c != entt::null);
+        Inimigo& chefe = naFrente(w, c, 5000);
+        chefe.recarga = 0.0f;
+        chefe.perseguindo = true;
+        EntradaMundo bate;
+        bate.atacar = true;
+        for (int q = 0; q < 60 * 6; ++q) {
+            const glm::vec2 pc = w.reg.get<Posicao>(c).v;
+            w.jogador.pos = pc + glm::vec2(0, 12);  // sempre colado, olhando para ele
+            w.jogador.dir = Direcao::Cima;
+            w.jogador.vida = std::max(w.jogador.vida, 60);  // o teste é do revide, não da derrota
+            passos(w, 1, bate);
+        }
+        EXPECT_LT(chefe.vida, 5000) << "o herói acertou";
+        EXPECT_LT(w.jogador.vida, w.jogador.vidaMax) << "e o chefe revidou";
+    }
 }
 
 TEST(CombateEscolhas, EfeitosDasArmas) {

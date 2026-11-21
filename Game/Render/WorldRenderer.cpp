@@ -221,8 +221,22 @@ void WorldRenderer::desenhar(ke::Renderer2D& r, const World& w, const ke::Camera
         if (i.queimando > 0.0f) tinta *= glm::vec4(1.0f, 0.75f, 0.55f, 1.0f);
         if (i.fase == 2) tinta *= glm::vec4(1.0f, 0.7f + 0.15f * std::sin(tempo * 8.0f), 0.65f, 1.0f);
         const glm::vec2 tam = glm::vec2(s.tamanho) * esc;
+        // 1.19: o golpe em área avisado: o círculo do alcance no chão, enchendo até o golpe cair, e o chefe piscando
+        float piscar = i.piscar;
+        if (i.preparo > 0.0f && def && def->golpe.preparo > 0.0f) {
+            const float raio = def->golpe.raio, prog = std::clamp(1.0f - i.preparo / def->golpe.preparo, 0.0f, 1.0f);
+            auto circulo = [&](float rc, glm::vec4 c) {
+                for (float y = -rc; y < rc; y += 2.0f) {
+                    const float k = (y + 1.0f) / rc, meia = rc * std::sqrt(std::max(0.0f, 1.0f - k * k));
+                    if (meia >= 1.0f) r.retangulo(glm::floor(p.v + glm::vec2(-meia, y)), {std::floor(meia * 2.0f), 2.0f}, c);
+                }
+            };
+            circulo(raio, {0.9f, 0.15f, 0.05f, 0.16f});
+            circulo(raio * prog, {1.0f, 0.3f, 0.1f, 0.22f + 0.2f * prog});
+            if (static_cast<int>(tempo * 14.0f) % 2 == 0) piscar = std::max(piscar, 0.05f);
+        }
         r.sprite(sombra, {std::floor(p.v.x) - 8, std::floor(p.v.y) - 3});
-        lista.push_back({p.v.y, &s, glm::floor(p.v - glm::vec2(tam.x / 2, tam.y - 2.0f)), i.dir == Direcao::Esquerda, i.piscar, {}, tinta, esc});
+        lista.push_back({p.v.y, &s, glm::floor(p.v - glm::vec2(tam.x / 2, tam.y - 2.0f)), i.dir == Direcao::Esquerda, piscar, {}, tinta, esc});
         if (i.vida < i.vidaMax) barras.push_back({p.v - glm::vec2(0, tam.y + 3.0f), static_cast<float>(i.vida) / i.vidaMax});
     }
     {

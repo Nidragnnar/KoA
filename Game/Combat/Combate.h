@@ -35,6 +35,13 @@ struct InimigoDef {
     float escala = 1.0f;
     float fase2 = 0.0f;       // chefe: fração da vida em que muda de padrão (0 = nunca)
     std::string efeitoFase2;  // "investida" ou "brasa"
+    // 1.19: chefes mais duros. postura = golpes que aguenta sem recuar (o carregado conta 2; 0 = recua a cada golpe);
+    // golpe = ataque em área avisado: para, brilha e marca o chão; depois de "preparo" segundos acerta quem estiver no raio
+    int postura = 0;
+    struct GolpeArea {
+        int dano = 0;  // 0 = não tem
+        float raio = 34.0f, preparo = 0.6f, recarga = 2.4f;
+    } golpe;
 };
 
 struct EquipDef {
@@ -87,6 +94,10 @@ struct Inimigo {
     int fase = 1;                 // chefe: 2 depois de perder vida o bastante
     float queimando = 0.0f, tickQueima = 0.0f;  // Lâmina da Chama
     float recargaTiro = 1.0f, recargaBrasa = 1.5f;
+    // 1.19
+    int golpesSofridos = 0;       // chefe: golpes desde o último recuo (cambaleia ao chegar na postura)
+    float preparo = 0.0f;         // chefe preparando o golpe em área (> 0 = parado, brilhando)
+    float recargaGolpe = 1.5f;
 };
 
 // 1.16: tiro de quem ataca de longe (o herói pode esquivar)

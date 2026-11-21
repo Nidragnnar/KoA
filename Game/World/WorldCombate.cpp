@@ -118,7 +118,17 @@ void World::golpearComEspada(bool carregado) {
         const int dano = danoContra(danoArma() * (carregado ? 2 : 1), efeito == "atravessa" ? 0 : d.defesa);
         i.vida -= dano;
         i.piscar = 0.12f;
-        i.empurrao = frente * (d.chefe ? 60.0f : 160.0f) * (carregado ? 1.6f : 1.0f);
+        // 1.19: o chefe aguenta alguns golpes sem recuar (e nenhum enquanto prepara o golpe em área); quebrada a postura, cambaleia
+        bool recua = true;
+        if (d.postura > 0) {
+            i.golpesSofridos += carregado ? 2 : 1;
+            recua = i.golpesSofridos >= d.postura && i.preparo <= 0.0f;
+            if (recua) {
+                i.golpesSofridos = 0;
+                eventos_.push_back({EventoJogo::Tipo::Cambaleou, ci, i.tipo});
+            }
+        }
+        if (recua) i.empurrao = frente * (d.chefe ? 110.0f : 160.0f) * (carregado ? 1.6f : 1.0f);
         if (efeito == "queima") i.queimando = 3.0f, i.tickQueima = 0.5f;  // a Lâmina da Chama
         i.perseguindo = true;
         eventos_.push_back({EventoJogo::Tipo::AcertouInimigo, ci, i.tipo, "", dano});
@@ -128,6 +138,7 @@ void World::golpearComEspada(bool carregado) {
             i.rendido = true;
             i.perseguindo = false;
             i.empurrao = {0, 0};
+            i.preparo = 0.0f;
             eventos_.push_back({EventoJogo::Tipo::AbrirEscolha, ci, d.escolha});
             continue;
         }
@@ -300,6 +311,22 @@ void World::atualizarInimigos(float dt, const std::vector<ke::AABB>& obst) {
                     brasas.push_back(jogador.pos);
                     i.recargaBrasa = 2.5f;
                 }
+                // 1.19: golpe em área avisado: perto do herói, para e brilha; no fim do preparo acerta quem ficou no raio
+                if (d.golpe.dano > 0) {
+                    i.recargaGolpe = std::max(0.0f, i.recargaGolpe - dt);
+                    if (i.preparo > 0.0f) {
+                        i.investida = 0.0f;
+                        if ((i.preparo -= dt) <= 0.0f) {
+                            i.preparo = 0.0f;
+                            if (dist < d.golpe.raio && jogador.vida > 0) ferirHeroi(static_cast<int>(std::round(d.golpe.dano * forcaInimigos())), p.v);
+                            eventos_.push_back({EventoJogo::Tipo::GolpeChefe, p.v, i.tipo, "", static_cast<int>(d.golpe.raio)});
+                            i.recargaGolpe = d.golpe.recarga * (i.fase == 2 ? 0.65f : 1.0f);  // enfurecido, golpeia mais vezes
+                        }
+                    } else if (i.recargaGolpe <= 0.0f && dist < d.golpe.raio * 0.85f && jogador.vida > 0) {
+                        i.preparo = d.golpe.preparo;
+                        eventos_.push_back({EventoJogo::Tipo::ChefePrepara, p.v, i.tipo, "", static_cast<int>(d.golpe.raio)});
+                    }
+                }
             }
             if (d.comportamento == "distancia") {
                 // Fica longe: recua se o herói chega perto, para no meio do caminho e atira quando dá
@@ -330,6 +357,11 @@ void World::atualizarInimigos(float dt, const std::vector<ke::AABB>& obst) {
                 vel = 0.0f;
             }
             vel *= 0.5f;  // vagando, sem pressa
+            i.preparo = 0.0f;  // o herói fugiu: o golpe em área se desfaz
+        }
+        if (i.preparo > 0.0f) {  // preparando o golpe: parado, virado para o herói
+            vel = 0.0f;
+            if (std::abs(paraHeroi.x) > std::abs(paraHeroi.y)) i.dir = paraHeroi.x < 0 ? Direcao::Esquerda : Direcao::Direita;
         }
         const glm::vec2 dirv = alvo - p.v;
         i.andando = false;

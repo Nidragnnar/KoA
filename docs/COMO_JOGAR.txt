@@ -34,8 +34,9 @@ CONTROLES
   W/S + E ............ escolher opções nos menus e no painel da casa
   B .................. obras: escolher e posicionar uma construção
   K .................. painel do reino (população, felicidade, impostos)
-  J .................. atacar com a espada (segure e solte: golpe carregado,
-                       dano em dobro)
+  J .................. atacar com a espada (segure: quando a espada carrega,
+                       sai o golpe forte, com dano em dobro; vale também
+                       segurar o botão esquerdo do mouse)
   Shift .............. esquivar (também o botão direito do mouse): no começo
                        da esquiva nada te acerta
   H .................. comer (3 de comida = +25 de vida)

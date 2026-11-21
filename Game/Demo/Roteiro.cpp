@@ -1774,13 +1774,14 @@ void Roteiro::noMundo(WorldScene& cena) {
                 in.simularToque(SDL_SCANCODE_LSHIFT);
             }
             if (quadro_ == 152) verificar(w.jogador.esquiva > 0.0f, "Shift esquiva");
-            if (quadro_ == 200) in.simularSegurar(SDL_SCANCODE_J, true);
-            if (quadro_ == 245) {
-                verificar(w.jogador.carga >= Jogador::CARGA_CHEIA, "segurar o J carrega o golpe");
+            // 1.19: segurando o botão do mouse, a espada carrega e o golpe forte sai sozinho quando a carga enche
+            if (quadro_ == 200) in.simularMouse({120, 180}), in.simularSegurarMouse(ke::BotaoMouse::Esquerdo, true);
+            if (quadro_ == 226) {
+                verificar(w.jogador.carga > 0.2f, "segurar o botão do mouse carrega o golpe");
                 capturar("108_golpe_carregando");
             }
-            if (quadro_ == 246) in.simularSegurar(SDL_SCANCODE_J, false);
-            if (quadro_ == 247) verificar(w.jogador.carregado && w.jogador.acao > 0.0f, "soltar o J dá o golpe carregado");
+            if (quadro_ == 241) verificar(w.jogador.carregado && w.jogador.acao > 0.0f, "com a carga cheia, o golpe forte sai sem soltar o mouse");
+            if (quadro_ == 242) in.simularSegurarMouse(ke::BotaoMouse::Esquerdo, false);
             if (quadro_ == 260) {
                 w.entrarRegiao("vilarejo", {31, 21}, Direcao::Baixo);
                 w.jogador.vida = w.jogador.vidaMax;
@@ -1820,7 +1821,22 @@ void Roteiro::noMundo(WorldScene& cena) {
                 w.jogador.pos = {14 * 16.0f + 8, 12 * 16.0f};
             }
             if (quadro_ == 200) capturar("110_torre_selo");
-            if (quadro_ == 202) {
+            // 1.19: colado em Varek, ele para, brilha e marca o círculo no chão antes do golpe em área
+            if (quadro_ == 202)
+                for (auto [e, p, i] : w.reg.view<Posicao, Inimigo>().each())
+                    if (i.tipo == "varek") {
+                        w.jogador.pos = p.v + glm::vec2(26, 0);
+                        w.jogador.invulneravel = 99.0f;
+                        i.perseguindo = true;
+                        i.recargaGolpe = 0.0f;
+                    }
+            if (quadro_ == 220) {
+                bool preparando = false;
+                for (auto [e, i] : w.reg.view<const Inimigo>().each()) preparando |= i.tipo == "varek" && i.preparo > 0.0f;
+                verificar(preparando, "Varek avisa o golpe em área (para e marca o chão)");
+                capturar("113_chefe_golpe_area");
+            }
+            if (quadro_ == 250) {
                 w.jogador.invulneravel = 0.0f;
                 w.entrarRegiao("vilarejo", {31, 21}, Direcao::Baixo);
                 proxima();

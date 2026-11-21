@@ -4,7 +4,7 @@ captura: 01b_novo_jogo_espacos
 [OK] mapa e dados carregados
 captura: 02_vilarejo_inicio
 captura: 03_andando
-[OK] herói andou 68 px para a direita
+[OK] herói andou 67 px para a direita
 [OK] achou uma árvore acessível
 captura: 04_cortando
 [OK] árvore virou toco após 3 golpes
@@ -252,7 +252,7 @@ captura: 88_mensagens
 [OK] 41 pessoas com nome; 16 andando pela vila, cada uma com a sua ficha
 [OK] hoje chove (a horta foi regada pela chuva)
 captura: 89_chuva
-[FALHOU] 33 quadros por segundo com 46 pessoas e chuva
+[OK] 120 quadros por segundo com 46 pessoas e chuva
 [OK] E perto de uma aldeã abre a ficha dela
 captura: 90_ficha
 [OK] P abre a lista do povo
@@ -310,16 +310,18 @@ captura: 106_guarda_esquadra
 [OK] o Arqueiro Espectral atira de longe
 captura: 107_combate_distancia
 [OK] Shift esquiva
-[OK] segurar o J carrega o golpe
+[OK] segurar o botão do mouse carrega o golpe
 captura: 108_golpe_carregando
-[OK] soltar o J dá o golpe carregado
+[OK] com a carga cheia, o golpe forte sai sem soltar o mouse
 [OK] com o primeiro ato, a floresta leva ao Pântano das Cinzas
 captura: 109_pantano
 [OK] os fragmentos e a escolha diante da Sacerdotisa fecham o segundo ato
 [OK] com o segundo ato, o pântano leva à Torre do Selo
 captura: 110_torre_selo
+[OK] Varek avisa o golpe em área (para e marca o chão)
+captura: 113_chefe_golpe_area
 [OK] o final da Queda abre a Quinta Era, Coroa Eterna
 [OK] o epílogo abre na tela
 captura: 111_coroa_epilogo
 captura: 112_coroa_vilarejo
-RESULTADO: 1 falha(s)
+RESULTADO: 0 falha(s)

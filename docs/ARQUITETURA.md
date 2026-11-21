@@ -263,3 +263,13 @@ O plano da 2.0 está em `docs/VISAO_2.0.md`.
 ## Versões das bibliotecas
 
 SDL 3.2.30 · glm 1.0.1 · EnTT 3.15.0 · nlohmann/json 3.12.0 · Dear ImGui 1.92.6 · GoogleTest 1.17.0 · stb (commit 4e9b368) · glad (OpenGL 3.3 core, no repositório)
+
+## Chefes mais duros e a arte das criaturas novas (versão 1.19)
+
+- **O problema**: cada golpe empurrava o chefe, e o recuo pulava a IA dele (inclusive o dano por encostar); golpeando sem parar, o chefe nunca revidava.
+- **Dados**: `InimigoDef` ganhou `postura` (golpes que aguenta sem recuar; o carregado conta 2) e `golpe` (dano, raio, preparo e recarga do golpe em área). Os 4 chefes têm os dois em `inimigos.json`; as outras criaturas continuam recuando a cada golpe.
+- **Mundo** (`WorldCombate.cpp`): `Inimigo` ganhou `golpesSofridos`, `preparo` e `recargaGolpe`. Perto do herói o chefe para e prepara o golpe (evento `ChefePrepara`); no fim acerta quem ficou no raio (`GolpeChefe`, respeitando a esquiva). Na fase 2 a recarga cai 35%. Quebrada a postura, ele cambaleia (`Cambaleou`).
+- **Golpe forte**: com a carga cheia, sai sozinho (sem soltar), segurando o J ou o botão esquerdo do mouse; segurando o mouse parado, o herói mira o cursor. `Input::simularSegurarMouse` para o roteiro.
+- **Desenho**: o círculo do golpe no chão enche até o golpe cair, e o chefe pisca. As 6 criaturas da 1.16 e os 2 chefes da 1.17 têm procedurais próprios (`criaturasDosAtos`, em `Sprites.cpp`) e a arte do NidraIA; o `aparencia`/`tinta`/`escala` ficou para quem quiser reaproveitar desenho.
+- **Save**: não muda.
+- **Testes**: 3 novos de chefe (postura, golpe em área avisado e o revide contra quem golpeia sem parar) e o do golpe carregado refeito; o roteiro testa o golpe forte pelo mouse (etapa 61) e captura o aviso de Varek (`113_chefe_golpe_area`).

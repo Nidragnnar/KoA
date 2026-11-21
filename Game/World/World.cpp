@@ -867,11 +867,15 @@ void World::passo(float dt, const EntradaMundo& in) {
     }
     if (jogador.acao <= 0.0f) jogador.atacando = false, jogador.carregado = false;
     if (in.atacar && jogador.acao <= 0.0f && jogador.vida > 0 && jogador.esquiva <= 0.0f) golpearComEspada();
-    // 1.16: segurando o ataque depois do golpe, a espada carrega; soltando com a carga cheia, sai o golpe carregado
+    // 1.16: segurando o ataque depois do golpe, a espada carrega; 1.19: com a carga cheia, o golpe forte sai sozinho
+    // (sem precisar soltar), e quem continua segurando carrega o próximo
     if (in.atacarSegurando && jogador.acao <= 0.0f && jogador.vida > 0 && jogador.esquiva <= 0.0f) {
         jogador.carga += dt;
+        if (jogador.carga >= Jogador::CARGA_CHEIA) {
+            golpearComEspada(true);
+            jogador.carga = 0.0f;
+        }
     } else if (!in.atacarSegurando) {
-        if (jogador.carga >= Jogador::CARGA_CHEIA && jogador.acao <= 0.0f && jogador.vida > 0) golpearComEspada(true);
         jogador.carga = 0.0f;
     }
     // Fase 15: ferido, o H come o prato que mais cura (e só depois a comida comum)

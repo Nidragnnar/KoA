@@ -75,6 +75,10 @@ da Chama: aprisioná-la, unir-se a ela ou apagá-la para sempre (as terras se cu
 A versão 1.18 trouxe a Quinta Era, Coroa Eterna: depois do final da Queda (com o Reino da Alta Fantasia), o reino
 amanhece numa era nova, diferente para cada final (a cor do mundo, o que o reino ganha, o cristal vivo nas ruas e um
 épílogo), com música própria e uma ameaça nova, o eco da Chama, que deixa as hordas mais fortes. A partida continua.
+A versão 1.19 deixou os chefes mais duros: cada um aguenta alguns golpes sem recuar (a postura; quebrada, ele
+cambaleia) e tem um golpe em área avisado, em que para, brilha e marca um círculo no chão antes de acertar (esquive ou
+saia dele). O golpe forte sai sozinho quando a espada carrega, segurando o J ou o botão do mouse. As criaturas novas
+e os chefes dos atos ganharam a arte do NidraIA.
 
 As 8 fases do plano de arquitetura da 1.0 estão feitas:
 
@@ -91,7 +95,7 @@ As 8 fases do plano de arquitetura da 1.0 estão feitas:
 |---|---|
 | W A S D / setas | andar |
 | E / Espaço | interagir (segure para continuar golpeando) |
-| clique esquerdo / J | atacar (o clique vira o herói para o cursor); segure e solte para o golpe carregado |
+| clique esquerdo / J | atacar (o clique vira o herói para o cursor); segure para o golpe forte, que sai sozinho quando a espada carrega |
 | Shift / botão direito | esquivar (um impulso com um instante invulnerável) |
 | mouse | escolher e confirmar nos menus e painéis (clicar fora fecha) |
 | H | comer (o prato que mais cura, ou 3 de comida) |

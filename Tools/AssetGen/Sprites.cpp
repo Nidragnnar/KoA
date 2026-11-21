@@ -2269,6 +2269,191 @@ void fase16(Lista& l) {
     l.emplace_back("estandarte_mastro", mastro());
     for (const char* s : {"coroa", "leao", "dragao", "chama", "arvore", "espada", "torre", "lua"}) l.emplace_back(std::format("simbolo_{}", s), simbolo(s));
 }
+// ---------- 1.16 e 1.17: as criaturas novas e os chefes dos atos (2 quadros, virados para a direita) ----------
+
+// Arqueiro espectral: vulto de capuz violeta que flutua, olhos ciano e um arco velho
+Img arqueiroEspectral(int q) {
+    Img t(16, 22);
+    const int b = q;  // flutua 1 px
+    const Cor manto = hex("#3a2e5a"), mantoC = hex("#54447e");
+    t.elipse(7, 12 - b, 5, 6, manto);  // corpo
+    t.rect(3, 12 - b, 9, 5, manto);
+    for (int i = 0; i < 5; ++i) t.rect(3 + i * 2, 17 - b, 1, 3 - (i + q) % 2, manto);  // fiapos
+    t.elipse(7, 5 - b, 4, 4, mantoC);  // capuz
+    t.elipse(8, 6 - b, 2, 2, hex("#140f20"));
+    t.px(8, 6 - b, hex("#a0f0ff"));
+    t.px(10, 6 - b, hex("#a0f0ff"));
+    t.rect(9, 10 - b, 4, 2, mantoC);   // braço
+    t.linha(13, 4 - b, 15, 10 - b, hex("#8a6a3a"));  // arco
+    t.linha(15, 10 - b, 13, 16 - b, hex("#8a6a3a"));
+    t.linha(13, 4 - b, 13, 16 - b, hex("#c8c0e0"));  // corda
+    if (q == 0) t.linha(9, 10, 15, 10, hex("#d8d0f0"));  // flecha na corda
+    t.contornar(hex("#0a080c"));
+    return t;
+}
+
+// Lobo da matilha cinzenta: menor e mais magro que o lobo corrompido, pelo de cinza e olho vermelho
+Img loboMatilha(int q) {
+    Img t(18, 14);
+    const Cor pelo = hex("#6a6a72"), escuro = hex("#3e3e46");
+    t.elipse(8, 8, 6, 3, pelo);                // corpo
+    t.rect(4, 5, 8, 1, hex("#8a8a94"));        // dorso claro
+    t.elipse(14, 6, 3, 2, pelo);               // cabeça
+    t.rect(16, 6, 2, 2, escuro);               // focinho
+    t.px(14, 5, hex("#e05040"));               // olho
+    t.rect(13, 2, 1, 3, escuro);               // orelhas
+    t.rect(15, 3, 1, 2, escuro);
+    t.linha(2, 7, 0, 4 + q, pelo);             // rabo
+    const int p = q ? 1 : -1;
+    for (const int x : {3, 6, 10, 13}) t.rect(x + (x % 2 ? p : -p), 10, 2, 3, escuro);  // patas
+    std::mt19937 r(6600 + q);
+    t.salpicar(r, 8, hex("#9a948a"));  // cinza no pelo
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Conjurador de ossos: túnica azul-escura, crânio no capuz e cajado com uma luz azul
+Img conjuradorOssos(int q) {
+    Img t(16, 24);
+    const Cor manto = hex("#22344a"), mantoC = hex("#34506a"), osso = hex("#c8c0a8");
+    t.rect(4, 9, 8, 13, manto);                // túnica
+    t.rect(3, 16, 10, 6, manto);
+    for (int x = 3; x < 13; x += 2) t.px(x, 22 + (x / 2 + q) % 2, manto);  // barra rasgada
+    t.rect(7, 10, 1, 11, mantoC);
+    t.rect(4, 14, 8, 1, osso);                 // cinto de ossos
+    t.elipse(8, 5, 4, 4, mantoC);              // capuz
+    t.elipse(9, 6, 2, 2, osso);                // crânio
+    t.px(8, 6, hex("#70c8ff"));
+    t.px(10, 6, hex("#70c8ff"));
+    t.rect(13, 4, 1, 19, hex("#5a4630"));      // cajado
+    t.elipse(13, 2, 2, 2, osso);
+    t.px(13, 2, q ? hex("#c8f0ff") : hex("#70c8ff"));  // a luz pulsa
+    t.rect(11, 11 + q, 2, 2, osso);            // mão
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Ossada rastejante: meio esqueleto que se arrasta pelos braços
+Img ossada(int q) {
+    Img t(16, 12);
+    const Cor osso = hex("#c8c0a8"), sombraO = hex("#8a8270");
+    t.rect(3, 6, 7, 1, osso);                  // espinha
+    for (int x = 4; x < 10; x += 2) t.rect(x, 4, 1, 5, osso);  // costelas
+    t.linha(10, 8, 14 + q, 11, osso);          // braços que puxam
+    t.linha(9, 8, 11 - q, 11, sombraO);
+    t.linha(3, 7, 0, 9 + q, sombraO);          // a perna que sobrou
+    t.elipse(12, 5, 3, 3, osso);               // crânio
+    t.rect(11, 8, 4, 1, sombraO);              // mandíbula
+    t.px(12, 4, hex("#1a1414"));
+    t.px(14, 4, hex("#e04030"));
+    t.contornar(CONTORNO);
+    return t;
+}
+
+// Cuspidora de cristal: aranha grande com cristais azuis nas costas e a boca brilhando
+Img cuspidora(int q) {
+    Img t(22, 16);
+    const Cor corpo = hex("#24303c"), perna = hex("#161e26");
+    for (int i = 0; i < 4; ++i) {
+        const int y = 6 + i * 2, d = (i + q) % 2;
+        t.linha(8, y, 1 + d, y + 3 - d, perna);
+        t.linha(14, y, 21 - d, y + 3 - d, perna);
+    }
+    t.elipse(11, 10, 6, 5, corpo);              // abdômen inchado
+    t.elipse(11, 4, 3, 2, hex("#34404e"));      // cabeça
+    t.px(10, 3, hex("#8af0ff"));
+    t.px(12, 3, hex("#8af0ff"));
+    t.px(11, 2, q ? hex("#ffffff") : hex("#c8f0ff"));  // a boca que cospe
+    t.rect(8, 7, 2, 3, hex("#6ac8f0"));         // cristais
+    t.px(8, 6, hex("#c8f0ff"));
+    t.rect(13, 9, 2, 4, hex("#6ac8f0"));
+    t.px(13, 8, hex("#c8f0ff"));
+    t.rect(10, 11, 1, 2, hex("#8ad8ff"));
+    t.contornar(hex("#0a080c"));
+    return t;
+}
+
+// Aranha do enxame: pequena, marrom-avermelhada, olhos alaranjados
+Img enxame(int q) {
+    Img t(14, 10);
+    const Cor corpo = hex("#4a2a22"), perna = hex("#2a1812");
+    for (int i = 0; i < 3; ++i) {
+        const int y = 3 + i * 2, d = (i + q) % 2;
+        t.linha(5, y, 1 + d, y + 2 - d, perna);
+        t.linha(8, y, 12 - d, y + 2 - d, perna);
+    }
+    t.elipse(7, 6, 3, 3, corpo);
+    t.elipse(7, 2, 2, 1, hex("#5a362c"));
+    t.px(6, 2, hex("#ffa040"));
+    t.px(8, 2, hex("#ffa040"));
+    t.px(6, 6, hex("#6a3a2a"));
+    t.contornar(hex("#0a080c"));
+    return t;
+}
+
+// A Sacerdotisa das Cinzas: manto cinza com brasa na barra, chifres no capuz e a chama erguida na mão
+Img sacerdotisa(int q) {
+    std::mt19937 r(6700 + q);
+    Img t(28, 38);
+    const Cor manto = hex("#4a4048"), mantoC = hex("#6a5e66"), brasa = hex("#e06a20"), chama = hex("#ffb040");
+    t.rect(8, 12, 12, 24, manto);               // manto até o chão
+    t.rect(6, 22, 16, 14, manto);
+    for (int x = 6; x < 22; x += 2) t.px(x, 36 + (x / 2 + q) % 2, manto);  // barra queimada
+    t.salpicar(r, 20, hex("#2e282c"), 6, 12, 22, 36);
+    t.rect(6, 34, 16, 1, brasa);
+    t.rect(13, 14, 2, 20, brasa);
+    t.rect(8, 12, 12, 2, mantoC);               // ombros
+    const int a = q;  // os braços sobem e descem
+    t.rect(5, 15 + a, 3, 9, manto);             // braço de trás
+    t.rect(19, 13 - a, 3, 8, manto);            // braço erguido
+    t.rect(20, 11 - a, 2, 2, hex("#c8b8a8"));   // mão
+    t.elipse(21, 7 - a, 2, 3, brasa);           // a chama na mão
+    t.elipse(21, 7 - a, 1, 1, chama);
+    t.linha(10, 3, 8, 0, hex("#2a2024"));       // chifres
+    t.linha(18, 3, 20, 0, hex("#2a2024"));
+    t.elipse(14, 7, 5, 6, mantoC);              // capuz
+    t.elipse(15, 8, 3, 3, hex("#1a1214"));      // rosto na sombra
+    t.px(14, 8, chama);
+    t.px(17, 8, chama);
+    t.contornar(hex("#0a080c"));
+    return t;
+}
+
+// Varek, o Herdeiro Esquecido: armadura negra rachada de brasa, coroa de ouro e a espada em chamas
+Img varek(int q) {
+    std::mt19937 r(6800 + q);
+    Img t(32, 40);
+    const Cor placa = hex("#2a2428"), placaC = hex("#463c42"), brasa = hex("#ff7a20"), ouro = hex("#d0a040"), capa = hex("#3a1010");
+    t.rect(5, 12, 22, 19, capa);                // capa
+    for (int x = 5; x < 27; x += 3) t.px(x, 31 + (x / 3 + q) % 3, capa);
+    t.rect(9, 11, 14, 16, placa);               // couraça
+    t.rect(9, 11, 14, 2, placaC);
+    t.rect(10, 27, 5, 11 - q, placa);           // pernas
+    t.rect(17, 27, 5, 10 + q, placa);
+    t.salpicar(r, 20, hex("#1a1418"), 9, 11, 23, 37);
+    t.linha(11, 14, 14, 22, brasa);             // rachaduras em brasa
+    t.linha(20, 13, 18, 20, brasa);
+    t.elipse(16, 18, 2, 2, brasa);
+    t.px(16, 18, hex("#ffd070"));
+    t.elipse(16, 7, 5, 5, placa);               // elmo
+    t.rect(13, 7, 7, 2, hex("#ff9030"));        // fresta em chama
+    t.rect(11, 2, 10, 2, ouro);                 // coroa
+    for (const int x : {11, 14, 17, 20}) t.rect(x, 0, 1, 2, ouro), t.px(x, 0, hex("#ffd070"));
+    t.linha(25, 8 + q, 30, 34, hex("#ffb040")); // espada em chamas
+    t.linha(26, 8 + q, 31, 34, brasa);
+    t.rect(23, 15 + q, 6, 2, ouro);
+    t.contornar(hex("#0a080c"));
+    return t;
+}
+
+void criaturasDosAtos(Lista& l) {
+    const std::pair<const char*, Img (*)(int)> criaturas[] = {
+        {"arqueiro_espectral", arqueiroEspectral}, {"matilha", loboMatilha}, {"conjurador_ossos", conjuradorOssos}, {"ossada", ossada},
+        {"cuspidora", cuspidora}, {"enxame", enxame}, {"sacerdotisa_cinzas", sacerdotisa}, {"varek", varek}};
+    for (const auto& [id, f] : criaturas)
+        for (int q = 0; q < 2; ++q) l.emplace_back(std::format("inimigo_{}_{}", id, q), f(q));
+}
+
 std::vector<std::pair<std::string, Img>> gerarTodos() {
     Lista l;
     const char* nomes[] = {"grama", "terra", "lama", "agua", "calcada", "muro"};
@@ -2311,6 +2496,7 @@ std::vector<std::pair<std::string, Img>> gerarTodos() {
     fase13(l);
     fase15(l);
     fase16(l);
+    criaturasDosAtos(l);
     return l;
 }
 

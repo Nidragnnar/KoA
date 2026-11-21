@@ -32,6 +32,11 @@ bool lerCombate(const nlohmann::json& ji, const nlohmann::json& je, const nlohma
             d.escala = i.value("escala", 1.0f);
             d.fase2 = i.value("fase2", 0.0f);
             d.efeitoFase2 = i.value("efeito_fase2", "");
+            d.postura = i.value("postura", 0);
+            if (i.contains("golpe")) {
+                const auto& jg = i["golpe"];
+                d.golpe = {jg.value("dano", d.dano), jg.value("raio", 34.0f), jg.value("preparo", 0.6f), jg.value("recarga", 2.4f)};
+            }
             inimigos[d.id] = d;
         }
         for (const auto& e : je.at("equipamentos")) {

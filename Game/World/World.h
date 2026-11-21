@@ -73,7 +73,9 @@ struct EventoJogo {
         // Fase 18
         AbrirFicha,
         // 1.16
-        Esquivou, GolpeCarregado, Tiro, FaseChefe, Queimou
+        Esquivou, GolpeCarregado, Tiro, FaseChefe, Queimou,
+        // 1.19
+        Cambaleou, ChefePrepara, GolpeChefe
     };
     Tipo tipo;
     glm::vec2 pos{0.0f};
