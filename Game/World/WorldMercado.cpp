@@ -32,14 +32,19 @@ float World::precoHoje(const std::string& bem) const {
     return precoUnitario(*b, estacaoAtual().id, it == mercado.pressao.end() ? 0.0f : it->second, sorteDoDia(dm, sementeBase_, relogio.dia, bem));
 }
 
+// A taxa do dia: a do nível do mercado (ou a do Corvin), menos o desconto do herdeiro Astuto (nunca abaixo de 5%)
+float World::taxaMercado(bool corvin) const {
+    return std::max(0.05f, dados().mercado.taxa(corvin ? 0 : nivelMercado()) + efeitosHerdeiro().taxaMercado);
+}
+
 int World::precoCompraLote(const std::string& bem) const {
     const BemDef* b = dados().mercado.bem(bem);
-    return b ? precoCompra(precoHoje(bem), b->lote, dados().mercado.taxa(nivelMercado())) : 0;
+    return b ? precoCompra(precoHoje(bem), b->lote, taxaMercado(false)) : 0;
 }
 
 int World::precoVendaLote(const std::string& bem, bool corvin) const {
     const BemDef* b = dados().mercado.bem(bem);
-    return b ? precoVenda(precoHoje(bem), b->lote, dados().mercado.taxa(corvin ? 0 : nivelMercado())) : 0;
+    return b ? precoVenda(precoHoje(bem), b->lote, taxaMercado(corvin)) : 0;
 }
 
 std::string World::podeNegociar(const std::string& bem, bool comprar, bool corvin) const {

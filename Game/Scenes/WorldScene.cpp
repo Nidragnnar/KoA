@@ -27,6 +27,7 @@ struct AbaLivro {
 constexpr AbaLivro ABAS_LIVRO[] = {{"Reino", Painel::Reino, "reino"},       {"Mercado", Painel::Mercado, "mercado"},
                                    {"Terras", Painel::Regioes, "terras"},    {"Conselho", Painel::Conselho, "conselho"},
                                    {"Povo", Painel::Povo, "povo"},           {"Vizinhos", Painel::Vizinhos, "vizinhos"},
+                                   {"Família", Painel::Familia, "familia"},
                                    {"Diário", Painel::Diario, "diario"},     {"Crônicas", Painel::Cronicas, "cronicas"},
                                    {"Avisos", Painel::Mensagens, "mensagens"}};
 constexpr int N_ABAS = static_cast<int>(std::size(ABAS_LIVRO));
@@ -1437,6 +1438,7 @@ void WorldScene::atualizar(double dtD) {
         if (in.pressionouAcao("terras") || in.pressionou(SDL_SCANCODE_ESCAPE) || in.pressionou(SDL_SCANCODE_E) || cliqueFecha(in, hud_.cliques))
             fechar(Painel::Regioes);
     } else if (aberto(Painel::Mercado)) entradaMercado();
+    else if (aberto(Painel::Familia)) entradaFamilia();
     else if (aberto(Painel::Construcao)) entradaPainel();
     else if (aberto(Painel::Forja)) entradaForja();
     else if (aberto(Painel::Loja)) entradaLoja();
@@ -1575,6 +1577,7 @@ void WorldScene::renderizar(float) {
     }
     if (aberto(Painel::Forja)) hud_.lojaForja(r, mundo_, opcoesForja(), selForja_);
     if (aberto(Painel::Loja)) hud_.lojaMercador(r, mundo_, ctx_.dados.npcs.at(loja_), selLoja_);
+    if (aberto(Painel::Familia)) hud_.painelFamilia(r, mundo_, selFamilia_, confirmarSucessao_, tempo_);
     if (aberto(Painel::Mercado)) hud_.painelMercado(r, mundo_, mercadoCorvin_, abaMercado_, selMercado_, rolagemMercado_, tempo_);
     if (aberto(Painel::Diario)) hud_.diario(r, mundo_);
     if (aberto(Painel::Cronicas)) hud_.cronicas(r, mundo_, abaCronicas_, rolagem_, selFragmento_);
@@ -1608,7 +1611,7 @@ void WorldScene::renderizar(float) {
     }
     if (aberto(Painel::Pausa)) hud_.menuPausa(r, OPCOES_PAUSA, selPausa_);
     if (aberto(Painel::Pausa) && telaOpcoes_.aberta()) telaOpcoes_.desenhar(r, f, ctx_);
-    if (!aberto(Painel::Pausa) && transicao_ < 0.0f) hud_.desenharDica(r, ctx_.app.input().mouse());  // fase 20: por cima de tudo
+    if (!aberto(Painel::Pausa) && transicao_ < 0.0f) hud_.desenharDica(r, ctx_.app.input().mouse(), !pilha_.empty());  // fase 20: por cima de tudo
     if (transicao_ >= 0.0f) {
         const float a = transicao_ < 1.0f ? transicao_ : 2.0f - transicao_;
         r.retangulo({0, 0}, {640, 360}, {0, 0, 0, std::clamp(a * 1.2f, 0.0f, 1.0f)});
@@ -1702,6 +1705,7 @@ void WorldScene::abrirAba(int k) {
     abrir(p);
     switch (p) {
     case Painel::Vizinhos: selVizinhos_ = 0; break;
+    case Painel::Familia: selFamilia_ = confirmarSucessao_ = 0; break;
     case Painel::Povo: selPovo_ = rolagemPovo_ = 0; break;
     case Painel::Mensagens: rolagemMensagens_ = 0; break;
     case Painel::Cronicas: rolagem_ = std::max(0, static_cast<int>(mundo_.cronicas.size()) - Hud::paginasVisiveis()); break;
@@ -1729,5 +1733,51 @@ bool WorldScene::entradaLivro() {
             return true;
         }
     return false;
+}
+
+// Fase 21: a família. E casa, troca o tutor (entre os conselheiros que ensinam) ou passa a coroa (com confirmação)
+void WorldScene::entradaFamilia() {
+    ke::Input& in = ctx_.app.input();
+    if (in.pressionouAcao("familia") || in.pressionou(SDL_SCANCODE_ESCAPE) || cliqueFecha(in, hud_.cliques)) {
+        fechar(Painel::Familia);
+        return;
+    }
+    const auto acoes = hud_.acoesFamilia(mundo_);
+    const int n = static_cast<int>(acoes.size());
+    if (n == 0) return;
+    selFamilia_ = std::clamp(selFamilia_, 0, n - 1);
+    const int antes = selFamilia_;
+    if (in.pressionou(SDL_SCANCODE_W) || in.pressionou(SDL_SCANCODE_UP)) selFamilia_ = (selFamilia_ + n - 1) % n;
+    if (in.pressionou(SDL_SCANCODE_S) || in.pressionou(SDL_SCANCODE_DOWN)) selFamilia_ = (selFamilia_ + 1) % n;
+    const bool clique = listaComMouse(in, hud_.cliques, selFamilia_, n);
+    if (selFamilia_ != antes) confirmarSucessao_ = 0;  // mudou de linha: a confirmação se perde
+    if (!(in.pressionou(SDL_SCANCODE_E) || in.pressionou(SDL_SCANCODE_RETURN) || in.pressionou(SDL_SCANCODE_SPACE) || clique)) return;
+    const std::string& a = acoes[selFamilia_];
+    const std::string id = a.substr(2);
+    if (a.starts_with("c:")) {
+        if (mundo_.casar(id)) selFamilia_ = 0;
+    } else if (a.starts_with("t:")) {
+        // O próximo cargo ocupado que ensina alguma coisa (e depois, nenhum)
+        std::vector<std::string> opcoes{""};
+        for (const auto& [cargo, traco] : ctx_.dados.linhagem.tutores)
+            if (!mundo_.ocupante(cargo).empty()) opcoes.push_back(cargo);
+        const Membro* f = mundo_.linhagem.membro(std::stoi(id));
+        const auto it = std::ranges::find(opcoes, f ? f->tutor : "");
+        const size_t k = it == opcoes.end() ? 0 : (static_cast<size_t>(it - opcoes.begin()) + 1) % opcoes.size();
+        if (opcoes.size() == 1) hud_.aviso("Nomeie alguém para o Conselho Real (G) para ter um tutor.", cor::ruim);
+        mundo_.definirTutor(std::stoi(id), opcoes[k]);
+    } else {
+        const int filho = std::stoi(id);
+        if (!mundo_.podeSuceder(filho).empty()) {
+            mundo_.passarCoroa(filho);  // mostra o motivo
+        } else if (confirmarSucessao_ != filho) {
+            confirmarSucessao_ = filho;  // a sucessão não volta atrás: pede o segundo E
+        } else {
+            confirmarSucessao_ = 0;
+            fechar(Painel::Familia);
+            mundo_.passarCoroa(filho);
+            salvar();
+        }
+    }
 }
 }

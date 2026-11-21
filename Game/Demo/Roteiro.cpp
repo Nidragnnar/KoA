@@ -1570,7 +1570,7 @@ void Roteiro::noMundo(WorldScene& cena) {
                 verificar(w.inventario.quantidade("comida") == abatesAntes_ && w.inventario.quantidade("ouro") > ouroAntes_ && w.mercado.negociadosHoje == 2,
                           "Q vende o lote de volta (a taxa fica com o mercado)");
             }
-            if (quadro_ == 52) in.simularClique(ke::BotaoMouse::Esquerdo, {320, 352});  // a aba Povo, na faixa do Livro
+            if (quadro_ == 52) in.simularClique(ke::BotaoMouse::Esquerdo, {288, 352});  // a aba Povo (a 5ª de 10), na faixa do Livro
             if (quadro_ == 62) verificar(cena.aberto(Painel::Povo) && !cena.aberto(Painel::Mercado), "o clique na aba troca o painel");
             if (quadro_ == 64) in.simularToque(SDL_SCANCODE_TAB);
             if (quadro_ == 74) {
@@ -1591,6 +1591,7 @@ void Roteiro::noMundo(WorldScene& cena) {
             if (quadro_ == 116) capturar("97_texto_grande");
             if (quadro_ == 118) {
                 ctx_.opcoes.textoGrande = false;
+                in.simularMouse({-1, -1});  // o mouse sai de cima do ouro (a dica some)
                 in.simularToque(SDL_SCANCODE_ESCAPE);  // menu de pausa
             }
             if (quadro_ == 122 || quadro_ == 124 || quadro_ == 126) in.simularToque(SDL_SCANCODE_S);
@@ -1612,7 +1613,72 @@ void Roteiro::noMundo(WorldScene& cena) {
             }
             return;
         }
-        case 58:            w.reino.eraForcada = 0;
+        // ---------- Fase 21: a linhagem ----------
+        case 58: {  // Y abre a família: casar com a Edda; o filho nasce, cresce com o tutor; a coroa passa (com confirmação)
+            if (cena.decisaoAberta() && quadro_ % 5 == 0) in.simularToque(SDL_SCANCODE_ESCAPE);
+            auto noites = [&](int n) {
+                for (int i = 0; i < n; ++i) w.dormir(false);
+                w.relogio.minutos = 10 * 60;
+            };
+            if (quadro_ == 1) {
+                for (const char* r : {"madeira", "pedra", "ouro", "comida"}) w.inventario.definir(r, 800);
+                for (auto [e, m, rel] : w.reg.view<const Morador, Relacionamento>().each())
+                    if (m.id == "edda") rel.afinidade = 820;
+                diaAntes_ = w.herdeiro().id;
+            }
+            if (quadro_ == 5) in.simularToque(SDL_SCANCODE_Y);
+            if (quadro_ == 14) {
+                verificar(cena.aberto(Painel::Familia), "Y abre a família");
+                capturar("99_familia");
+            }
+            if (quadro_ == 16) in.simularToque(SDL_SCANCODE_S);  // a segunda linha: a Edda
+            if (quadro_ == 18) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 26) {
+                const Membro* c = w.linhagem.membro(w.herdeiro().conjuge);
+                verificar(c && c->npc == "edda", "E casa o herdeiro com a Edda");
+            }
+            if (quadro_ == 28) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 34) {
+                w.marcar("conselho_formado", "", true);
+                w.nomear("tesoureiro", "bram");
+                w.lealdade["bram"] = 85;
+                noites(7);
+                const auto filhos = w.linhagem.filhosDe(w.herdeiro().id);
+                verificar(filhos.size() == 1, "o primeiro filho nasce 7 dias depois do casamento");
+                if (!filhos.empty()) w.definirTutor(filhos[0]->id, "tesoureiro");
+                noites(28);
+            }
+            if (quadro_ == 40) in.simularToque(SDL_SCANCODE_E);  // fecha o relatório
+            if (quadro_ == 50) in.simularToque(SDL_SCANCODE_Y);
+            if (quadro_ == 60) {
+                const auto filhos = w.linhagem.filhosDe(w.herdeiro().id);
+                verificar(!filhos.empty() && filhos[0]->adulto && filhos[0]->tracos.size() == 2 && filhos[0]->tracos[1] == "astuto",
+                          std::format("o filho cresceu com o Mestre da Moeda: {}", filhos.empty() ? "" : textoTracos(ctx_.dados.linhagem, filhos[0]->tracos)));
+                capturar("100_familia_herdeiro");
+            }
+            if (quadro_ == 62) in.simularToque(SDL_SCANCODE_E);  // passar a coroa: pede confirmação
+            if (quadro_ == 66) verificar(cena.aberto(Painel::Familia) && w.linhagem.reinado == 1, "o primeiro E só pede confirmação");
+            if (quadro_ == 68) in.simularToque(SDL_SCANCODE_E);
+            if (quadro_ == 80) {
+                verificar(w.linhagem.reinado == 2 && w.herdeiro().id != diaAntes_ && w.reino.construcao("casa_herdeiro") != nullptr,
+                          std::format("a coroa passou para {} (ano {} do reino) e o reino continua", w.herdeiro().nome, w.anoDoReino()));
+                capturar("101_sucessao");
+            }
+            if (quadro_ == 84) in.simularToque(SDL_SCANCODE_C);
+            if (quadro_ == 88) in.simularToque(SDL_SCANCODE_A);  // a etapa 25 deixou os fragmentos abertos: volta às páginas
+            if (quadro_ == 94) {
+                verificar(cena.aberto(Painel::Cronicas) && !w.cronicas.empty() && w.cronicas.back().reinado == 2, "as Crônicas abrem o segundo reinado");
+                capturar("102_cronicas_reinados");
+            }
+            if (quadro_ == 96) in.simularToque(SDL_SCANCODE_ESCAPE);
+            if (quadro_ == 104) {
+                verificar(cena.pilha().empty(), "Esc fecha as Crônicas");
+                proxima();
+            }
+            return;
+        }
+        case 59:
+            w.reino.eraForcada = 0;
             w.reino.eraVisual = 0.0f;
             terminar();
             return;

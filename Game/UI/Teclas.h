@@ -28,6 +28,7 @@ inline constexpr AcaoTecla ACOES_TECLAS[] = {
     {"conselho", "Conselho Real", SDL_SCANCODE_G},
     {"povo", "o povo", SDL_SCANCODE_P},
     {"vizinhos", "os vizinhos e a fama", SDL_SCANCODE_T},
+    {"familia", "a família (linhagem)", SDL_SCANCODE_Y},
     {"diario", "diário", SDL_SCANCODE_L},
     {"cronicas", "Crônicas do Reino", SDL_SCANCODE_C},
     {"mensagens", "mensagens", SDL_SCANCODE_N},

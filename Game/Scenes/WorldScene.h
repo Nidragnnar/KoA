@@ -22,7 +22,8 @@ namespace koa {
 enum class Painel {
     Pausa, Leitura, Relatorio, Conversa, Escolha, Decisao, Conselho, Guilda, Cozinha, Alas, Brasao,
     Regioes, Construcao, Forja, Loja, Cronicas, Diario, MenuObras, Reino, Mensagens, Ficha, Povo, Vizinhos,
-    Mercado  // fase 20
+    Mercado,  // fase 20
+    Familia   // fase 21
 };
 
 // O vilarejo jogável
@@ -96,7 +97,8 @@ private:
     // Fase 20: o Livro do Reino (abas = painéis que já existiam)
     int abaAberta() const;  // -1 = nenhuma aba do Livro por cima
     void abrirAba(int k);
-    bool entradaLivro();    // true = a faixa de abas tratou a entrada deste passo
+    bool entradaLivro();
+    void entradaFamilia();  // fase 21    // true = a faixa de abas tratou a entrada deste passo
     void desenharClima(ke::Renderer2D& r);  // fase 18: chuva, neve e raios por cima do mundo
     void verificarGravacao(bool esperar);
     void darPresenteNaConversa();
@@ -150,6 +152,7 @@ private:
     bool mercadoCorvin_ = false;  // fase 20: o painel do mercado aberto na banca do Corvin (só vende e encomenda)
     int abaMercado_ = 0, selMercado_ = 0, rolagemMercado_ = 0;
     int abaLivro_ = 0;  // a última aba do Livro aberta
+    int selFamilia_ = 0, confirmarSucessao_ = 0;  // fase 21: a linha escolhida; o filho cuja sucessão espera confirmação
     std::string painel_;  // id da construção com o painel aberto ("" = fechado)
     int selPainel_ = 0;
     int selPausa_ = 0;

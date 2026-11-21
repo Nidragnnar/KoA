@@ -137,8 +137,17 @@ Saída da auditoria da versão 1.8 (problemas E1 a E11). Nada novo para jogar; o
 - **Balanceamento**: o jogador automático vende a comida que passa de 8 dias e compra pedra no mercado. Em 120 dias: perto de 4.000 de comida vendida (cerca de 2.000 de ouro); a comida ainda vale 0,64 de ouro a unidade no fim. Sem alarmes nos 4 ritmos.
 - Fica para depois: a escala de texto dentro dos painéis grandes (hoje só conversas, avisos e dicas), controle (gamepad) sobre a camada de ações, e mercadores de outras facções.
 
-### Próximas fases (plano da auditoria de 18/11/2026)
-- **Fase 21 — Linhagem.** Detalhes e critérios no relatório da auditoria.
+### Fase 21 — Linhagem (feita, versão 1.13)
+- **Tempo** (decisão do Nidragnnar): o dia a dia não muda; os filhos chegam à maioridade em 28 dias (um ano de jogo) e, na sucessão, a história salta 15 anos. O relógio não pula: o salto é de anos do reino (o painel mostra o "Ano N do reino").
+- **Casamento** (tecla Y, `Data/Kingdom/linhagem.json`): com um morador de 7 corações (Bram, Edda, Maelis, Oswin ou Tilda, cada um com o seu traço) ou, por política, com alguém de uma facção aliada (Hilda dos anões, Arin da Ordem, Sera do Culto), que traz dote e irrita o rival. A festa custa 40 de comida e 60 de ouro e alegra o reino.
+- **Filhos**: o primeiro nasce 7 dias depois do casamento, os outros a cada 14 (até 3). Na maioridade, cada um ganha dois traços: um herdado (do herdeiro ou do cônjuge) e um do **tutor**, o conselheiro escolhido no painel (Marechal ensina Valente, Mestre da Moeda Astuto, Intendente Frugal, Mestre das Obras Sábio). Tutor com lealdade baixa não ensina: vem um traço sorteado, que pode ser ruim (Frágil, Impetuoso).
+- **Traços** que mudam o jogo: Valente (+25 de vida), Forte (+3 de dano), Carismático (+3 de felicidade), Astuto (-5% na taxa do mercado e mais chance de pegar desvio), Frugal (o povo come 10% menos), Sábio (+1 nas expedições), Devoto (fama de devoto por noite), Frágil e Impetuoso. O fundador, Aren, é Valente; saves antigos viram a primeira geração.
+- **Sucessão**: com um filho adulto, a coroa passa (pede confirmação). O conselho reage (o tutor de quem sobe +10 de lealdade; pular o mais velho, -6), os vizinhos reagem aos traços de quem sobe, e o salto faz o povo esquecer 30% da fama e os vizinhos voltarem 30% ao que eram. O reino inteiro continua (obras, recursos, povo, tratados). Com 120 dias de reinado o herdeiro envelhece; com 168 morre, e a coroa passa sozinha para o filho adulto mais velho (sem filho adulto, ele segue no trono).
+- **Crônicas por reinado** e um título novo (Herdeiro da Dinastia). O brasão passa de geração. Falas novas de Bram, Edda, Maelis e Oswin.
+- Fica para depois: arte própria para crianças e para cada herdeiro (hoje o herói tem a mesma aparência), filhos andando pela vila, casamento dos filhos com gente das facções, regência quando ninguém pode herdar.
+
+### Depois do plano da auditoria (para decidir mais tarde)
+- Guarda Real (P3.4), Mundo vivo (P3.5), combate com escolhas (P2.5) em paralelo à arte, segundo e terceiro atos (P4.1), regiões novas (P4.2) e a Quinta Era como desfecho (P4.3).
 ### Depois da 2.0 (para decidir mais tarde)
 - Linhagem: casamento, herdeiros, envelhecimento e sucessão.
 - Mais facções e diplomacia (elfos, tribos do norte) e conflitos entre elas no mapa.
@@ -147,6 +156,6 @@ Saída da auditoria da versão 1.8 (problemas E1 a E11). Nada novo para jogar; o
 
 ## Notas técnicas
 
-- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`), a 14 para a v9 (`guild.json`), a 15 para a v10 (`life.json`), a 16 para a v11 (`castle.json`), a 17 para a v12 (a semente do sorteio no `metadata.json`) a 18 para a v13 (`people.json`) a 19 para a v14 (`factions.json`) e a 20 para a v15 (`market.json`).
+- Cada fase que mudar o que é salvo sobe a versão do save (5, 6...), sempre com migração dos saves antigos e teste com cópia de save real. A fase 11 levou o save para a v6 (`regions.json`) a 12 para a v7 (`council.json`) a 13 para a v8 (`defense.json`), a 14 para a v9 (`guild.json`), a 15 para a v10 (`life.json`), a 16 para a v11 (`castle.json`), a 17 para a v12 (a semente do sorteio no `metadata.json`) a 18 para a v13 (`people.json`) a 19 para a v14 (`factions.json`) a 20 para a v15 (`market.json`) e a 21 para a v16 (`family.json`).
 - Conteúdo (crônicas, títulos, eventos, cargos, estações) em JSON dentro de `Data/`, como missões e diálogos hoje.
 - O roteiro ponta a ponta ganha etapas a cada fase; a arte nova vem do NidraIA em sessão separada.

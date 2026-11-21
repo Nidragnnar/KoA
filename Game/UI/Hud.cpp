@@ -176,8 +176,9 @@ void Hud::desenhar(ke::Renderer2D& r, const World& w, float tempo) {
         r.retangulo(b + glm::vec2(5, 4), {1, 6}, cor::ouro);
         f_.desenhar(r, "Livro", b + glm::vec2(14, 3), cor::texto);
         cliques.area(b, s, ID_LIVRO);
-        areaDica(b, s, "Livro do Reino (" + teclaLivro_ + "): reino, mercado, terras, conselho, povo, vizinhos, diário, crônicas e avisos.");
+        areaDica(b, s, "Livro do Reino (" + teclaLivro_ + "): reino, mercado, terras, conselho, povo, vizinhos, família, diário, crônicas e avisos.");
     }
+    dicasDoHud_ = dicas_.size();
 
     // Avisos: no canto de baixo, à esquerda, o mais novo embaixo (fase 17: o meio da tela fica para o herói)
     acertarRelogio(w.relogio);
@@ -592,7 +593,15 @@ void Hud::cronicas(ke::Renderer2D& r, const World& w, int aba, int rolagem, int 
         const auto& c = w.cronicas;
         for (int i = std::max(0, rolagem); i < static_cast<int>(c.size()); ++i) {
             const auto linhas = quebrarLinhas(f_, c[i].texto, largura - 70);
-            if (y + 11.0f * linhas.size() > fim) break;
+            // Fase 21: depois da primeira sucessão, as páginas se dividem por reinado
+            const bool cabecalho = w.linhagem.reinado > 1 && (i == std::max(0, rolagem) || c[i].reinado != c[i - 1].reinado);
+            if (y + 11.0f * linhas.size() + (cabecalho ? 13.0f : 0.0f) > fim) break;
+            if (cabecalho) {
+                const auto rei = std::ranges::find(w.linhagem.membros, c[i].reinado, &Membro::reinou);
+                f_.desenhar(r, std::format("— {}º reinado: {} —", c[i].reinado, rei != w.linhagem.membros.end() ? rei->nome : std::string("?")),
+                            {p.x + 20, y}, cor::ouro * glm::vec4(1, 1, 1, 0.85f));
+                y += 13;
+            }
             f_.desenhar(r, c[i].dia > 0 ? std::format("Dia {}", c[i].dia) : "Antes", {p.x + 20, y}, cor::ouro);
             for (const auto& l : linhas) f_.desenhar(r, l, {p.x + 90, y}, cor::texto), y += 11;
             y += 6;
@@ -1617,7 +1626,7 @@ void Hud::painelMercado(ke::Renderer2D& r, const World& w, bool corvin, int aba,
     f_.desenharCentralizado(r, corvin ? "Banca do Corvin" : "Mercado de Valdren", {320, p.y + 11}, cor::ouro);
     f_.desenharCentralizado(r,
                             std::format("Ouro {}   negócios hoje {}/{}   taxa {:.0f}%   {}", w.inventario.quantidade("ouro"), w.mercado.negociadosHoje,
-                                        dm.limite(corvin ? 1 : nivel), dm.taxa(nivel) * 100, w.estacaoAtual().nome),
+                                        dm.limite(corvin ? 1 : nivel), w.taxaMercado(corvin) * 100, w.estacaoAtual().nome),
                             {320, p.y + 23}, cor::apagado);
     float y = p.y + 34;
     if (corvin) {  // abas: vender e encomendas (ids 900 e 901)
@@ -1755,10 +1764,12 @@ void Hud::abasLivro(ke::Renderer2D& r, const std::vector<std::string>& nomes, co
     }
 }
 
-void Hud::desenharDica(ke::Renderer2D& r, glm::vec2 mouse) {
+void Hud::desenharDica(ke::Renderer2D& r, glm::vec2 mouse, bool soPaineis) {
     const Dica* d = nullptr;
-    for (const Dica& x : dicas_)  // a última registrada vence (fica por cima)
+    for (size_t i = soPaineis ? dicasDoHud_ : 0; i < dicas_.size(); ++i) {  // a última registrada vence (fica por cima)
+        const Dica& x = dicas_[i];
         if (mouse.x >= x.min.x && mouse.y >= x.min.y && mouse.x < x.max.x && mouse.y < x.max.y) d = &x;
+    }
     if (!d) return;
     const int esc = escalaTexto_;
     const auto ls = quebrarLinhas(f_, d->texto, esc == 2 ? 150 : 260);
@@ -1772,4 +1783,122 @@ void Hud::desenharDica(ke::Renderer2D& r, glm::vec2 mouse) {
     r.contorno(o, {largura + 10, alt}, cor::borda);
     for (size_t i = 0; i < ls.size(); ++i) f_.desenhar(r, ls[i], o + glm::vec2(5, 4 + i * (esc == 2 ? 18.0f : 11.0f)), cor::texto, true, esc);
 }
+
+// ---------- Fase 21: a família ----------
+
+std::vector<std::string> Hud::acoesFamilia(const World& w) const {
+    std::vector<std::string> v;
+    const Membro& h = w.herdeiro();
+    const Membro* c = w.linhagem.membro(h.conjuge);
+    if (!c || !c->vivo)
+        for (const ConjugeDef& cj : dados_.linhagem.conjuges) v.push_back("c:" + cj.id());
+    for (const Membro* f : w.linhagem.filhosDe(h.id))
+        if (f->vivo) v.push_back(std::string(f->adulto ? "s:" : "t:") + std::to_string(f->id));
+    return v;
+}
+
+void Hud::painelFamilia(ke::Renderer2D& r, const World& w, int sel, int confirmar, float tempo) {
+    r.retangulo({0, 0}, {640, 360}, {0, 0, 0, 0.5f});
+    const glm::vec2 p{50, 18}, s{540, 324};
+    desenharPainel(r, p, s);
+    painelClicavel(p, s);
+    const DadosLinhagem& dl = dados_.linhagem;
+    const Membro& h = w.herdeiro();
+    f_.desenharCentralizado(r, "A Linhagem de Valdren", {320, p.y + 11}, cor::ouro);
+    const int dias = w.diasDeReinado();
+    f_.desenharCentralizado(r,
+                            std::format("Ano {} do reino   {}º reinado: {} reina há {} dia{}{}", w.anoDoReino(), w.linhagem.reinado, h.nome, dias,
+                                        dias == 1 ? "" : "s", dias >= dl.reinadoVelho ? " (envelhecendo)" : ""),
+                            {320, p.y + 23}, dias >= dl.reinadoVelho ? cor::ruim : cor::apagado);
+    r.retangulo({p.x + 12, p.y + 34}, {s.x - 24, 1}, cor::borda);
+    // A árvore: um reinado por linha (quem reinou e com quem casou); os filhos embaixo, ligados por um traço
+    float y = p.y + 40;
+    auto nomeComTracos = [&](const Membro& m) {
+        return m.nome + (m.adulto ? " (" + textoTracos(dl, m.tracos) + ")" : std::format(" (criança, {} dias)", w.relogio.dia - m.nasceu));
+    };
+    // Cabem os dois últimos reinados; os anteriores ficam nas Crônicas
+    const int primeiro = std::max(1, w.linhagem.reinado - 1);
+    if (primeiro > 1) {
+        f_.desenhar(r, std::format("... {} reinado{} antes (nas Crônicas)", primeiro - 1, primeiro > 2 ? "s" : ""), {p.x + 18, y}, cor::apagado);
+        y += 12;
+    }
+    for (int rn = primeiro; rn <= w.linhagem.reinado && y < p.y + 170; ++rn) {
+        const auto it = std::ranges::find(w.linhagem.membros, rn, &Membro::reinou);
+        if (it == w.linhagem.membros.end()) continue;
+        const Membro& rei = *it;
+        const Membro* cj = w.linhagem.membro(rei.conjuge);
+        const bool atual = rei.id == h.id;
+        if (atual) r.retangulo({p.x + 12, y - 2}, {s.x - 24, 12}, {0.45f, 0.36f, 0.22f, 0.35f});
+        std::string linha = std::format("{}º  {}", rn, nomeComTracos(rei));
+        if (cj) linha += "  +  " + nomeComTracos(*cj);
+        if (!rei.vivo) linha += "  †";
+        f_.desenhar(r, caber(f_, linha, static_cast<int>(s.x) - 40), {p.x + 18, y}, atual ? cor::ouro : cor::texto);
+        y += 12;
+        const auto filhos = w.linhagem.filhosDe(rei.id);
+        if (filhos.empty()) continue;
+        // Um filho por linha, ligado ao pai por um traço
+        const float topo = y - 3;
+        for (const Membro* f : filhos) {
+            if (y > p.y + 160) break;
+            r.retangulo({p.x + 30, y + 3}, {8, 1}, cor::borda);
+            const std::string fl = nomeComTracos(*f) + (f->reinou ? " [reinou]" : "") + (f->vivo ? "" : " †");
+            f_.desenhar(r, caber(f_, fl, static_cast<int>(s.x) - 70), {p.x + 42, y}, f->reinou ? cor::texto : cor::apagado);
+            y += 11;
+        }
+        r.retangulo({p.x + 30, topo}, {1, y - 7 - topo}, cor::borda);
+        y += 2;
+    }
+    // O que os traços de quem reina fazem
+    std::string efeitos;
+    for (const auto& t : h.tracos)
+        if (const TracoLinhagem* x = dl.traco(t)) efeitos += (efeitos.empty() ? "" : "  ") + x->descricao;
+    f_.desenhar(r, caber(f_, "Quem reina: " + (efeitos.empty() ? std::string("sem traços.") : efeitos), static_cast<int>(s.x) - 36), {p.x + 18, p.y + 172},
+                cor::bom);
+    r.retangulo({p.x + 12, p.y + 184}, {s.x - 24, 1}, cor::borda);
+    // As ações: casar, escolher tutor, passar a coroa
+    const auto acoes = acoesFamilia(w);
+    y = p.y + 190;
+    if (acoes.empty())
+        f_.desenhar(r, h.conjuge ? std::format("Casado com {}. O próximo filho nasce em {} dias.", w.linhagem.membro(h.conjuge)->nome,
+                                               std::max(0, w.linhagem.proximoNascimento - w.relogio.dia))
+                                 : "Ninguém para casar.",
+                    {p.x + 18, y}, cor::apagado);
+    for (int k = 0; k < static_cast<int>(acoes.size()) && y < p.y + s.y - 26; ++k, y += 14) {
+        const std::string& a = acoes[k];
+        const std::string id = a.substr(2);
+        std::string texto, estado;
+        bool pode = false;
+        if (a.starts_with("c:")) {
+            const ConjugeDef* cj = dl.conjuge(id);
+            const std::string falta = w.podeCasar(id);
+            pode = falta.empty();
+            texto = std::format("Casar com {} ({})", w.nomeConjuge(*cj), dl.traco(cj->traco)->nome);
+            estado = pode ? (cj->dote.empty() ? "E casa" : "E casa (traz dote)") : falta;
+        } else {
+            const Membro* f = w.linhagem.membro(std::stoi(id));
+            if (a.starts_with("t:")) {
+                const CargoDef* cargo = dados_.conselho.cargo(f->tutor);
+                const std::string tutor = cargo ? cargo->nome + " (" + dados_.npcs.at(w.ocupante(f->tutor)).nome + ")" : "nenhum";
+                texto = std::format("Tutor de {}: {}", f->nome, tutor);
+                estado = f->tutor.empty() ? "E escolhe" : std::format("ensina: {}", dl.traco(dl.tutores.at(f->tutor))->nome);
+                pode = true;
+            } else {
+                const std::string falta = w.podeSuceder(f->id);
+                pode = falta.empty();
+                texto = std::format("Passar a coroa para {}", f->nome);
+                estado = confirmar == f->id ? "E de novo: confirmar!" : pode ? std::format("E passa ({} anos depois)", dl.saltoAnos) : falta;
+            }
+        }
+        const bool s1 = k == sel;
+        if (s1) r.retangulo({p.x + 12, y - 2}, {s.x - 24, 13}, {0.45f, 0.36f, 0.22f, 0.4f + 0.05f * std::sin(tempo * 4.0f)});
+        cliques.area({p.x + 12, y - 2}, {s.x - 24, 13}, k);
+        marcaSimNao(r, {p.x + 16, y}, pode);
+        f_.desenhar(r, caber(f_, texto, 290), {p.x + 28, y}, s1 ? cor::ouro : cor::texto);
+        f_.desenhar(r, caber(f_, estado, static_cast<int>(s.x) - 340), {p.x + s.x - 16 - std::min(static_cast<int>(s.x) - 340, f_.largura(estado)), y},
+                    confirmar > 0 && a == "s:" + std::to_string(confirmar) ? cor::ruim : pode ? cor::ouro : cor::apagado);
+    }
+    f_.desenharCentralizado(r, "W/S ou mouse escolher   E ou clique fazer   Y ou Esc fechar", {320, p.y + s.y - 10}, cor::apagado);
+    rodapeFechar("Y ou Esc fechar", {320 + f_.largura("W/S ou mouse escolher   E ou clique fazer   ") / 2.0f, p.y + s.y - 10});
+}
+
 }

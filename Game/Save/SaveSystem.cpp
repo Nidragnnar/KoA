@@ -25,7 +25,7 @@ struct ModuloSave {
 };
 constexpr ModuloSave MODULOS[] = {{"npcs", 2},     {"relationships", 2}, {"quests", 4},  {"chronicles", 5}, {"regions", 6},
                                   {"council", 7},  {"defense", 8},       {"guild", 9},   {"life", 10},      {"castle", 11},
-                                  {"people", 13}, {"factions", 14}, {"market", 15}};
+                                  {"people", 13}, {"factions", 14}, {"market", 15}, {"family", 16}};
 
 std::filesystem::path comSufixo(std::filesystem::path p, const char* sufixo) {
     p += sufixo;
@@ -90,7 +90,7 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
     json jNpcs = {{"moradores", npcs}};
     json jRel = {{"afinidades", relacoes}};
     json paginas = json::array();
-    for (const auto& c : d.cronicas) paginas.push_back({{"marco", c.marco}, {"dia", c.dia}, {"era", c.era}, {"texto", c.texto}});
+    for (const auto& c : d.cronicas) paginas.push_back({{"marco", c.marco}, {"dia", c.dia}, {"era", c.era}, {"texto", c.texto}, {"reinado", c.reinado}});
     json cronicas = {{"cronicas", paginas}};
     json jRegioes = json::object();
     for (const auto& [id, e] : d.regioes)
@@ -136,11 +136,20 @@ bool SaveSystem::salvar(const DadosSave& d, const std::string& slot, std::string
     json mercado = {{"pressao", d.mercado.pressao}, {"historico", d.mercado.historico}, {"negociados_hoje", d.mercado.negociadosHoje},
                     {"encomendas", encs}, {"vendido", d.mercado.vendido}, {"comprado", d.mercado.comprado}};
 
+    json membros = json::array();
+    for (const Membro& m : d.linhagem.membros)
+        membros.push_back({{"id", m.id}, {"nome", m.nome}, {"tracos", m.tracos}, {"genitor", m.genitor}, {"outro_genitor", m.outroGenitor},
+                           {"conjuge", m.conjuge}, {"npc", m.npc}, {"faccao", m.faccao}, {"nasceu", m.nasceu}, {"reinado", m.reinado},
+                           {"reinou", m.reinou}, {"vivo", m.vivo}, {"adulto", m.adulto}, {"tutor", m.tutor}});
+    const Linhagem& lg = d.linhagem;
+    json familia = {{"membros", membros}, {"atual", lg.atual}, {"reinado", lg.reinado}, {"inicio_reinado", lg.inicioReinado},
+                    {"anos_saltados", lg.anosSaltados}, {"proximo_id", lg.proximoId}, {"proximo_nascimento", lg.proximoNascimento}};
+
     const std::pair<const char*, const json*> arquivos[] = {
         {"player.json", &player}, {"inventory.json", &inv}, {"kingdom.json", &reino}, {"world.json", &mundo},
         {"npcs.json", &jNpcs}, {"relationships.json", &jRel}, {"quests.json", &quests}, {"chronicles.json", &cronicas},
         {"regions.json", &regioes}, {"council.json", &conselho}, {"defense.json", &defesa}, {"guild.json", &guilda}, {"life.json", &vida},
-        {"castle.json", &castelo}, {"people.json", &pessoas}, {"factions.json", &vizinhos}, {"market.json", &mercado},
+        {"castle.json", &castelo}, {"people.json", &pessoas}, {"factions.json", &vizinhos}, {"market.json", &mercado}, {"family.json", &familia},
         {"metadata.json", &meta}};  // metadata por último: só existe save "válido" quando tudo foi gravado
     // Fase 17: o save inteiro vai para uma pasta nova e só então troca de lugar com o antigo (que vira o backup).
     // Uma queda no meio nunca mistura arquivos de dois momentos diferentes
@@ -242,6 +251,11 @@ json SaveSystem::migrar(json tudo, int deVersao) {
         tudo["market"] = {{"padrao", true}};
         deVersao = 15;
     }
+    if (deVersao < 16) {
+        // v15 não tinha a família: o herdeiro vira o fundador, a primeira geração
+        tudo["family"] = {{"padrao", true}};
+        deVersao = 16;
+    }
     tudo["metadata"]["versao_formato"] = deVersao;
     return tudo;
 }
@@ -303,7 +317,8 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
         const json& jc = tudo["chronicles"];
         d.temCronicas = !jc.value("reconstruir", false);
         for (const auto& c : jc.value("cronicas", json::array()))
-            d.cronicas.push_back({c.value("marco", ""), std::max(0, c.value("dia", 0)), std::clamp(c.value("era", 0), 0, 3), c.value("texto", "")});
+            d.cronicas.push_back({c.value("marco", ""), std::max(0, c.value("dia", 0)), std::clamp(c.value("era", 0), 0, 3), c.value("texto", ""),
+                                  std::max(1, c.value("reinado", 1))});
         const json& jreg = tudo["regions"];
         d.temRegioes = !jreg.value("padrao", false);
         const json regioes = jreg.value("regioes", json::object());  // variável: .items() de temporário quebra
@@ -375,6 +390,32 @@ std::optional<DadosSave> SaveSystem::lerPasta(const std::filesystem::path& dir, 
             const json& jr = jfac["reputacao"];
             d.reputacao = {jr.value("justica", 0.0f), jr.value("generosidade", 0.0f), jr.value("devocao", 0.0f)};
         }
+        const json& jfam = tudo["family"];
+        d.temLinhagem = !jfam.value("padrao", false);
+        for (const auto& jm : jfam.value("membros", json::array())) {
+            Membro mb;
+            mb.id = jm.value("id", 0);
+            mb.nome = jm.value("nome", "");
+            mb.tracos = jm.value("tracos", std::vector<std::string>{});
+            mb.genitor = jm.value("genitor", 0);
+            mb.outroGenitor = jm.value("outro_genitor", 0);
+            mb.conjuge = jm.value("conjuge", 0);
+            mb.npc = jm.value("npc", "");
+            mb.faccao = jm.value("faccao", "");
+            mb.nasceu = jm.value("nasceu", 0);
+            mb.reinado = std::max(1, jm.value("reinado", 1));
+            mb.reinou = std::max(0, jm.value("reinou", 0));
+            mb.vivo = jm.value("vivo", true);
+            mb.adulto = jm.value("adulto", true);
+            mb.tutor = jm.value("tutor", "");
+            if (mb.id > 0) d.linhagem.membros.push_back(std::move(mb));
+        }
+        d.linhagem.atual = jfam.value("atual", 0);
+        d.linhagem.reinado = std::max(1, jfam.value("reinado", 1));
+        d.linhagem.inicioReinado = jfam.value("inicio_reinado", 1);
+        d.linhagem.anosSaltados = std::max(0, jfam.value("anos_saltados", 0));
+        d.linhagem.proximoId = std::max(1, jfam.value("proximo_id", 1));
+        d.linhagem.proximoNascimento = std::max(0, jfam.value("proximo_nascimento", 0));
         const json& jmer = tudo["market"];
         d.temMercado = !jmer.value("padrao", false);
         d.mercado.pressao = jmer.value("pressao", std::map<std::string, float>{});

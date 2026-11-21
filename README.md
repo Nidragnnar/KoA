@@ -6,7 +6,7 @@ era a era, até a **Alta Fantasia**.
 
 Engine própria em **C++20 + SDL3 + OpenGL 3.3** (Kingdom Engine), com EnTT, Dear ImGui, nlohmann/json e GoogleTest.
 
-## Versão 1.12
+## Versão 1.13
 
 A 2.0 está em andamento (identidade e plano em `docs/VISAO_2.0.md`). A fase 9 trouxe as Crônicas do Reino
 (tecla C), os títulos do herdeiro, o mercador viajante, três monumentos e o começo do mistério da Queda das Cinzas.
@@ -52,6 +52,10 @@ com taxa e limite por dia, e o Corvin compra também e traz encomendas. O Livro 
 junta os painéis em abas; o mouse mostra dicas nos números, há texto grande, velocidade do texto e teclas trocáveis
 (Opções → Controles), e a prévia de obra mostra ✓ ou ✗ além da cor. Cada ala do castelo ganhou uma ação (festa,
 empréstimo, treino da guarda, decifrar fragmentos) e cada região, os seus sons de fundo.
+A fase 21 trouxe a linhagem (tecla Y): o herdeiro casa com um morador de amizade alta ou, por política, com alguém de
+uma facção aliada; os filhos nascem, crescem em cerca de um ano de jogo e herdam um traço dos pais e outro do tutor
+(um conselheiro). Com um filho adulto, a coroa passa e a história salta 15 anos: o reino continua, o novo herdeiro
+joga com os próprios traços e as Crônicas se dividem por reinado. Quem reina demais envelhece e morre.
 
 As 8 fases do plano de arquitetura da 1.0 estão feitas:
 
@@ -77,6 +81,7 @@ As 8 fases do plano de arquitetura da 1.0 estão feitas:
 | N | mensagens (os últimos avisos, com dia e hora) |
 | P | o povo (todos os habitantes; clique para a ficha) |
 | T | os vizinhos: tratados, missões das facções e a fama do herdeiro |
+| Y | a família: árvore da linhagem, casamento, tutores e a sucessão |
 | Opções → Controles | trocar qualquer tecla acima (fica no config.json) |
 | Esc | menu (salvar, opções, controles, título, sair) |
 | F5 | salvar |

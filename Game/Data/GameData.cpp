@@ -184,7 +184,8 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
              {"NPCs/povo.json", [&](const nlohmann::json& jj) { return lerPovo(jj, povo, erro); }},
              {"World/clima.json", [&](const nlohmann::json& jj) { return lerClima(jj, clima, erro); }},
              {"Kingdom/faccoes.json", [&](const nlohmann::json& jj) { return lerFaccoes(jj, faccoes, erro); }},
-             {"Kingdom/mercado.json", [&](const nlohmann::json& jj) { return lerMercado(jj, mercado, erro); }}}) {
+             {"Kingdom/mercado.json", [&](const nlohmann::json& jj) { return lerMercado(jj, mercado, erro); }},
+             {"Kingdom/linhagem.json", [&](const nlohmann::json& jj) { return lerLinhagem(jj, linhagem, erro); }}}) {
         const auto texto = ke::fs::lerTexto(pasta / arq);
         const auto jj = texto ? nlohmann::json::parse(*texto, nullptr, false) : nlohmann::json();
         if (!texto || jj.is_discarded()) {
@@ -196,6 +197,17 @@ bool GameData::carregar(const std::filesystem::path& pasta, std::string* erro) {
     for (const MissaoDef& m : missoes)
         if (!m.faccao.empty() && !faccoes.faccao(m.faccao)) {
             if (erro) *erro = "missão " + m.id + " de facção desconhecida: " + m.faccao;
+            return false;
+        }
+    // Fase 21: cônjuges e tutores que existem (morador, facção, cargo)
+    for (const ConjugeDef& cj : linhagem.conjuges)
+        if ((!cj.npc.empty() && !npcs.contains(cj.npc)) || (!cj.faccao.empty() && !faccoes.faccao(cj.faccao))) {
+            if (erro) *erro = "linhagem: cônjuge desconhecido: " + cj.id();
+            return false;
+        }
+    for (const auto& [cargo, t] : linhagem.tutores)
+        if (std::ranges::none_of(conselho.cargos, [&](const CargoDef& x) { return x.id == cargo; })) {
+            if (erro) *erro = "linhagem: tutor de cargo desconhecido: " + cargo;
             return false;
         }
     for (const ProfissaoDef& p : povo.profissoes)

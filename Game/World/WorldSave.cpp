@@ -92,6 +92,9 @@ DadosSave World::capturar() const {
     d.emprestimoVolta = emprestimoVolta;
     d.emprestimoValor = emprestimoValor;
     d.emprestimoDia = emprestimoDia;
+    // Fase 21
+    d.temLinhagem = true;
+    d.linhagem = linhagem;
     return d;
 }
 
@@ -297,6 +300,18 @@ void World::aplicar(const DadosSave& d) {
     emprestimoVolta = d.emprestimoVolta;
     emprestimoValor = d.emprestimoValor;
     emprestimoDia = d.emprestimoDia;
+    // Fase 21: a família (saves antigos: o fundador, primeira geração; família quebrada também volta a ser só o fundador)
+    if (d.temLinhagem && d.linhagem.membro(d.linhagem.atual)) {
+        linhagem = d.linhagem;
+        int maior = 0;
+        for (const Membro& m : linhagem.membros) maior = std::max(maior, m.id);
+        linhagem.proximoId = std::max(linhagem.proximoId, maior + 1);
+        aplicarTracos();
+    } else {
+        const int vida = jogador.vida;
+        iniciarLinhagem();
+        jogador.vida = std::clamp(vida, 1, jogador.vidaMax);
+    }
     atualizarPistas();
     atualizarEspeciais();
     atualizarMeteorito();

@@ -340,6 +340,7 @@ public:
     bool corvinNaVila() const;
     std::vector<const BemDef*> bensNoMercado(bool corvin) const;  // o que aparece no painel (itens só se o herdeiro tiver)
     float precoHoje(const std::string& bem) const;                // uma unidade, hoje (sem a taxa)
+    float taxaMercado(bool corvin) const;
     int precoCompraLote(const std::string& bem) const;
     int precoVendaLote(const std::string& bem, bool corvin = false) const;
     std::string podeNegociar(const std::string& bem, bool comprar, bool corvin = false) const;  // "" = pode; senão o motivo
@@ -359,6 +360,23 @@ public:
     int diasParaAgir(const std::string& ala) const;         // 0 = pronta
     bool agirAla(const std::string& ala);
     void manhaDasAlas(std::vector<std::string>& notas);
+    // Fase 21: a linhagem (família, casamento, filhos, tutores e sucessão com salto de anos)
+    Linhagem linhagem;
+    void iniciarLinhagem();  // jogo novo e saves de antes da família: o fundador, primeira geração
+    const Membro& herdeiro() const;
+    EfeitosTracos efeitosHerdeiro() const;
+    void aplicarTracos();  // a vida máxima de quem reina
+    int afinidadeCom(const std::string& npc) const;
+    std::string nomeConjuge(const ConjugeDef& c) const;
+    std::string podeCasar(const std::string& conjuge) const;  // "" = pode; senão o motivo
+    bool casar(const std::string& conjuge);
+    bool definirTutor(int filho, const std::string& cargo);  // "" = sem tutor
+    std::string podeSuceder(int filho) const;
+    bool passarCoroa(int filho, bool natural = false);
+    int maisVelho() const;  // o filho adulto e vivo mais velho de quem reina (0 = nenhum)
+    int diasDeReinado() const { return relogio.dia - linhagem.inicioReinado; }
+    int anoDoReino() const { return relogio.ano() + linhagem.anosSaltados; }
+    void noiteDaLinhagem(std::vector<std::string>& notas);
 
     const std::vector<ke::AABB>& obstaculos() const;  // fase 17: em cache (refeito só quando algo muda)
     std::vector<ke::AABB> calcularObstaculos() const;  // o cálculo completo, sem cache (os testes comparam os dois)

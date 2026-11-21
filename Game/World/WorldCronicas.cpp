@@ -15,7 +15,7 @@ bool World::marcar(const std::string& marco, const std::string& nome, bool silen
     auto it = paginas.find(marco);
     if (const auto dp = marco.find(':'); it == paginas.end() && dp != std::string::npos) it = paginas.find(marco.substr(0, dp + 1) + "*");
     if (it != paginas.end()) {
-        EntradaCronica c{marco, relogio.dia, static_cast<int>(reino.eraAlvo()), preencher(it->second, {{"nome", nome}})};
+        EntradaCronica c{marco, relogio.dia, static_cast<int>(reino.eraAlvo()), preencher(it->second, {{"nome", nome}}), linhagem.reinado};
         cronicas.push_back(c);
         if (!silencioso) eventos_.push_back({EventoJogo::Tipo::Cronica, jogador.pos, marco, "", 0, c.texto});
     }

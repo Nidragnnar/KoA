@@ -43,6 +43,8 @@ CONTROLES
                        vizinhos, diário, crônicas e avisos (clique nas abas
                        embaixo, ou Tab de novo). Também no botão "Livro" no canto.
   V .................. mercado (comprar e vender; precisa construir o mercado)
+  Y .................. a família: casar, escolher o tutor dos filhos e passar a
+                       coroa (passar a coroa pede E duas vezes: não tem volta)
   Mouse parado em cima dos números mostra uma dica.
   Esc ................ menu (continuar, salvar, opções, controles, título, sair)
   F5 ................. salvar

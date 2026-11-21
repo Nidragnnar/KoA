@@ -126,7 +126,7 @@ TEST(Combate, DerrotadoAcordaEmCasaNoDiaSeguinte) {
     ASSERT_TRUE(std::ranges::any_of(ev, [](const EventoJogo& e) { return e.tipo == EventoJogo::Tipo::HeroiDerrotado; }));
     w.reviver();
     EXPECT_TRUE(w.noVilarejo());
-    EXPECT_EQ(w.jogador.vida, 100);
+    EXPECT_EQ(w.jogador.vida, w.jogador.vidaMax) << "acorda com a vida cheia (125: o fundador é Valente)";
     EXPECT_EQ(w.relogio.dia, 2);
 }
 

@@ -75,9 +75,9 @@ captura: 21_missao_aceita
 captura: 22_floresta
 captura: 23_combate
 [OK] 5 sombras derrotadas: missão cumprida
-[OK] o lobo fere o herói (vida 89)
+[OK] o lobo fere o herói (vida 114)
 captura: 24_ferido
-[OK] H come e recupera vida (89 -> 100)
+[OK] H come e recupera vida (114 -> 125)
 [OK] a escada leva à cripta
 captura: 25_cripta
 captura: 26_chefe
@@ -283,4 +283,16 @@ captura: 97_texto_grande
 captura: 98_controles
 [OK] Restaurar volta o W
 [OK] Esc volta das opções e do menu
+[OK] Y abre a família
+captura: 99_familia
+[OK] E casa o herdeiro com a Edda
+[OK] o primeiro filho nasce 7 dias depois do casamento
+[OK] o filho cresceu com o Mestre da Moeda: Carismático, Astuto
+captura: 100_familia_herdeiro
+[OK] o primeiro E só pede confirmação
+[OK] a coroa passou para Hugo (ano 20 do reino) e o reino continua
+captura: 101_sucessao
+[OK] as Crônicas abrem o segundo reinado
+captura: 102_cronicas_reinados
+[OK] Esc fecha as Crônicas
 RESULTADO: 0 falha(s)

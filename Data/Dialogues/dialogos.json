@@ -2,7 +2,9 @@
   "_como_funciona": "Para cada morador vale a PRIMEIRA entrada cujas condições batem (de cima para baixo). Condições: primeiro_encontro, ja_falou_hoje, periodo (manha/tarde/noite), estacao (primavera/verao/outono/inverno), casa_nivel_min, afinidade_min, era_min, marco (só depois do acontecimento), sem_marco (só antes), pistas_min (fragmentos da Queda achados), festival (na hora da festa), evento (acontecimento do dia: lua_sangue, aurora, meteoros). 'uma_vez': a entrada vira lembrança e não se repete. {titulo} vira o título atual do herdeiro.",
   "dialogos": {
     "bram": [
-      { "id": "bram_fama_justo", "uma_vez": true, "se": { "marco": "fama:justo" }, "falas": [
+      { "id": "bram_casou", "uma_vez": true, "se": { "marco": "casou" }, "falas": [
+        "Casado, é? Forjei um par de alianças para o seu avô. Ainda sei fazer.",
+        "Felicidades, {titulo}. E não deixe o cônjuge chegar perto da minha bigorna."] },      { "id": "bram_fama_justo", "uma_vez": true, "se": { "marco": "fama:justo" }, "falas": [
         "Os anões de Pedra-Funda perguntaram de você. Disseram que o herdeiro de Valdren 'pesa certo'.",
         "Vindo de anão, isso é quase uma declaração de amor."] },
       { "id": "bram_fama_tirano", "uma_vez": true, "se": { "marco": "fama:tirano" }, "falas": [
@@ -43,7 +45,9 @@
       { "se": {}, "falas": ["A forja está fria há sete invernos. Ferro não cai do céu, majestade.", "Se as criaturas da floresta vierem de novo, quero uma lâmina decente na mão."] }
     ],
     "edda": [
-      { "id": "edda_fama_generoso", "uma_vez": true, "se": { "marco": "fama:generoso" }, "falas": [
+      { "id": "edda_filho", "uma_vez": true, "se": { "marco": "primeiro_filho" }, "falas": [
+        "Um bebê no castelo! Faz quanto tempo que Valdren não ouvia choro de criança feliz?",
+        "Vou guardar a melhor torta para o primeiro aniversário."] },      { "id": "edda_fama_generoso", "uma_vez": true, "se": { "marco": "fama:generoso" }, "falas": [
         "Na taverna só se fala de você. 'O herdeiro que divide o pão', dizem.",
         "Cuidado, que fama boa atrai pedinte. Mas hoje a rodada é por minha conta."] },
       { "id": "edda_fama_avarento", "uma_vez": true, "se": { "marco": "fama:avarento" }, "falas": [
@@ -87,7 +91,9 @@
       { "se": {}, "falas": ["Dizem que a floresta engole quem entra depois do anoitecer.", "Mas dizem tanta coisa... Disseram que você nunca voltaria!"] }
     ],
     "maelis": [
-      { "id": "maelis_fama_devoto", "uma_vez": true, "se": { "marco": "fama:devoto" }, "falas": [
+      { "id": "maelis_filho", "uma_vez": true, "se": { "marco": "primeiro_filho" }, "falas": [
+        "Abençoei a criança na capela. Ela não chorou quando a água tocou a testa.",
+        "Dizem que é sinal de quem vai enfrentar coisa pior que água fria."] },      { "id": "maelis_fama_devoto", "uma_vez": true, "se": { "marco": "fama:devoto" }, "falas": [
         "A Ordem Arcana me mandou uma carta. A primeira em vinte anos.",
         "Dizem que Valdren voltou a acender velas. Eu disse que foi você que acendeu."] },
       { "id": "maelis_fama_arcano", "uma_vez": true, "se": { "marco": "fama:arcano" }, "falas": [
@@ -141,7 +147,9 @@
       { "se": {}, "falas": ["Os mortos não pedem muito. Só que alguém lembre deles.", "O castelo ainda guarda segredos sob o entulho. Um dia vamos precisar deles."] }
     ],
     "oswin": [
-      { "id": "oswin_fama_justo", "uma_vez": true, "se": { "marco": "fama:justo" }, "falas": [
+      { "id": "oswin_sucessao", "uma_vez": true, "se": { "marco": "sucessao:2" }, "falas": [
+        "Servi quem reinou antes de você. Agora sirvo você.",
+        "Os anos passam rápido para quem guarda um portão, {titulo}. A coroa é sua. Que pese menos do que pesou para nós."] },      { "id": "oswin_fama_justo", "uma_vez": true, "se": { "marco": "fama:justo" }, "falas": [
         "Servi três reis. Nenhum deles ouvia o povo antes de decidir.",
         "Você ouve. Não sei se isso é sabedoria ou juventude, mas o povo chama de justiça."] },
       { "id": "oswin_desvio", "uma_vez": true, "se": { "marco": "decisao:desvio:prender" }, "falas": [

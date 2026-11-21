@@ -85,10 +85,14 @@ public:
     void marcaSimNao(ke::Renderer2D& r, glm::vec2 pos, bool sim);  // ✓ ou ✗ desenhados (além da cor)
     // Fase 20: o Livro do Reino (faixa de abas embaixo do painel; ids de clique 7100+aba) e o botão no canto (id 7000)
     static constexpr int ID_LIVRO = 7000, ID_ABA = 7100;
+    // Fase 21: a família. Linhas: "c:<cônjuge>" (casar), "t:<filho>" (tutor), "s:<filho>" (sucessão); ids de clique = índice.
+    // confirmar: o filho cuja sucessão espera o segundo E
+    std::vector<std::string> acoesFamilia(const World& w) const;
+    void painelFamilia(ke::Renderer2D& r, const World& w, int sel, int confirmar, float tempo);
     void abasLivro(ke::Renderer2D& r, const std::vector<std::string>& nomes, const std::vector<std::string>& teclas, int ativa);
     // Dicas ao passar o mouse: as áreas entram enquanto a interface é desenhada; a dica vai por cima de tudo no fim
     void areaDica(glm::vec2 pos, glm::vec2 tam, std::string texto) { dicas_.push_back({pos, pos + tam, std::move(texto)}); }
-    void desenharDica(ke::Renderer2D& r, glm::vec2 mouse);
+    void desenharDica(ke::Renderer2D& r, glm::vec2 mouse, bool soPaineis = false);  // soPaineis: as do HUD ficam por baixo do painel
     void limparDicas() { dicas_.clear(); }
     void definirEscalaTexto(int e) { escalaTexto_ = std::clamp(e, 1, 2); }
     int escalaTexto() const { return escalaTexto_; }
@@ -127,6 +131,7 @@ private:
         std::string texto;
     };
     std::vector<Dica> dicas_;
+    size_t dicasDoHud_ = 0;  // as primeiras são do HUD (recursos, data, botão do Livro)
     int escalaTexto_ = 1;  // fase 20: 2 = texto grande (conversas, avisos e dicas)
     std::string teclaLivro_ = "Tab";
 };

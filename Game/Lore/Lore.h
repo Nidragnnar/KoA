@@ -18,6 +18,7 @@ struct EntradaCronica {
     int dia = 0;  // 0 = antes das Crônicas (veio de um save antigo)
     int era = 0;
     std::string texto;
+    int reinado = 1;  // fase 21: em que reinado aconteceu (as Crônicas se dividem por reinado)
 };
 
 // O que é preciso para ganhar um título (vale tudo o que estiver preenchido)

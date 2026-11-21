@@ -197,6 +197,16 @@ O plano da 2.0 está em `docs/VISAO_2.0.md`.
 - **Save v15**: arquivo novo `market.json` (pressão, histórico, negócios do dia, encomendas, totais). As ações das alas foram para o `castle.json` (campos novos com padrão). Saves v1 a v14 começam com o mercado calmo.
 - **Testes**: 224 (11 novos: 9 do mercado e das alas e 2 da engine, ambiência e teclas) e o roteiro com a etapa 57 (mercado pela tecla, compra e venda, abas pelo clique e pelo Tab, o botão do Livro, texto grande com dica e a troca de tecla nos Controles).
 
+## Fase 21 — Linhagem (versão 1.13)
+
+- **Regras puras**: `Game/Kingdom/Linhagem.h` (`TracoLinhagem`, `EfeitosTracos`, `ConjugeDef`, `DadosLinhagem`; `Membro` e `Linhagem` são o que vai para o save; `tracosDaMaioridade` sorteia pela semente da partida e pelo id do filho, sempre igual).
+- **No mundo** (`Game/World/WorldLinhagem.cpp`): `World::linhagem`, `herdeiro()`, `efeitosHerdeiro()`, `podeCasar`/`casar`, `definirTutor`, `podeSuceder`/`passarCoroa`, `noiteDaLinhagem` (depois da virada do dia: nascimento, maioridade, velhice e a morte natural). O "herdeiro" deixou de ser fixo: o jogador é sempre o membro `linhagem.atual`, e `aplicarTracos` acerta a vida máxima. Os efeitos dos traços entram onde o jogo já somava bônus: `danoArma`, `modificadorReino` (felicidade e consumo), `margemSemSorte` (expedições), `taxaMercado` (nunca abaixo de 5%, para o mercado continuar sem lucro infinito) e a chance de descobrir um desvio.
+- **Salto**: a sucessão soma 15 a `linhagem.anosSaltados` (o relógio do jogo não muda, para nada que depende do dia quebrar); `anoDoReino()` mostra o ano da história.
+- **Crônicas**: `EntradaCronica::reinado`; o painel abre um cabeçalho a cada reinado depois da primeira sucessão.
+- **Interface**: `Painel::Familia` (tecla Y e aba "Família" do Livro), `Hud::painelFamilia`/`acoesFamilia` (linhas `c:`, `t:`, `s:`). Passar a coroa pede o segundo E. Com um painel aberto, as dicas do HUD ficam por baixo dele.
+- **Save v16**: arquivo novo `family.json`; páginas das Crônicas ganham `reinado`. Saves v1 a v15 viram a primeira geração (o fundador, Aren, Valente).
+- **Testes**: 231 (7 novos: dados, herança, casamento, filhos e tutor, sucessão sem perder o reino, morte natural e save v16) e o roteiro com a etapa 58 (casar pelo painel, nascimento, maioridade com o tutor, sucessão com confirmação e as Crônicas por reinado).
+
 ## Desvios (e por quê)
 
 | Documento | Feito | Motivo |

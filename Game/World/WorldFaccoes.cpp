@@ -184,6 +184,7 @@ void World::noiteDaIntriga(std::vector<std::string>& notas) {
     const std::string marechal = ocupante("marechal");
     if (!marechal.empty() && !desvios.contains(marechal) && lealdade[marechal] >= 50) chance += 25;
     if (std::ranges::find(alas, "biblioteca") != alas.end()) chance += 25;
+    chance += efeitosHerdeiro().descobrir;  // fase 21: o Astuto
     if (static_cast<int>(misturar(sementeBase_, static_cast<uint32_t>(relogio.dia) * 7919u) % 100u) >= chance) return;
     const auto maior = std::ranges::max_element(desvios, {}, &std::map<std::string, int>::value_type::second);
     suspeito = maior->first;

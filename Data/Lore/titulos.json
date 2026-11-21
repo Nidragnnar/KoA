@@ -19,6 +19,8 @@
       "requer": { "marcos": ["fama:tirano"], "construcoes_min": 6 } },
     { "id": "bem_amado", "nome": "O Bem-Amado", "descricao": "Generoso com quem chega: trinta moradores e nenhum esquecido.",
       "requer": { "marcos": ["fama:generoso"], "populacao_min": 30 } },
+    { "id": "herdeiro_dinastia", "nome": "Herdeiro da Dinastia", "descricao": "A coroa passou de pai para filho: Valdren já tem uma dinastia.",
+      "requer": { "marcos": ["sucessao:2"] } },
     { "id": "rei_estandartes", "nome": "Rei dos Sete Estandartes", "descricao": "Sete tipos de obra de pé num reino renascido.",
       "requer": { "tipos_min": 7, "era_min": 2 } }
   ]

@@ -1,0 +1,46 @@
+{
+  "_como_funciona": "Fase 21. A família do herdeiro. Casamento: com um morador de amizade alta (amizade_min, de 0 a 1000) ou, por política, com uma facção aliada (relacao_min); a festa custa 'festa'. Os filhos nascem 'gestacao' dias depois do casamento e depois a cada 'entre_filhos' dias, até 'filhos_max'. Cada filho chega à maioridade com 'maioridade' dias de vida e então recebe dois traços: um herdado (do herdeiro ou do cônjuge) e um do tutor (o conselheiro escolhido, se tiver lealdade de pelo menos 'tutor_lealdade'; senão, um traço sorteado, que pode ser ruim). Sucessão: com um filho adulto, a coroa pode passar; o jogo salta 'salto_anos' anos. Depois de 'reinado_velho' dias de reinado o herdeiro envelhece, e com 'reinado_max' dias ele morre e a coroa passa sozinha para o filho adulto mais velho (sem filho adulto, ele segue no trono). No salto, a fama e as relações perdem 'salto_memoria' do caminho até o começo. reacoes_traco: o que cada povo acha de quem sobe ao trono.",
+  "fundador": { "nome": "Aren", "tracos": ["valente"] },
+  "amizade_min": 700,
+  "relacao_min": 50,
+  "festa": { "comida": 40, "ouro": 60 },
+  "gestacao": 7,
+  "entre_filhos": 14,
+  "filhos_max": 3,
+  "maioridade": 28,
+  "tutor_lealdade": 40,
+  "salto_anos": 15,
+  "salto_memoria": 0.3,
+  "reinado_velho": 120,
+  "reinado_max": 168,
+  "tracos": [
+    { "id": "valente", "nome": "Valente", "descricao": "Aguenta mais na luta: +25 de vida.", "vida": 25 },
+    { "id": "forte", "nome": "Forte", "descricao": "Golpes pesados: +3 de dano.", "dano": 3 },
+    { "id": "carismatico", "nome": "Carismático", "descricao": "O povo gosta de quem fala bem: +3 de felicidade.", "felicidade": 3 },
+    { "id": "astuto", "nome": "Astuto", "descricao": "Pechincha e desconfia: -5% na taxa do mercado e mais chance de pegar quem desvia ouro.", "taxa_mercado": -0.05, "descobrir": 20 },
+    { "id": "frugal", "nome": "Frugal", "descricao": "Nada se perde: o povo come 10% menos.", "consumo": -0.1 },
+    { "id": "sabio", "nome": "Sábio", "descricao": "Leu os mapas antigos: +1 de força nas expedições.", "expedicao": 1 },
+    { "id": "devoto", "nome": "Devoto", "descricao": "Reza com o povo: a fama de devoto cresce um pouco por noite.", "devocao_noite": 0.3 },
+    { "id": "fragil", "nome": "Frágil", "descricao": "Saúde ruim desde criança: -20 de vida.", "vida": -20, "ruim": true },
+    { "id": "impetuoso", "nome": "Impetuoso", "descricao": "Bate antes de pensar: +2 de dano, -2 de felicidade.", "dano": 2, "felicidade": -2, "ruim": true }
+  ],
+  "conjuges": [
+    { "npc": "bram", "traco": "forte" },
+    { "npc": "edda", "traco": "carismatico" },
+    { "npc": "maelis", "traco": "devoto" },
+    { "npc": "oswin", "traco": "valente" },
+    { "npc": "tilda", "traco": "frugal" },
+    { "faccao": "anoes", "nome": "Hilda Barba-de-Ferro", "traco": "forte", "dote": { "pedra": 120, "ouro": 60 } },
+    { "faccao": "ordem", "nome": "Arin Vauren", "traco": "sabio", "dote": { "cristal": 8, "ouro": 40 } },
+    { "faccao": "culto", "nome": "Sera, a Cinzenta", "traco": "astuto", "dote": { "ouro": 150 } }
+  ],
+  "tutores": { "marechal": "valente", "tesoureiro": "astuto", "intendente": "frugal", "obras": "sabio" },
+  "reacoes_traco": [
+    { "traco": "valente", "anoes": 8 },
+    { "traco": "forte", "anoes": 5 },
+    { "traco": "devoto", "ordem": 8, "culto": -8 },
+    { "traco": "sabio", "ordem": 6 },
+    { "traco": "astuto", "culto": 5 },
+    { "traco": "impetuoso", "culto": 4, "ordem": -4 }
+  ]
+}

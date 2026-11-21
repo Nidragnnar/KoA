@@ -73,6 +73,10 @@ ModificadorDia World::modificadorReino(Estacao e, int dia) const {
     m.ouroDia += static_cast<int>(p.ouroDia);
     m.seguranca += static_cast<int>(p.seguranca);
     m.felicidade += p.felicidade + tempoDoDia(dia < 0 ? relogio.dia : dia).felicidade;
+    // Fase 21: os traços de quem reina
+    const EfeitosTracos tr = efeitosHerdeiro();
+    m.felicidade += tr.felicidade;
+    m.consumo *= std::max(0.5f, 1.0f + tr.consumo);
     // Fase 19: os tratados com os vizinhos
     const EfeitosTratado t = efeitosTratados();
     m.pedraDia += t.pedraDia;

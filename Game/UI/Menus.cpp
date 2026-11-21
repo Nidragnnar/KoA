@@ -141,10 +141,10 @@ void TelaOpcoes::desenhar(ke::Renderer2D& r, const ke::BitmapFont& f, const Cont
         cliques_.area(p, s, Cliques::PAINEL);
         f.desenharCentralizado(r, "Controles", {320, p.y + 10}, cor::ouro);
         float y = p.y + 24;
-        for (int i = 0; i < N_ACOES + 2; ++i, y += 12) {
+        for (int i = 0; i < N_ACOES + 2; ++i, y += 11) {
             const bool s1 = i == selControle_;
-            if (s1) r.retangulo({p.x + 10, y - 2}, {s.x - 20, 12}, {0.45f, 0.36f, 0.22f, 0.45f});
-            cliques_.area({p.x + 10, y - 2}, {s.x - 20, 12}, i);
+            if (s1) r.retangulo({p.x + 10, y - 2}, {s.x - 20, 11}, {0.45f, 0.36f, 0.22f, 0.45f});
+            cliques_.area({p.x + 10, y - 2}, {s.x - 20, 11}, i);
             if (i < N_ACOES) {
                 const AcaoTecla& a = ACOES_TECLAS[i];
                 const SDL_Scancode t = in.tecla(a.id, a.padrao);

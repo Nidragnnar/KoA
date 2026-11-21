@@ -236,7 +236,7 @@ TEST(Cenarios, MontarSavesDeTeste) {
     free(pasta);
     auto gravar = [&](World& w, const std::string& slot) {
         DadosSave d = w.capturar();
-        d.versaoJogo = "1.12.0";
+        d.versaoJogo = "1.13.0";
         d.dataHora = "cenário de teste";
         ASSERT_TRUE(s.salvar(d, slot));
     };
@@ -285,82 +285,85 @@ TEST(Cenarios, MontarSavesDeTeste) {
         w.equip.arma = "espada_linhagem";
         w.equip.armadura = "cota_malha";
     };
-    // Fase 20: reino de meio de jogo no Reino Renascido, com o Mercado Central e o castelo no nível 3 (duas alas)
-    auto comMercadoEAlas = [&](World& w, std::initializer_list<const char*> alas) {
+    // Fase 21: reino de meio de jogo com o conselho formado (Bram no Tesouro, Oswin Marechal, os dois leais)
+    auto comConselho = [&](World& w) {
         reinoAvancado(w);
         equipar(w);
         w.estado.populacao = std::min(26, w.resumo().populacaoMax);
         std::vector<std::string> notas;
         w.ajustarPovo(false, notas);
-        w.marcar("era:2", "Reino Renascido", true);
-        w.marcar("primeiro_cristal", "", true);
-        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 3000);
-        w.inventario.definir("cristal", 40);
-        for (const auto& b : w.reino.construcoes)
-            if (b.defId == "mercado") {
-                const std::string id = b.id;
-                ASSERT_TRUE(w.melhorarConstrucao(id));
-                break;
-            }
-        while (w.nivelCastelo() < 3) ASSERT_TRUE(w.melhorarConstrucao("castelo"));
-        for (const char* a : alas) ASSERT_TRUE(w.erguerAla(a)) << a;
+        w.marcar("conselho_formado", "O Conselho Real", true);
+        for (const auto& [cargo, npc] : {std::pair{"marechal", "oswin"}, {"tesoureiro", "bram"}}) ASSERT_TRUE(w.nomear(cargo, npc));
+        for (const char* npc : {"oswin", "bram"}) w.lealdade[npc] = 80;
+        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 400);
+        w.inventario.definir("comida", 300);
         w.hordaDia = 0;
+        w.proximaHorda = w.relogio.dia + 20;
         w.ultimaDecisao = w.relogio.dia;
     };
-    // Save_002 (fase 20): O MERCADO. Fim do outono (dia 18; o inverno começa no dia 22 e a comida sobe 75%), Corvin na
-    // praça. Mercado Central, 500 de comida, colheita, peixe e pratos para vender; uma caixa de sementes encomendada no
-    // dia 15 chega na visita do dia 21. Alas: Salão de Banquetes (festa) e Sala do Tesouro (empréstimo)
+    auto amizade = [](World& w, const std::string& npc, int valor) {
+        for (auto [e, m, rel] : w.reg.view<const Morador, Relacionamento>().each())
+            if (m.id == npc) rel.afinidade = valor;
+    };
+    // Save_002 (fase 21): O CASAMENTO. Aren (o fundador) está solteiro. Edda (8 corações) e Tilda (7) aceitam casar;
+    // a Ordem Arcana está aliada (+60) e manda Arin Vauren com dote; Maelis ainda não (5 corações). Depois do casamento,
+    // o primeiro filho nasce em 7 dias: escolha o tutor na família (Y)
     {
         World w = vilarejo();
-        comMercadoEAlas(w, {"salao", "tesouro"});
-        w.relogio.dia = 18;
+        comConselho(w);
+        amizade(w, "edda", 820);
+        amizade(w, "tilda", 720);
+        amizade(w, "maelis", 500);
+        w.mudarRelacao("ordem", 60.0f - w.relacaoCom("ordem"));
         w.relogio.minutos = 9 * 60;
-        w.proximaHorda = w.relogio.dia + 12;
-        w.inventario.definir("madeira", 150);
-        w.inventario.definir("pedra", 150);
-        w.inventario.definir("ouro", 400);
-        w.inventario.definir("comida", 500);
-        for (const auto& [item, q] : std::initializer_list<std::pair<const char*, int>>{{"peixe", 6}, {"ovo", 8}, {"pao", 3}, {"abobora", 4}, {"truta", 2}})
-            w.inventario.definir(item, q);
-        // Duas semanas de preços para a tendência aparecer no painel
-        w.mercado.historico.clear();
-        for (int d = 4; d <= 17; ++d) {
-            w.relogio.dia = d;
-            for (const char* b : {"comida", "madeira", "pedra", "cristal"}) w.mercado.historico[b].push_back(w.precoHoje(b));
-        }
-        w.relogio.dia = 18;
-        w.mercado.encomendas.push_back({"sementes", 15});
-        EXPECT_TRUE(w.corvinNaVila());
-        std::printf("[cenário] Save_002: dia %d (%s), Corvin na vila: %s; comida a %.2f hoje\n", w.relogio.dia, w.estacaoAtual().nome.c_str(),
-                    w.corvinNaVila() ? "sim" : "não", w.precoHoje("comida"));
+        std::printf("[cenário] Save_002: %s solteiro; Edda %s, Ordem %s\n", w.herdeiro().nome.c_str(), w.podeCasar("edda").empty() ? "aceita" : "não",
+                    w.podeCasar("ordem").empty() ? "aceita" : "não");
         w.tirarEventos();
         gravar(w, "Save_002");
         World c = vilarejo();
         c.aplicar(*s.carregar("Save_002"));
-        EXPECT_EQ(c.nivelMercado(), 2);
-        EXPECT_EQ(c.mercado.encomendas.size(), 1u);
-        EXPECT_EQ(c.mercado.historico.at("comida").size(), 14u);
+        EXPECT_TRUE(c.podeCasar("edda").empty());
+        EXPECT_FALSE(c.podeCasar("maelis").empty());
     }
-    // Save_003 (fase 20): AS ALAS E OS SONS. Noite (21:00) no vilarejo (grilos); a horda vem em 2 dias. Alas: Quartel
-    // Real (treinar a guarda) e Biblioteca Real (decifrar: faltam fragmentos da Queda). As minas estão abertas e a cripta
-    // e a floresta a um passeio: cada uma soa diferente
+    // Save_003 (fase 21): A SUCESSÃO. Aren casou com a Edda; Hugo já é adulto (educado pelo Mestre da Moeda), o segundo
+    // filho fica adulto em poucos dias (educado pelo Marechal) e o terceiro acabou de nascer. Aren reina há 115 dias:
+    // daqui a 5 envelhece e, com 168, morre e a coroa passa sozinha ao mais velho. Dá para passar a coroa ao Hugo agora,
+    // ou esperar o segundo (o conselho não gosta de pular o mais velho)
     {
         World w = vilarejo();
-        comMercadoEAlas(w, {"quartel", "biblioteca"});
-        w.relogio.dia = 10;
-        w.relogio.minutos = 21 * 60;
-        w.hordaDia = w.relogio.dia + 2;
-        w.marcar("minas_abertas", "", true);
-        w.inventario.definir("ouro", 300);
-        w.inventario.definir("comida", 200);
-        std::printf("[cenário] Save_003: alas %zu, horda no dia %d, fragmentos achados %d de %zu\n", w.alas.size(), w.hordaDia,
-                    w.pistasEncontradas(), dados().lore.pistas.size());
+        comConselho(w);
+        amizade(w, "edda", 820);
+        ASSERT_TRUE(w.casar("edda"));
+        std::vector<std::string> notas;
+        auto noites = [&](int n) {
+            for (int i = 0; i < n; ++i) w.dormir(false);
+        };
+        noites(7);
+        const auto f1 = w.linhagem.filhosDe(w.herdeiro().id);
+        ASSERT_EQ(f1.size(), 1u);
+        w.definirTutor(f1[0]->id, "tesoureiro");
+        noites(14);
+        const auto f2 = w.linhagem.filhosDe(w.herdeiro().id);
+        ASSERT_EQ(f2.size(), 2u);
+        w.definirTutor(f2[1]->id, "marechal");
+        noites(14);  // o primeiro já é adulto; o terceiro nasce
+        w.linhagem.inicioReinado = w.relogio.dia - 115;
+        for (const char* r : {"madeira", "pedra", "ouro"}) w.inventario.definir(r, 400);
+        w.inventario.definir("comida", 300);
+        w.estado.felicidade = 65.0f;
+        w.hordaDia = 0;
+        w.proximaHorda = w.relogio.dia + 20;
+        w.ultimaDecisao = w.relogio.dia;
+        w.relogio.minutos = 9 * 60;
+        const auto f = w.linhagem.filhosDe(w.herdeiro().id);
+        std::printf("[cenário] Save_003: %zu filhos; %s adulto (%s); reina há %d dias\n", f.size(), f[0]->nome.c_str(),
+                    textoTracos(dados().linhagem, f[0]->tracos).c_str(), w.diasDeReinado());
         w.tirarEventos();
         gravar(w, "Save_003");
         World c = vilarejo();
         c.aplicar(*s.carregar("Save_003"));
-        EXPECT_TRUE(c.podeAgirAla("quartel").empty());
-        EXPECT_TRUE(c.podeAgirAla("biblioteca").empty());
+        EXPECT_EQ(c.linhagem.filhosDe(c.herdeiro().id).size(), 3u);
+        EXPECT_NE(c.maisVelho(), 0);
     }
 }
 TEST(SaveV5, SaveV4GanhaCronicasDoQueJaAconteceu) {

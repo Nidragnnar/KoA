@@ -1,0 +1,16 @@
+{
+  "regioes": {
+    "floresta": {
+      "corrupcao": 70.0,
+      "prosperidade": 0.0,
+      "seguranca": 0.0,
+      "ultima_visita": 1
+    },
+    "minas": {
+      "corrupcao": 80.0,
+      "prosperidade": 0.0,
+      "seguranca": 0.0,
+      "ultima_visita": 1
+    }
+  }
+}
